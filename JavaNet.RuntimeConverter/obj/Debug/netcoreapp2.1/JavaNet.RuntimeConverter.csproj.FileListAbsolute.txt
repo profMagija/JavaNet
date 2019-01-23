@@ -1,0 +1,14 @@
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/bin/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.deps.json
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/bin/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.runtimeconfig.json
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/bin/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.runtimeconfig.dev.json
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/bin/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.dll
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/bin/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.pdb
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/bin/Debug/netcoreapp2.1/JavaNet.dll
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/bin/Debug/netcoreapp2.1/JavaNet.pdb
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/obj/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.csprojAssemblyReference.cache
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/obj/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.csproj.CoreCompileInputs.cache
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/obj/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.AssemblyInfoInputs.cache
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/obj/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.AssemblyInfo.cs
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/obj/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.csproj.CopyComplete
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/obj/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.dll
+/home/prof/RiderProjects/JavaNet/JavaNet.RuntimeConverter/obj/Debug/netcoreapp2.1/JavaNet.RuntimeConverter.pdb

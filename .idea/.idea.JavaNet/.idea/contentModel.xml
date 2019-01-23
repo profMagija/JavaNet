@@ -1,0 +1,1533 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="$USER_HOME$/.Rider2018.1/system/resharper-host/local/Transient/ReSharperHost/v12/SolutionCaches/_JavaNet.-270893679.00" t="ExcludeRecursive" />
+    <e p="$PROJECT_DIR$" t="IncludeFlat">
+      <e p="JavaNet" t="IncludeRecursive">
+        <e p="ClassFile.cs" t="Include" />
+        <e p="CpInfo.cs" t="Include" />
+        <e p="JarFile.cs" t="Include" />
+        <e p="JarReader.cs" t="Include" />
+        <e p="JavaAssemblyBuilder.cs" t="Include" />
+        <e p="JavaAttributeInfo.cs" t="Include" />
+        <e p="JavaFieldInfo.cs" t="Include" />
+        <e p="JavaMethodInfo.cs" t="Include" />
+        <e p="JavaNet.csproj" t="IncludeRecursive" />
+        <e p="StreamExtensions.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="JavaNet.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+      </e>
+      <e p="JavaNet.Console" t="IncludeRecursive">
+        <e p="JavaNet.Console.csproj" t="IncludeRecursive" />
+        <e p="Metadata.cs" t="Include" />
+        <e p="Program.cs" t="Include" />
+        <e p="Project.cs" t="Include" />
+        <e p="Test.dll" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="JavaNet.Console.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+      </e>
+      <e p="JavaNet.Mvn" t="IncludeRecursive">
+        <e p="Controllers" t="Include">
+          <e p="ApiController.cs" t="Include" />
+          <e p="PackageController.cs" t="Include" />
+          <e p="RegistrationsController.cs" t="Include" />
+          <e p="SearchController.cs" t="Include" />
+        </e>
+        <e p="Helpers.cs" t="Include" />
+        <e p="JavaNet.Mvn.csproj" t="IncludeRecursive" />
+        <e p="Model" t="Include">
+          <e p="MvnMetadata.cs" t="Include" />
+          <e p="MvnPom.cs" t="Include" />
+          <e p="MvnSearchResult.cs" t="Include" />
+          <e p="RegistrationItem.cs" t="Include" />
+          <e p="SearchResults.cs" t="Include" />
+          <e p="ServiceIndex.cs" t="Include" />
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Startup.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="JavaNet.Mvn.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="wwwroot" t="Include" />
+      </e>
+      <e p="JavaNet.Runtime" t="IncludeRecursive">
+        <e p="JavaNet.Runtime.csproj" t="IncludeRecursive" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netstandard2.0" t="Include">
+              <e p="JavaNet.Runtime.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+      </e>
+      <e p="JavaNet.RuntimeConverter" t="IncludeRecursive">
+        <e p="JavaNet.RuntimeConverter.csproj" t="IncludeRecursive" />
+        <e p="Program.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp2.1" t="Include">
+              <e p="JavaNet.RuntimeConverter.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="output" t="Include">
+          <e p="Internal" t="Include">
+            <e p="Console.java" t="Include" />
+            <e p="Runtime" t="Include">
+              <e p="Augments" t="Include">
+                <e p="EnvironmentAugments.java" t="Include" />
+                <e p="RuntimeThread.java" t="Include" />
+              </e>
+              <e p="CompilerServices" t="Include">
+                <e p="Unsafe.java" t="Include" />
+              </e>
+            </e>
+          </e>
+          <e p="Microsoft" t="Include">
+            <e p="Win32" t="Include">
+              <e p="SafeHandles" t="Include">
+                <e p="CriticalHandleMinusOneIsInvalid.java" t="Include" />
+                <e p="CriticalHandleZeroOrMinusOneIsInvalid.java" t="Include" />
+                <e p="SafeFileHandle.java" t="Include" />
+                <e p="SafeHandleMinusOneIsInvalid.java" t="Include" />
+                <e p="SafeHandleZeroOrMinusOneIsInvalid.java" t="Include" />
+                <e p="SafeWaitHandle.java" t="Include" />
+                <e p="SafeX509ChainHandle.java" t="Include" />
+              </e>
+            </e>
+          </e>
+          <e p="System" t="Include">
+            <e p="AccessViolationException.java" t="Include" />
+            <e p="Action.java" t="Include" />
+            <e p="Activator.java" t="Include" />
+            <e p="AdjustmentRule.java" t="Include" />
+            <e p="AggregateException.java" t="Include" />
+            <e p="AppContext.java" t="Include" />
+            <e p="AppDomain.java" t="Include" />
+            <e p="AppDomainUnloadedException.java" t="Include" />
+            <e p="ApplicationException.java" t="Include" />
+            <e p="ApplicationId.java" t="Include" />
+            <e p="ArgIterator.java" t="Include" />
+            <e p="ArgumentException.java" t="Include" />
+            <e p="ArgumentNullException.java" t="Include" />
+            <e p="ArgumentOutOfRangeException.java" t="Include" />
+            <e p="ArithmeticException.java" t="Include" />
+            <e p="Array.java" t="Include" />
+            <e p="ArrayTypeMismatchException.java" t="Include" />
+            <e p="AssemblyLoadEventArgs.java" t="Include" />
+            <e p="AssemblyLoadEventHandler.java" t="Include" />
+            <e p="AsyncCallback.java" t="Include" />
+            <e p="Attribute.java" t="Include" />
+            <e p="AttributeTargets.java" t="Include" />
+            <e p="AttributeUsageAttribute.java" t="Include" />
+            <e p="BadImageFormatException.java" t="Include" />
+            <e p="Base64FormattingOptions.java" t="Include" />
+            <e p="BitConverter.java" t="Include" />
+            <e p="Boolean.java" t="Include" />
+            <e p="Buffer.java" t="Include" />
+            <e p="Buffers" t="Include">
+              <e p="Binary" t="Include">
+                <e p="BinaryPrimitives.java" t="Include" />
+              </e>
+              <e p="BuffersExtensions.java" t="Include" />
+              <e p="IPinnable.java" t="Include" />
+              <e p="MemoryHandle.java" t="Include" />
+              <e p="OperationStatus.java" t="Include" />
+              <e p="StandardFormat.java" t="Include" />
+              <e p="Text" t="Include">
+                <e p="Base64.java" t="Include" />
+                <e p="Utf8Formatter.java" t="Include" />
+                <e p="Utf8Parser.java" t="Include" />
+              </e>
+            </e>
+            <e p="Byte.java" t="Include" />
+            <e p="CLSCompliantAttribute.java" t="Include" />
+            <e p="CannotUnloadAppDomainException.java" t="Include" />
+            <e p="Char.java" t="Include" />
+            <e p="CharEnumerator.java" t="Include" />
+            <e p="CodeDom" t="Include">
+              <e p="Compiler" t="Include">
+                <e p="GeneratedCodeAttribute.java" t="Include" />
+                <e p="IndentedTextWriter.java" t="Include" />
+              </e>
+            </e>
+            <e p="Collections" t="Include">
+              <e p="ArrayList.java" t="Include" />
+              <e p="BitArray.java" t="Include" />
+              <e p="CaseInsensitiveComparer.java" t="Include" />
+              <e p="CaseInsensitiveHashCodeProvider.java" t="Include" />
+              <e p="CollectionBase.java" t="Include" />
+              <e p="Comparer.java" t="Include" />
+              <e p="Concurrent" t="Include">
+                <e p="EnumerablePartitionerOptions.java" t="Include" />
+                <e p="Partitioner.java" t="Include" />
+              </e>
+              <e p="DictionaryBase.java" t="Include" />
+              <e p="DictionaryEntry.java" t="Include" />
+              <e p="Generic" t="Include">
+                <e p="ByteEqualityComparer.java" t="Include" />
+                <e p="CollectionExtensions.java" t="Include" />
+                <e p="KeyNotFoundException.java" t="Include" />
+                <e p="KeyValuePair.java" t="Include" />
+                <e p="NonRandomizedStringEqualityComparer.java" t="Include" />
+              </e>
+              <e p="Hashtable.java" t="Include" />
+              <e p="ICollection.java" t="Include" />
+              <e p="IComparer.java" t="Include" />
+              <e p="IDictionary.java" t="Include" />
+              <e p="IDictionaryEnumerator.java" t="Include" />
+              <e p="IEnumerable.java" t="Include" />
+              <e p="IEnumerator.java" t="Include" />
+              <e p="IEqualityComparer.java" t="Include" />
+              <e p="IHashCodeProvider.java" t="Include" />
+              <e p="IList.java" t="Include" />
+              <e p="IStructuralComparable.java" t="Include" />
+              <e p="IStructuralEquatable.java" t="Include" />
+              <e p="ListDictionaryInternal.java" t="Include" />
+              <e p="Queue.java" t="Include" />
+              <e p="ReadOnlyCollectionBase.java" t="Include" />
+              <e p="SortedList.java" t="Include" />
+              <e p="Specialized" t="Include">
+                <e p="BitVector32.java" t="Include" />
+                <e p="CollectionsUtil.java" t="Include" />
+                <e p="DictionaryNode.java" t="Include" />
+                <e p="HybridDictionary.java" t="Include" />
+                <e p="IOrderedDictionary.java" t="Include" />
+                <e p="KeysCollection.java" t="Include" />
+                <e p="ListDictionary.java" t="Include" />
+                <e p="NameObjectCollectionBase.java" t="Include" />
+                <e p="NameValueCollection.java" t="Include" />
+                <e p="OrderedDictionary.java" t="Include" />
+                <e p="Section.java" t="Include" />
+                <e p="StringCollection.java" t="Include" />
+                <e p="StringDictionary.java" t="Include" />
+                <e p="StringEnumerator.java" t="Include" />
+              </e>
+              <e p="Stack.java" t="Include" />
+              <e p="StructuralComparisons.java" t="Include" />
+            </e>
+            <e p="ComponentModel" t="Include">
+              <e p="DefaultValueAttribute.java" t="Include" />
+              <e p="EditorBrowsableAttribute.java" t="Include" />
+              <e p="EditorBrowsableState.java" t="Include" />
+              <e p="Win32Exception.java" t="Include" />
+            </e>
+            <e p="Configuration" t="Include">
+              <e p="Assemblies" t="Include">
+                <e p="AssemblyHashAlgorithm.java" t="Include" />
+                <e p="AssemblyVersionCompatibility.java" t="Include" />
+              </e>
+            </e>
+            <e p="Console.java" t="Include" />
+            <e p="ConsoleCancelEventArgs.java" t="Include" />
+            <e p="ConsoleCancelEventHandler.java" t="Include" />
+            <e p="ConsoleColor.java" t="Include" />
+            <e p="ConsoleKey.java" t="Include" />
+            <e p="ConsoleKeyInfo.java" t="Include" />
+            <e p="ConsoleModifiers.java" t="Include" />
+            <e p="ConsoleSpecialKey.java" t="Include" />
+            <e p="ContextBoundObject.java" t="Include" />
+            <e p="ContextMarshalException.java" t="Include" />
+            <e p="ContextStaticAttribute.java" t="Include" />
+            <e p="Convert.java" t="Include" />
+            <e p="CultureAwareComparer.java" t="Include" />
+            <e p="DBNull.java" t="Include" />
+            <e p="DataMisalignedException.java" t="Include" />
+            <e p="DateTime.java" t="Include" />
+            <e p="DateTimeKind.java" t="Include" />
+            <e p="DateTimeOffset.java" t="Include" />
+            <e p="DayOfWeek.java" t="Include" />
+            <e p="Decimal.java" t="Include" />
+            <e p="Delegate.java" t="Include" />
+            <e p="Diagnostics" t="Include">
+              <e p="Activity.java" t="Include" />
+              <e p="CodeAnalysis" t="Include">
+                <e p="ExcludeFromCodeCoverageAttribute.java" t="Include" />
+                <e p="SuppressMessageAttribute.java" t="Include" />
+              </e>
+              <e p="ConditionalAttribute.java" t="Include" />
+              <e p="Contracts" t="Include">
+                <e p="Contract.java" t="Include" />
+                <e p="ContractAbbreviatorAttribute.java" t="Include" />
+                <e p="ContractArgumentValidatorAttribute.java" t="Include" />
+                <e p="ContractClassAttribute.java" t="Include" />
+                <e p="ContractClassForAttribute.java" t="Include" />
+                <e p="ContractException.java" t="Include" />
+                <e p="ContractFailedEventArgs.java" t="Include" />
+                <e p="ContractFailureKind.java" t="Include" />
+                <e p="ContractInvariantMethodAttribute.java" t="Include" />
+                <e p="ContractOptionAttribute.java" t="Include" />
+                <e p="ContractPublicPropertyNameAttribute.java" t="Include" />
+                <e p="ContractReferenceAssemblyAttribute.java" t="Include" />
+                <e p="ContractRuntimeIgnoredAttribute.java" t="Include" />
+                <e p="ContractVerificationAttribute.java" t="Include" />
+                <e p="PureAttribute.java" t="Include" />
+              </e>
+              <e p="Debug.java" t="Include" />
+              <e p="DebuggableAttribute.java" t="Include" />
+              <e p="Debugger.java" t="Include" />
+              <e p="DebuggerBrowsableAttribute.java" t="Include" />
+              <e p="DebuggerBrowsableState.java" t="Include" />
+              <e p="DebuggerDisplayAttribute.java" t="Include" />
+              <e p="DebuggerHiddenAttribute.java" t="Include" />
+              <e p="DebuggerNonUserCodeAttribute.java" t="Include" />
+              <e p="DebuggerStepThroughAttribute.java" t="Include" />
+              <e p="DebuggerStepperBoundaryAttribute.java" t="Include" />
+              <e p="DebuggerTypeProxyAttribute.java" t="Include" />
+              <e p="DebuggerVisualizerAttribute.java" t="Include" />
+              <e p="DebuggingModes.java" t="Include" />
+              <e p="DiagnosticListener.java" t="Include" />
+              <e p="DiagnosticSource.java" t="Include" />
+              <e p="StackFrame.java" t="Include" />
+              <e p="StackTrace.java" t="Include" />
+              <e p="Stopwatch.java" t="Include" />
+              <e p="SymbolStore" t="Include">
+                <e p="ISymbolDocumentWriter.java" t="Include" />
+              </e>
+              <e p="Tracing" t="Include">
+                <e p="EventActivityOptions.java" t="Include" />
+                <e p="EventAttribute.java" t="Include" />
+                <e p="EventChannel.java" t="Include" />
+                <e p="EventCommand.java" t="Include" />
+                <e p="EventCommandEventArgs.java" t="Include" />
+                <e p="EventCounter.java" t="Include" />
+                <e p="EventDataAttribute.java" t="Include" />
+                <e p="EventFieldAttribute.java" t="Include" />
+                <e p="EventFieldFormat.java" t="Include" />
+                <e p="EventFieldTags.java" t="Include" />
+                <e p="EventIgnoreAttribute.java" t="Include" />
+                <e p="EventKeywords.java" t="Include" />
+                <e p="EventLevel.java" t="Include" />
+                <e p="EventListener.java" t="Include" />
+                <e p="EventManifestOptions.java" t="Include" />
+                <e p="EventOpcode.java" t="Include" />
+                <e p="EventSource.java" t="Include" />
+                <e p="EventSourceAttribute.java" t="Include" />
+                <e p="EventSourceCreatedEventArgs.java" t="Include" />
+                <e p="EventSourceException.java" t="Include" />
+                <e p="EventSourceOptions.java" t="Include" />
+                <e p="EventSourceSettings.java" t="Include" />
+                <e p="EventTags.java" t="Include" />
+                <e p="EventTask.java" t="Include" />
+                <e p="EventWrittenEventArgs.java" t="Include" />
+                <e p="NonEventAttribute.java" t="Include" />
+                <e p="TraceLoggingEventTypes.java" t="Include" />
+              </e>
+            </e>
+            <e p="DivideByZeroException.java" t="Include" />
+            <e p="DllNotFoundException.java" t="Include" />
+            <e p="Double.java" t="Include" />
+            <e p="DuplicateWaitObjectException.java" t="Include" />
+            <e p="EntryPointNotFoundException.java" t="Include" />
+            <e p="Enum.java" t="Include" />
+            <e p="Environment.java" t="Include" />
+            <e p="EnvironmentVariableTarget.java" t="Include" />
+            <e p="EventArgs.java" t="Include" />
+            <e p="EventHandler.java" t="Include" />
+            <e p="Exception.java" t="Include" />
+            <e p="ExecutionEngineException.java" t="Include" />
+            <e p="FieldAccessException.java" t="Include" />
+            <e p="FileStyleUriParser.java" t="Include" />
+            <e p="FlagsAttribute.java" t="Include" />
+            <e p="FormatException.java" t="Include" />
+            <e p="FormattableString.java" t="Include" />
+            <e p="FtpStyleUriParser.java" t="Include" />
+            <e p="GC.java" t="Include" />
+            <e p="GCCollectionMode.java" t="Include" />
+            <e p="GCNotificationStatus.java" t="Include" />
+            <e p="GenericUriParser.java" t="Include" />
+            <e p="GenericUriParserOptions.java" t="Include" />
+            <e p="Globalization" t="Include">
+              <e p="Calendar.java" t="Include" />
+              <e p="CalendarAlgorithmType.java" t="Include" />
+              <e p="CalendarWeekRule.java" t="Include" />
+              <e p="CharUnicodeInfo.java" t="Include" />
+              <e p="ChineseLunisolarCalendar.java" t="Include" />
+              <e p="CompareInfo.java" t="Include" />
+              <e p="CompareOptions.java" t="Include" />
+              <e p="CultureInfo.java" t="Include" />
+              <e p="CultureNotFoundException.java" t="Include" />
+              <e p="CultureTypes.java" t="Include" />
+              <e p="DateTimeFormatInfo.java" t="Include" />
+              <e p="DateTimeStyles.java" t="Include" />
+              <e p="DaylightTime.java" t="Include" />
+              <e p="DigitShapes.java" t="Include" />
+              <e p="EastAsianLunisolarCalendar.java" t="Include" />
+              <e p="GlobalizationExtensions.java" t="Include" />
+              <e p="GregorianCalendar.java" t="Include" />
+              <e p="GregorianCalendarTypes.java" t="Include" />
+              <e p="HebrewCalendar.java" t="Include" />
+              <e p="HijriCalendar.java" t="Include" />
+              <e p="IdnMapping.java" t="Include" />
+              <e p="JapaneseCalendar.java" t="Include" />
+              <e p="JapaneseLunisolarCalendar.java" t="Include" />
+              <e p="JulianCalendar.java" t="Include" />
+              <e p="KoreanCalendar.java" t="Include" />
+              <e p="KoreanLunisolarCalendar.java" t="Include" />
+              <e p="NumberFormatInfo.java" t="Include" />
+              <e p="NumberStyles.java" t="Include" />
+              <e p="PersianCalendar.java" t="Include" />
+              <e p="RegionInfo.java" t="Include" />
+              <e p="SortKey.java" t="Include" />
+              <e p="SortVersion.java" t="Include" />
+              <e p="StringInfo.java" t="Include" />
+              <e p="TaiwanCalendar.java" t="Include" />
+              <e p="TaiwanLunisolarCalendar.java" t="Include" />
+              <e p="TextElementEnumerator.java" t="Include" />
+              <e p="TextInfo.java" t="Include" />
+              <e p="ThaiBuddhistCalendar.java" t="Include" />
+              <e p="TimeSpanStyles.java" t="Include" />
+              <e p="UmAlQuraCalendar.java" t="Include" />
+              <e p="UnicodeCategory.java" t="Include" />
+            </e>
+            <e p="GopherStyleUriParser.java" t="Include" />
+            <e p="Guid.java" t="Include" />
+            <e p="HashCode.java" t="Include" />
+            <e p="HttpStyleUriParser.java" t="Include" />
+            <e p="IAsyncResult.java" t="Include" />
+            <e p="ICloneable.java" t="Include" />
+            <e p="IComparable.java" t="Include" />
+            <e p="IConvertible.java" t="Include" />
+            <e p="ICustomFormatter.java" t="Include" />
+            <e p="IDisposable.java" t="Include" />
+            <e p="IFormatProvider.java" t="Include" />
+            <e p="IFormattable.java" t="Include" />
+            <e p="IO" t="Include">
+              <e p="BinaryReader.java" t="Include" />
+              <e p="BinaryWriter.java" t="Include" />
+              <e p="BufferedStream.java" t="Include" />
+              <e p="Compression" t="Include">
+                <e p="CompressionLevel.java" t="Include" />
+                <e p="CompressionMode.java" t="Include" />
+                <e p="DeflateStream.java" t="Include" />
+                <e p="GZipStream.java" t="Include" />
+                <e p="ZLibException.java" t="Include" />
+                <e p="ZipArchive.java" t="Include" />
+                <e p="ZipArchiveEntry.java" t="Include" />
+                <e p="ZipArchiveMode.java" t="Include" />
+              </e>
+              <e p="Directory.java" t="Include" />
+              <e p="DirectoryInfo.java" t="Include" />
+              <e p="DirectoryNotFoundException.java" t="Include" />
+              <e p="EndOfStreamException.java" t="Include" />
+              <e p="Enumeration" t="Include">
+                <e p="&lt;_fileNameBuffer&gt;e__FixedBuffer.java" t="Include" />
+                <e p="FileSystemEntry.java" t="Include" />
+                <e p="FileSystemName.java" t="Include" />
+              </e>
+              <e p="EnumerationOptions.java" t="Include" />
+              <e p="File.java" t="Include" />
+              <e p="FileAccess.java" t="Include" />
+              <e p="FileAttributes.java" t="Include" />
+              <e p="FileInfo.java" t="Include" />
+              <e p="FileLoadException.java" t="Include" />
+              <e p="FileMode.java" t="Include" />
+              <e p="FileNotFoundException.java" t="Include" />
+              <e p="FileOptions.java" t="Include" />
+              <e p="FileShare.java" t="Include" />
+              <e p="FileStream.java" t="Include" />
+              <e p="FileSystemInfo.java" t="Include" />
+              <e p="HandleInheritability.java" t="Include" />
+              <e p="IOException.java" t="Include" />
+              <e p="InvalidDataException.java" t="Include" />
+              <e p="MatchCasing.java" t="Include" />
+              <e p="MatchType.java" t="Include" />
+              <e p="MemoryStream.java" t="Include" />
+              <e p="Path.java" t="Include" />
+              <e p="PathTooLongException.java" t="Include" />
+              <e p="SearchOption.java" t="Include" />
+              <e p="SeekOrigin.java" t="Include" />
+              <e p="Stream.java" t="Include" />
+              <e p="StreamReader.java" t="Include" />
+              <e p="StreamWriter.java" t="Include" />
+              <e p="StringReader.java" t="Include" />
+              <e p="StringWriter.java" t="Include" />
+              <e p="TextReader.java" t="Include" />
+              <e p="TextWriter.java" t="Include" />
+              <e p="UnmanagedMemoryAccessor.java" t="Include" />
+              <e p="UnmanagedMemoryStream.java" t="Include" />
+            </e>
+            <e p="IndexOutOfRangeException.java" t="Include" />
+            <e p="InsufficientExecutionStackException.java" t="Include" />
+            <e p="InsufficientMemoryException.java" t="Include" />
+            <e p="Int16.java" t="Include" />
+            <e p="Int32.java" t="Include" />
+            <e p="Int64.java" t="Include" />
+            <e p="IntPtr.java" t="Include" />
+            <e p="InvalidCastException.java" t="Include" />
+            <e p="InvalidOperationException.java" t="Include" />
+            <e p="InvalidProgramException.java" t="Include" />
+            <e p="InvalidTimeZoneException.java" t="Include" />
+            <e p="LdapStyleUriParser.java" t="Include" />
+            <e p="Linq" t="Include">
+              <e p="Enumerable.java" t="Include" />
+            </e>
+            <e p="LoaderOptimization.java" t="Include" />
+            <e p="LoaderOptimizationAttribute.java" t="Include" />
+            <e p="LocalDataStoreSlot.java" t="Include" />
+            <e p="MTAThreadAttribute.java" t="Include" />
+            <e p="MarshalByRefObject.java" t="Include" />
+            <e p="Math.java" t="Include" />
+            <e p="MathF.java" t="Include" />
+            <e p="MemberAccessException.java" t="Include" />
+            <e p="MemoryExtensions.java" t="Include" />
+            <e p="MethodAccessException.java" t="Include" />
+            <e p="MidpointRounding.java" t="Include" />
+            <e p="MissingFieldException.java" t="Include" />
+            <e p="MissingMemberException.java" t="Include" />
+            <e p="MissingMethodException.java" t="Include" />
+            <e p="ModuleHandle.java" t="Include" />
+            <e p="MulticastDelegate.java" t="Include" />
+            <e p="MulticastNotSupportedException.java" t="Include" />
+            <e p="Net" t="Include">
+              <e p="AuthenticationManager.java" t="Include" />
+              <e p="AuthenticationSchemes.java" t="Include" />
+              <e p="Authorization.java" t="Include" />
+              <e p="BindIPEndPoint.java" t="Include" />
+              <e p="Cache" t="Include">
+                <e p="HttpCacheAgeControl.java" t="Include" />
+                <e p="HttpRequestCacheLevel.java" t="Include" />
+                <e p="HttpRequestCachePolicy.java" t="Include" />
+                <e p="RequestCacheLevel.java" t="Include" />
+                <e p="RequestCachePolicy.java" t="Include" />
+              </e>
+              <e p="Cookie.java" t="Include" />
+              <e p="CookieCollection.java" t="Include" />
+              <e p="CookieContainer.java" t="Include" />
+              <e p="CookieException.java" t="Include" />
+              <e p="CookieVariant.java" t="Include" />
+              <e p="CredentialCache.java" t="Include" />
+              <e p="DecompressionMethods.java" t="Include" />
+              <e p="Dns.java" t="Include" />
+              <e p="DnsEndPoint.java" t="Include" />
+              <e p="EndPoint.java" t="Include" />
+              <e p="File.java" t="Include" />
+              <e p="FileWebRequest.java" t="Include" />
+              <e p="FileWebResponse.java" t="Include" />
+              <e p="Ftp.java" t="Include" />
+              <e p="FtpStatusCode.java" t="Include" />
+              <e p="FtpWebRequest.java" t="Include" />
+              <e p="FtpWebResponse.java" t="Include" />
+              <e p="GlobalProxySelection.java" t="Include" />
+              <e p="Http" t="Include">
+                <e p="ByteArrayContent.java" t="Include" />
+                <e p="ClientCertificateOption.java" t="Include" />
+                <e p="DelegatingHandler.java" t="Include" />
+                <e p="FormUrlEncodedContent.java" t="Include" />
+                <e p="Headers" t="Include">
+                  <e p="AuthenticationHeaderValue.java" t="Include" />
+                  <e p="CacheControlHeaderValue.java" t="Include" />
+                  <e p="ContentDispositionHeaderValue.java" t="Include" />
+                  <e p="ContentRangeHeaderValue.java" t="Include" />
+                  <e p="EntityTagHeaderValue.java" t="Include" />
+                  <e p="HttpContentHeaders.java" t="Include" />
+                  <e p="HttpHeaders.java" t="Include" />
+                  <e p="HttpRequestHeaders.java" t="Include" />
+                  <e p="HttpResponseHeaders.java" t="Include" />
+                  <e p="MediaTypeHeaderValue.java" t="Include" />
+                  <e p="MediaTypeWithQualityHeaderValue.java" t="Include" />
+                  <e p="NameValueHeaderValue.java" t="Include" />
+                  <e p="NameValueWithParametersHeaderValue.java" t="Include" />
+                  <e p="ProductHeaderValue.java" t="Include" />
+                  <e p="ProductInfoHeaderValue.java" t="Include" />
+                  <e p="RangeConditionHeaderValue.java" t="Include" />
+                  <e p="RangeHeaderValue.java" t="Include" />
+                  <e p="RangeItemHeaderValue.java" t="Include" />
+                  <e p="RetryConditionHeaderValue.java" t="Include" />
+                  <e p="StringWithQualityHeaderValue.java" t="Include" />
+                  <e p="TransferCodingHeaderValue.java" t="Include" />
+                  <e p="TransferCodingWithQualityHeaderValue.java" t="Include" />
+                  <e p="ViaHeaderValue.java" t="Include" />
+                  <e p="WarningHeaderValue.java" t="Include" />
+                </e>
+                <e p="HttpClient.java" t="Include" />
+                <e p="HttpClientHandler.java" t="Include" />
+                <e p="HttpCompletionOption.java" t="Include" />
+                <e p="HttpContent.java" t="Include" />
+                <e p="HttpMessageHandler.java" t="Include" />
+                <e p="HttpMessageInvoker.java" t="Include" />
+                <e p="HttpMethod.java" t="Include" />
+                <e p="HttpRequestException.java" t="Include" />
+                <e p="HttpRequestMessage.java" t="Include" />
+                <e p="HttpResponseMessage.java" t="Include" />
+                <e p="MessageProcessingHandler.java" t="Include" />
+                <e p="MultipartContent.java" t="Include" />
+                <e p="MultipartFormDataContent.java" t="Include" />
+                <e p="ReadOnlyMemoryContent.java" t="Include" />
+                <e p="SocketsHttpHandler.java" t="Include" />
+                <e p="StreamContent.java" t="Include" />
+                <e p="StringContent.java" t="Include" />
+              </e>
+              <e p="Http.java" t="Include" />
+              <e p="HttpContinueDelegate.java" t="Include" />
+              <e p="HttpRequestHeader.java" t="Include" />
+              <e p="HttpResponseHeader.java" t="Include" />
+              <e p="HttpStatusCode.java" t="Include" />
+              <e p="HttpVersion.java" t="Include" />
+              <e p="HttpWebRequest.java" t="Include" />
+              <e p="HttpWebResponse.java" t="Include" />
+              <e p="IAuthenticationModule.java" t="Include" />
+              <e p="ICredentialPolicy.java" t="Include" />
+              <e p="ICredentials.java" t="Include" />
+              <e p="ICredentialsByHost.java" t="Include" />
+              <e p="IPAddress.java" t="Include" />
+              <e p="IPEndPoint.java" t="Include" />
+              <e p="IPHostEntry.java" t="Include" />
+              <e p="IWebProxy.java" t="Include" />
+              <e p="IWebRequestCreate.java" t="Include" />
+              <e p="Internals" t="Include">
+                <e p="ProtocolType.java" t="Include" />
+              </e>
+              <e p="NetworkCredential.java" t="Include" />
+              <e p="NetworkInformation" t="Include">
+                <e p="IPAddressCollection.java" t="Include" />
+              </e>
+              <e p="PathList.java" t="Include" />
+              <e p="ProtocolViolationException.java" t="Include" />
+              <e p="Security" t="Include">
+                <e p="AuthenticatedStream.java" t="Include" />
+                <e p="AuthenticationLevel.java" t="Include" />
+                <e p="EncryptionPolicy.java" t="Include" />
+                <e p="LocalCertificateSelectionCallback.java" t="Include" />
+                <e p="NegotiateStream.java" t="Include" />
+                <e p="ProtectionLevel.java" t="Include" />
+                <e p="RemoteCertificateValidationCallback.java" t="Include" />
+                <e p="ServerCertificateSelectionCallback.java" t="Include" />
+                <e p="SslApplicationProtocol.java" t="Include" />
+                <e p="SslClientAuthenticationOptions.java" t="Include" />
+                <e p="SslPolicyErrors.java" t="Include" />
+                <e p="SslServerAuthenticationOptions.java" t="Include" />
+                <e p="SslStream.java" t="Include" />
+              </e>
+              <e p="SecurityProtocolType.java" t="Include" />
+              <e p="ServicePoint.java" t="Include" />
+              <e p="ServicePointManager.java" t="Include" />
+              <e p="SocketAddress.java" t="Include" />
+              <e p="Sockets" t="Include">
+                <e p="AddressFamily.java" t="Include" />
+                <e p="IOControlCode.java" t="Include" />
+                <e p="IPPacketInformation.java" t="Include" />
+                <e p="IPProtectionLevel.java" t="Include" />
+                <e p="IPv6MulticastOption.java" t="Include" />
+                <e p="LingerOption.java" t="Include" />
+                <e p="MulticastOption.java" t="Include" />
+                <e p="NetworkStream.java" t="Include" />
+                <e p="ProtocolFamily.java" t="Include" />
+                <e p="ProtocolType.java" t="Include" />
+                <e p="SelectMode.java" t="Include" />
+                <e p="SendPacketsElement.java" t="Include" />
+                <e p="Socket.java" t="Include" />
+                <e p="SocketAsyncEventArgs.java" t="Include" />
+                <e p="SocketAsyncOperation.java" t="Include" />
+                <e p="SocketError.java" t="Include" />
+                <e p="SocketException.java" t="Include" />
+                <e p="SocketFlags.java" t="Include" />
+                <e p="SocketInformation.java" t="Include" />
+                <e p="SocketInformationOptions.java" t="Include" />
+                <e p="SocketOptionLevel.java" t="Include" />
+                <e p="SocketOptionName.java" t="Include" />
+                <e p="SocketReceiveFromResult.java" t="Include" />
+                <e p="SocketReceiveMessageFromResult.java" t="Include" />
+                <e p="SocketShutdown.java" t="Include" />
+                <e p="SocketTaskExtensions.java" t="Include" />
+                <e p="SocketType.java" t="Include" />
+                <e p="TcpClient.java" t="Include" />
+                <e p="TcpListener.java" t="Include" />
+                <e p="TransmitFileOptions.java" t="Include" />
+                <e p="UdpClient.java" t="Include" />
+                <e p="UdpReceiveResult.java" t="Include" />
+                <e p="UnixDomainSocketEndPoint.java" t="Include" />
+              </e>
+              <e p="TransportContext.java" t="Include" />
+              <e p="WebException.java" t="Include" />
+              <e p="WebExceptionStatus.java" t="Include" />
+              <e p="WebHeaderCollection.java" t="Include" />
+              <e p="WebRequest.java" t="Include" />
+              <e p="WebRequestMethods.java" t="Include" />
+              <e p="WebResponse.java" t="Include" />
+              <e p="WebUtility.java" t="Include" />
+            </e>
+            <e p="NetPipeStyleUriParser.java" t="Include" />
+            <e p="NetTcpStyleUriParser.java" t="Include" />
+            <e p="NewsStyleUriParser.java" t="Include" />
+            <e p="NonSerializedAttribute.java" t="Include" />
+            <e p="NotFiniteNumberException.java" t="Include" />
+            <e p="NotImplementedException.java" t="Include" />
+            <e p="NotSupportedException.java" t="Include" />
+            <e p="NullReferenceException.java" t="Include" />
+            <e p="Nullable.java" t="Include" />
+            <e p="Numerics" t="Include">
+              <e p="BigInteger.java" t="Include" />
+              <e p="Complex.java" t="Include" />
+              <e p="Vector.java" t="Include" />
+            </e>
+            <e p="Object.java" t="Include" />
+            <e p="ObjectDisposedException.java" t="Include" />
+            <e p="ObsoleteAttribute.java" t="Include" />
+            <e p="OperatingSystem.java" t="Include" />
+            <e p="OperationCanceledException.java" t="Include" />
+            <e p="OrdinalComparer.java" t="Include" />
+            <e p="OutOfMemoryException.java" t="Include" />
+            <e p="OverflowException.java" t="Include" />
+            <e p="ParamArrayAttribute.java" t="Include" />
+            <e p="PlatformID.java" t="Include" />
+            <e p="PlatformNotSupportedException.java" t="Include" />
+            <e p="Random.java" t="Include" />
+            <e p="RankException.java" t="Include" />
+            <e p="Reflection" t="Include">
+              <e p="AmbiguousMatchException.java" t="Include" />
+              <e p="Assembly.java" t="Include" />
+              <e p="AssemblyAlgorithmIdAttribute.java" t="Include" />
+              <e p="AssemblyCompanyAttribute.java" t="Include" />
+              <e p="AssemblyConfigurationAttribute.java" t="Include" />
+              <e p="AssemblyContentType.java" t="Include" />
+              <e p="AssemblyCopyrightAttribute.java" t="Include" />
+              <e p="AssemblyCultureAttribute.java" t="Include" />
+              <e p="AssemblyDefaultAliasAttribute.java" t="Include" />
+              <e p="AssemblyDelaySignAttribute.java" t="Include" />
+              <e p="AssemblyDescriptionAttribute.java" t="Include" />
+              <e p="AssemblyFileVersionAttribute.java" t="Include" />
+              <e p="AssemblyFlagsAttribute.java" t="Include" />
+              <e p="AssemblyInformationalVersionAttribute.java" t="Include" />
+              <e p="AssemblyKeyFileAttribute.java" t="Include" />
+              <e p="AssemblyKeyNameAttribute.java" t="Include" />
+              <e p="AssemblyMetadataAttribute.java" t="Include" />
+              <e p="AssemblyName.java" t="Include" />
+              <e p="AssemblyNameFlags.java" t="Include" />
+              <e p="AssemblyNameProxy.java" t="Include" />
+              <e p="AssemblyProductAttribute.java" t="Include" />
+              <e p="AssemblySignatureKeyAttribute.java" t="Include" />
+              <e p="AssemblyTitleAttribute.java" t="Include" />
+              <e p="AssemblyTrademarkAttribute.java" t="Include" />
+              <e p="AssemblyVersionAttribute.java" t="Include" />
+              <e p="Binder.java" t="Include" />
+              <e p="BindingFlags.java" t="Include" />
+              <e p="CallingConventions.java" t="Include" />
+              <e p="ConstructorInfo.java" t="Include" />
+              <e p="CustomAttributeData.java" t="Include" />
+              <e p="CustomAttributeExtensions.java" t="Include" />
+              <e p="CustomAttributeFormatException.java" t="Include" />
+              <e p="CustomAttributeNamedArgument.java" t="Include" />
+              <e p="CustomAttributeTypedArgument.java" t="Include" />
+              <e p="DefaultMemberAttribute.java" t="Include" />
+              <e p="Emit" t="Include">
+                <e p="AssemblyBuilder.java" t="Include" />
+                <e p="AssemblyBuilderAccess.java" t="Include" />
+                <e p="ConstructorBuilder.java" t="Include" />
+                <e p="CustomAttributeBuilder.java" t="Include" />
+                <e p="DynamicMethod.java" t="Include" />
+                <e p="EnumBuilder.java" t="Include" />
+                <e p="EventBuilder.java" t="Include" />
+                <e p="EventToken.java" t="Include" />
+                <e p="FieldBuilder.java" t="Include" />
+                <e p="FieldToken.java" t="Include" />
+                <e p="FlowControl.java" t="Include" />
+                <e p="GenericTypeParameterBuilder.java" t="Include" />
+                <e p="ILGenerator.java" t="Include" />
+                <e p="Label.java" t="Include" />
+                <e p="LocalBuilder.java" t="Include" />
+                <e p="MethodBuilder.java" t="Include" />
+                <e p="MethodToken.java" t="Include" />
+                <e p="ModuleBuilder.java" t="Include" />
+                <e p="OpCode.java" t="Include" />
+                <e p="OpCodeType.java" t="Include" />
+                <e p="OpCodes.java" t="Include" />
+                <e p="OperandType.java" t="Include" />
+                <e p="PEFileKinds.java" t="Include" />
+                <e p="PackingSize.java" t="Include" />
+                <e p="ParameterBuilder.java" t="Include" />
+                <e p="ParameterToken.java" t="Include" />
+                <e p="PropertyBuilder.java" t="Include" />
+                <e p="PropertyToken.java" t="Include" />
+                <e p="SignatureHelper.java" t="Include" />
+                <e p="SignatureToken.java" t="Include" />
+                <e p="StackBehaviour.java" t="Include" />
+                <e p="StringToken.java" t="Include" />
+                <e p="TypeBuilder.java" t="Include" />
+                <e p="TypeToken.java" t="Include" />
+              </e>
+              <e p="EventAttributes.java" t="Include" />
+              <e p="EventInfo.java" t="Include" />
+              <e p="ExceptionHandlingClause.java" t="Include" />
+              <e p="ExceptionHandlingClauseOptions.java" t="Include" />
+              <e p="FieldAttributes.java" t="Include" />
+              <e p="FieldInfo.java" t="Include" />
+              <e p="GenericParameterAttributes.java" t="Include" />
+              <e p="ICustomAttributeProvider.java" t="Include" />
+              <e p="IReflect.java" t="Include" />
+              <e p="IReflectableType.java" t="Include" />
+              <e p="ImageFileMachine.java" t="Include" />
+              <e p="InterfaceMapping.java" t="Include" />
+              <e p="IntrospectionExtensions.java" t="Include" />
+              <e p="InvalidFilterCriteriaException.java" t="Include" />
+              <e p="LocalVariableInfo.java" t="Include" />
+              <e p="ManifestResourceInfo.java" t="Include" />
+              <e p="MemberFilter.java" t="Include" />
+              <e p="MemberInfo.java" t="Include" />
+              <e p="MemberTypes.java" t="Include" />
+              <e p="Metadata" t="Include">
+                <e p="AssemblyExtensions.java" t="Include" />
+              </e>
+              <e p="MethodAttributes.java" t="Include" />
+              <e p="MethodBase.java" t="Include" />
+              <e p="MethodBody.java" t="Include" />
+              <e p="MethodImplAttributes.java" t="Include" />
+              <e p="MethodInfo.java" t="Include" />
+              <e p="Missing.java" t="Include" />
+              <e p="Module.java" t="Include" />
+              <e p="ModuleResolveEventHandler.java" t="Include" />
+              <e p="ObfuscateAssemblyAttribute.java" t="Include" />
+              <e p="ObfuscationAttribute.java" t="Include" />
+              <e p="ParameterAttributes.java" t="Include" />
+              <e p="ParameterInfo.java" t="Include" />
+              <e p="ParameterModifier.java" t="Include" />
+              <e p="Pointer.java" t="Include" />
+              <e p="PortableExecutableKinds.java" t="Include" />
+              <e p="ProcessorArchitecture.java" t="Include" />
+              <e p="PropertyAttributes.java" t="Include" />
+              <e p="PropertyInfo.java" t="Include" />
+              <e p="ReflectionContext.java" t="Include" />
+              <e p="ReflectionTypeLoadException.java" t="Include" />
+              <e p="ResourceAttributes.java" t="Include" />
+              <e p="ResourceLocation.java" t="Include" />
+              <e p="RuntimeReflectionExtensions.java" t="Include" />
+              <e p="StrongNameKeyPair.java" t="Include" />
+              <e p="TargetException.java" t="Include" />
+              <e p="TargetInvocationException.java" t="Include" />
+              <e p="TargetParameterCountException.java" t="Include" />
+              <e p="TypeAttributes.java" t="Include" />
+              <e p="TypeDelegator.java" t="Include" />
+              <e p="TypeFilter.java" t="Include" />
+              <e p="TypeInfo.java" t="Include" />
+            </e>
+            <e p="ResolveEventArgs.java" t="Include" />
+            <e p="ResolveEventHandler.java" t="Include" />
+            <e p="Resources" t="Include">
+              <e p="IResourceReader.java" t="Include" />
+              <e p="MissingManifestResourceException.java" t="Include" />
+              <e p="MissingSatelliteAssemblyException.java" t="Include" />
+              <e p="NeutralResourcesLanguageAttribute.java" t="Include" />
+              <e p="ResourceManager.java" t="Include" />
+              <e p="ResourceReader.java" t="Include" />
+              <e p="ResourceSet.java" t="Include" />
+              <e p="SatelliteContractVersionAttribute.java" t="Include" />
+              <e p="UltimateResourceFallbackLocation.java" t="Include" />
+            </e>
+            <e p="Runtime" t="Include">
+              <e p="AssemblyTargetedPatchBandAttribute.java" t="Include" />
+              <e p="CompilerServices" t="Include">
+                <e p="AccessedThroughPropertyAttribute.java" t="Include" />
+                <e p="AsyncMethodBuilderAttribute.java" t="Include" />
+                <e p="AsyncStateMachineAttribute.java" t="Include" />
+                <e p="AsyncTaskMethodBuilder.java" t="Include" />
+                <e p="AsyncValueTaskMethodBuilder.java" t="Include" />
+                <e p="AsyncVoidMethodBuilder.java" t="Include" />
+                <e p="CallerFilePathAttribute.java" t="Include" />
+                <e p="CallerLineNumberAttribute.java" t="Include" />
+                <e p="CallerMemberNameAttribute.java" t="Include" />
+                <e p="CleanupCode.java" t="Include" />
+                <e p="CompilationRelaxations.java" t="Include" />
+                <e p="CompilationRelaxationsAttribute.java" t="Include" />
+                <e p="CompilerGeneratedAttribute.java" t="Include" />
+                <e p="CompilerGlobalScopeAttribute.java" t="Include" />
+                <e p="ConfiguredTaskAwaitable.java" t="Include" />
+                <e p="ConfiguredTaskAwaiter.java" t="Include" />
+                <e p="ConfiguredValueTaskAwaitable.java" t="Include" />
+                <e p="ConfiguredValueTaskAwaiter.java" t="Include" />
+                <e p="ContractHelper.java" t="Include" />
+                <e p="CustomConstantAttribute.java" t="Include" />
+                <e p="DateTimeConstantAttribute.java" t="Include" />
+                <e p="DecimalConstantAttribute.java" t="Include" />
+                <e p="DefaultDependencyAttribute.java" t="Include" />
+                <e p="DependencyAttribute.java" t="Include" />
+                <e p="DisablePrivateReflectionAttribute.java" t="Include" />
+                <e p="DiscardableAttribute.java" t="Include" />
+                <e p="ExtensionAttribute.java" t="Include" />
+                <e p="FixedAddressValueTypeAttribute.java" t="Include" />
+                <e p="FixedBufferAttribute.java" t="Include" />
+                <e p="FormattableStringFactory.java" t="Include" />
+                <e p="IAsyncStateMachine.java" t="Include" />
+                <e p="ICastable.java" t="Include" />
+                <e p="ICriticalNotifyCompletion.java" t="Include" />
+                <e p="INotifyCompletion.java" t="Include" />
+                <e p="IStrongBox.java" t="Include" />
+                <e p="ITuple.java" t="Include" />
+                <e p="IUnknownConstantAttribute.java" t="Include" />
+                <e p="IndexerNameAttribute.java" t="Include" />
+                <e p="InternalsVisibleToAttribute.java" t="Include" />
+                <e p="IsByRefLikeAttribute.java" t="Include" />
+                <e p="IsConst.java" t="Include" />
+                <e p="IsReadOnlyAttribute.java" t="Include" />
+                <e p="IsVolatile.java" t="Include" />
+                <e p="IteratorStateMachineAttribute.java" t="Include" />
+                <e p="LoadHint.java" t="Include" />
+                <e p="MethodCodeType.java" t="Include" />
+                <e p="MethodImplAttribute.java" t="Include" />
+                <e p="MethodImplOptions.java" t="Include" />
+                <e p="ReferenceAssemblyAttribute.java" t="Include" />
+                <e p="RuntimeCompatibilityAttribute.java" t="Include" />
+                <e p="RuntimeFeature.java" t="Include" />
+                <e p="RuntimeHelpers.java" t="Include" />
+                <e p="RuntimeWrappedException.java" t="Include" />
+                <e p="SpecialNameAttribute.java" t="Include" />
+                <e p="StateMachineAttribute.java" t="Include" />
+                <e p="StringFreezingAttribute.java" t="Include" />
+                <e p="SuppressIldasmAttribute.java" t="Include" />
+                <e p="TaskAwaiter.java" t="Include" />
+                <e p="TryCode.java" t="Include" />
+                <e p="TupleElementNamesAttribute.java" t="Include" />
+                <e p="TypeForwardedFromAttribute.java" t="Include" />
+                <e p="TypeForwardedToAttribute.java" t="Include" />
+                <e p="UnsafeValueTypeAttribute.java" t="Include" />
+                <e p="ValueTaskAwaiter.java" t="Include" />
+                <e p="YieldAwaitable.java" t="Include" />
+                <e p="YieldAwaiter.java" t="Include" />
+              </e>
+              <e p="ConstrainedExecution" t="Include">
+                <e p="Cer.java" t="Include" />
+                <e p="Consistency.java" t="Include" />
+                <e p="CriticalFinalizerObject.java" t="Include" />
+                <e p="PrePrepareMethodAttribute.java" t="Include" />
+                <e p="ReliabilityContractAttribute.java" t="Include" />
+              </e>
+              <e p="ExceptionServices" t="Include">
+                <e p="ExceptionDispatchInfo.java" t="Include" />
+                <e p="FirstChanceExceptionEventArgs.java" t="Include" />
+                <e p="HandleProcessCorruptedStateExceptionsAttribute.java" t="Include" />
+              </e>
+              <e p="GCLargeObjectHeapCompactionMode.java" t="Include" />
+              <e p="GCLatencyMode.java" t="Include" />
+              <e p="GCSettings.java" t="Include" />
+              <e p="InteropServices" t="Include">
+                <e p="AllowReversePInvokeCallsAttribute.java" t="Include" />
+                <e p="Architecture.java" t="Include" />
+                <e p="ArrayWithOffset.java" t="Include" />
+                <e p="AssemblyRegistrationFlags.java" t="Include" />
+                <e p="AutomationProxyAttribute.java" t="Include" />
+                <e p="BStrWrapper.java" t="Include" />
+                <e p="BestFitMappingAttribute.java" t="Include" />
+                <e p="COMException.java" t="Include" />
+                <e p="CallingConvention.java" t="Include" />
+                <e p="CharSet.java" t="Include" />
+                <e p="ClassInterfaceAttribute.java" t="Include" />
+                <e p="ClassInterfaceType.java" t="Include" />
+                <e p="CoClassAttribute.java" t="Include" />
+                <e p="ComAliasNameAttribute.java" t="Include" />
+                <e p="ComAwareEventInfo.java" t="Include" />
+                <e p="ComCompatibleVersionAttribute.java" t="Include" />
+                <e p="ComConversionLossAttribute.java" t="Include" />
+                <e p="ComDefaultInterfaceAttribute.java" t="Include" />
+                <e p="ComEventInterfaceAttribute.java" t="Include" />
+                <e p="ComEventsHelper.java" t="Include" />
+                <e p="ComImportAttribute.java" t="Include" />
+                <e p="ComInterfaceType.java" t="Include" />
+                <e p="ComMemberType.java" t="Include" />
+                <e p="ComRegisterFunctionAttribute.java" t="Include" />
+                <e p="ComSourceInterfacesAttribute.java" t="Include" />
+                <e p="ComTypes" t="Include">
+                  <e p="ADVF.java" t="Include" />
+                  <e p="BINDPTR.java" t="Include" />
+                  <e p="BIND_OPTS.java" t="Include" />
+                  <e p="CALLCONV.java" t="Include" />
+                  <e p="CONNECTDATA.java" t="Include" />
+                  <e p="DATADIR.java" t="Include" />
+                  <e p="DESCKIND.java" t="Include" />
+                  <e p="DESCUNION.java" t="Include" />
+                  <e p="DISPPARAMS.java" t="Include" />
+                  <e p="DVASPECT.java" t="Include" />
+                  <e p="ELEMDESC.java" t="Include" />
+                  <e p="EXCEPINFO.java" t="Include" />
+                  <e p="FILETIME.java" t="Include" />
+                  <e p="FORMATETC.java" t="Include" />
+                  <e p="FUNCDESC.java" t="Include" />
+                  <e p="FUNCFLAGS.java" t="Include" />
+                  <e p="FUNCKIND.java" t="Include" />
+                  <e p="IAdviseSink.java" t="Include" />
+                  <e p="IBindCtx.java" t="Include" />
+                  <e p="IConnectionPoint.java" t="Include" />
+                  <e p="IConnectionPointContainer.java" t="Include" />
+                  <e p="IDLDESC.java" t="Include" />
+                  <e p="IDLFLAG.java" t="Include" />
+                  <e p="IDataObject.java" t="Include" />
+                  <e p="IEnumConnectionPoints.java" t="Include" />
+                  <e p="IEnumConnections.java" t="Include" />
+                  <e p="IEnumFORMATETC.java" t="Include" />
+                  <e p="IEnumMoniker.java" t="Include" />
+                  <e p="IEnumSTATDATA.java" t="Include" />
+                  <e p="IEnumString.java" t="Include" />
+                  <e p="IEnumVARIANT.java" t="Include" />
+                  <e p="IMPLTYPEFLAGS.java" t="Include" />
+                  <e p="IMoniker.java" t="Include" />
+                  <e p="INVOKEKIND.java" t="Include" />
+                  <e p="IPersistFile.java" t="Include" />
+                  <e p="IRunningObjectTable.java" t="Include" />
+                  <e p="IStream.java" t="Include" />
+                  <e p="ITypeComp.java" t="Include" />
+                  <e p="ITypeInfo.java" t="Include" />
+                  <e p="ITypeInfo2.java" t="Include" />
+                  <e p="ITypeLib.java" t="Include" />
+                  <e p="ITypeLib2.java" t="Include" />
+                  <e p="LIBFLAGS.java" t="Include" />
+                  <e p="PARAMDESC.java" t="Include" />
+                  <e p="PARAMFLAG.java" t="Include" />
+                  <e p="STATDATA.java" t="Include" />
+                  <e p="STATSTG.java" t="Include" />
+                  <e p="STGMEDIUM.java" t="Include" />
+                  <e p="SYSKIND.java" t="Include" />
+                  <e p="TYMED.java" t="Include" />
+                  <e p="TYPEATTR.java" t="Include" />
+                  <e p="TYPEDESC.java" t="Include" />
+                  <e p="TYPEFLAGS.java" t="Include" />
+                  <e p="TYPEKIND.java" t="Include" />
+                  <e p="TYPELIBATTR.java" t="Include" />
+                  <e p="VARDESC.java" t="Include" />
+                  <e p="VARFLAGS.java" t="Include" />
+                  <e p="VARKIND.java" t="Include" />
+                </e>
+                <e p="ComUnregisterFunctionAttribute.java" t="Include" />
+                <e p="ComVisibleAttribute.java" t="Include" />
+                <e p="CriticalHandle.java" t="Include" />
+                <e p="CurrencyWrapper.java" t="Include" />
+                <e p="CustomQueryInterfaceMode.java" t="Include" />
+                <e p="CustomQueryInterfaceResult.java" t="Include" />
+                <e p="DefaultCharSetAttribute.java" t="Include" />
+                <e p="DefaultDllImportSearchPathsAttribute.java" t="Include" />
+                <e p="DefaultParameterValueAttribute.java" t="Include" />
+                <e p="DispIdAttribute.java" t="Include" />
+                <e p="DispatchWrapper.java" t="Include" />
+                <e p="DllImportAttribute.java" t="Include" />
+                <e p="DllImportSearchPath.java" t="Include" />
+                <e p="ErrorWrapper.java" t="Include" />
+                <e p="ExporterEventKind.java" t="Include" />
+                <e p="ExternalException.java" t="Include" />
+                <e p="FieldOffsetAttribute.java" t="Include" />
+                <e p="GCHandle.java" t="Include" />
+                <e p="GCHandleType.java" t="Include" />
+                <e p="GuidAttribute.java" t="Include" />
+                <e p="HandleCollector.java" t="Include" />
+                <e p="HandleRef.java" t="Include" />
+                <e p="ICustomAdapter.java" t="Include" />
+                <e p="ICustomFactory.java" t="Include" />
+                <e p="ICustomMarshaler.java" t="Include" />
+                <e p="ICustomQueryInterface.java" t="Include" />
+                <e p="IDispatchImplAttribute.java" t="Include" />
+                <e p="IDispatchImplType.java" t="Include" />
+                <e p="ImportedFromTypeLibAttribute.java" t="Include" />
+                <e p="InAttribute.java" t="Include" />
+                <e p="InterfaceTypeAttribute.java" t="Include" />
+                <e p="InvalidComObjectException.java" t="Include" />
+                <e p="InvalidOleVariantTypeException.java" t="Include" />
+                <e p="LCIDConversionAttribute.java" t="Include" />
+                <e p="LayoutKind.java" t="Include" />
+                <e p="ManagedToNativeComInteropStubAttribute.java" t="Include" />
+                <e p="Marshal.java" t="Include" />
+                <e p="MarshalAsAttribute.java" t="Include" />
+                <e p="MarshalDirectiveException.java" t="Include" />
+                <e p="MemoryMarshal.java" t="Include" />
+                <e p="NativeCallableAttribute.java" t="Include" />
+                <e p="OSPlatform.java" t="Include" />
+                <e p="OptionalAttribute.java" t="Include" />
+                <e p="OutAttribute.java" t="Include" />
+                <e p="PreserveSigAttribute.java" t="Include" />
+                <e p="PrimaryInteropAssemblyAttribute.java" t="Include" />
+                <e p="ProgIdAttribute.java" t="Include" />
+                <e p="RegistrationClassContext.java" t="Include" />
+                <e p="RegistrationConnectionType.java" t="Include" />
+                <e p="RuntimeEnvironment.java" t="Include" />
+                <e p="RuntimeInformation.java" t="Include" />
+                <e p="SEHException.java" t="Include" />
+                <e p="SafeArrayRankMismatchException.java" t="Include" />
+                <e p="SafeArrayTypeMismatchException.java" t="Include" />
+                <e p="SafeBuffer.java" t="Include" />
+                <e p="SafeHandle.java" t="Include" />
+                <e p="SequenceMarshal.java" t="Include" />
+                <e p="SetWin32ContextInIDispatchAttribute.java" t="Include" />
+                <e p="StructLayoutAttribute.java" t="Include" />
+                <e p="TypeIdentifierAttribute.java" t="Include" />
+                <e p="TypeLibFuncAttribute.java" t="Include" />
+                <e p="TypeLibFuncFlags.java" t="Include" />
+                <e p="TypeLibImportClassAttribute.java" t="Include" />
+                <e p="TypeLibTypeAttribute.java" t="Include" />
+                <e p="TypeLibTypeFlags.java" t="Include" />
+                <e p="TypeLibVarAttribute.java" t="Include" />
+                <e p="TypeLibVarFlags.java" t="Include" />
+                <e p="TypeLibVersionAttribute.java" t="Include" />
+                <e p="UnknownWrapper.java" t="Include" />
+                <e p="UnmanagedFunctionPointerAttribute.java" t="Include" />
+                <e p="UnmanagedType.java" t="Include" />
+                <e p="VarEnum.java" t="Include" />
+                <e p="VariantWrapper.java" t="Include" />
+              </e>
+              <e p="Intrinsics" t="Include">
+                <e p="Arm" t="Include">
+                  <e p="Arm64" t="Include">
+                    <e p="Aes.java" t="Include" />
+                    <e p="Base.java" t="Include" />
+                    <e p="Sha1.java" t="Include" />
+                    <e p="Sha256.java" t="Include" />
+                    <e p="Simd.java" t="Include" />
+                  </e>
+                </e>
+                <e p="X86" t="Include">
+                  <e p="Aes.java" t="Include" />
+                  <e p="Avx.java" t="Include" />
+                  <e p="Avx2.java" t="Include" />
+                  <e p="Bmi1.java" t="Include" />
+                  <e p="Bmi2.java" t="Include" />
+                  <e p="FloatComparisonMode.java" t="Include" />
+                  <e p="Fma.java" t="Include" />
+                  <e p="Lzcnt.java" t="Include" />
+                  <e p="Pclmulqdq.java" t="Include" />
+                  <e p="Popcnt.java" t="Include" />
+                  <e p="ResultsFlag.java" t="Include" />
+                  <e p="Sse.java" t="Include" />
+                  <e p="Sse2.java" t="Include" />
+                  <e p="Sse3.java" t="Include" />
+                  <e p="Sse41.java" t="Include" />
+                  <e p="Sse42.java" t="Include" />
+                  <e p="Ssse3.java" t="Include" />
+                  <e p="StringComparisonMode.java" t="Include" />
+                </e>
+              </e>
+              <e p="Loader" t="Include">
+                <e p="AssemblyLoadContext.java" t="Include" />
+              </e>
+              <e p="MemoryFailPoint.java" t="Include" />
+              <e p="RuntimeImports.java" t="Include" />
+              <e p="Serialization" t="Include">
+                <e p="IDeserializationCallback.java" t="Include" />
+                <e p="IFormatterConverter.java" t="Include" />
+                <e p="IObjectReference.java" t="Include" />
+                <e p="ISafeSerializationData.java" t="Include" />
+                <e p="ISerializable.java" t="Include" />
+                <e p="OnDeserializedAttribute.java" t="Include" />
+                <e p="OnDeserializingAttribute.java" t="Include" />
+                <e p="OnSerializedAttribute.java" t="Include" />
+                <e p="OnSerializingAttribute.java" t="Include" />
+                <e p="OptionalFieldAttribute.java" t="Include" />
+                <e p="SafeSerializationEventArgs.java" t="Include" />
+                <e p="SerializationEntry.java" t="Include" />
+                <e p="SerializationException.java" t="Include" />
+                <e p="SerializationInfo.java" t="Include" />
+                <e p="SerializationInfoEnumerator.java" t="Include" />
+                <e p="StreamingContext.java" t="Include" />
+                <e p="StreamingContextStates.java" t="Include" />
+              </e>
+              <e p="TargetedPatchingOptOutAttribute.java" t="Include" />
+              <e p="Versioning" t="Include">
+                <e p="ComponentGuaranteesAttribute.java" t="Include" />
+                <e p="ComponentGuaranteesOptions.java" t="Include" />
+                <e p="FrameworkName.java" t="Include" />
+                <e p="ResourceConsumptionAttribute.java" t="Include" />
+                <e p="ResourceExposureAttribute.java" t="Include" />
+                <e p="ResourceScope.java" t="Include" />
+                <e p="TargetFrameworkAttribute.java" t="Include" />
+                <e p="VersioningHelper.java" t="Include" />
+              </e>
+            </e>
+            <e p="RuntimeArgumentHandle.java" t="Include" />
+            <e p="RuntimeFieldHandle.java" t="Include" />
+            <e p="RuntimeMethodHandle.java" t="Include" />
+            <e p="RuntimeTypeHandle.java" t="Include" />
+            <e p="SByte.java" t="Include" />
+            <e p="STAThreadAttribute.java" t="Include" />
+            <e p="Security" t="Include">
+              <e p="AllowPartiallyTrustedCallersAttribute.java" t="Include" />
+              <e p="Authentication" t="Include">
+                <e p="AuthenticationException.java" t="Include" />
+                <e p="CipherAlgorithmType.java" t="Include" />
+                <e p="ExchangeAlgorithmType.java" t="Include" />
+                <e p="ExtendedProtection" t="Include">
+                  <e p="ChannelBinding.java" t="Include" />
+                  <e p="ChannelBindingKind.java" t="Include" />
+                  <e p="ExtendedProtectionPolicy.java" t="Include" />
+                  <e p="PolicyEnforcement.java" t="Include" />
+                  <e p="ProtectionScenario.java" t="Include" />
+                  <e p="ServiceNameCollection.java" t="Include" />
+                </e>
+                <e p="HashAlgorithmType.java" t="Include" />
+                <e p="InvalidCredentialException.java" t="Include" />
+                <e p="SslProtocols.java" t="Include" />
+              </e>
+              <e p="Claims" t="Include">
+                <e p="Claim.java" t="Include" />
+                <e p="ClaimTypes.java" t="Include" />
+                <e p="ClaimValueTypes.java" t="Include" />
+                <e p="ClaimsIdentity.java" t="Include" />
+                <e p="ClaimsPrincipal.java" t="Include" />
+              </e>
+              <e p="Cryptography" t="Include">
+                <e p="Aes.java" t="Include" />
+                <e p="AesManaged.java" t="Include" />
+                <e p="AsnEncodedData.java" t="Include" />
+                <e p="AsnEncodedDataCollection.java" t="Include" />
+                <e p="AsnEncodedDataEnumerator.java" t="Include" />
+                <e p="AsymmetricAlgorithm.java" t="Include" />
+                <e p="AsymmetricKeyExchangeDeformatter.java" t="Include" />
+                <e p="AsymmetricKeyExchangeFormatter.java" t="Include" />
+                <e p="AsymmetricSignatureDeformatter.java" t="Include" />
+                <e p="AsymmetricSignatureFormatter.java" t="Include" />
+                <e p="CipherMode.java" t="Include" />
+                <e p="CryptoConfig.java" t="Include" />
+                <e p="CryptoStream.java" t="Include" />
+                <e p="CryptoStreamMode.java" t="Include" />
+                <e p="CryptographicException.java" t="Include" />
+                <e p="CryptographicOperations.java" t="Include" />
+                <e p="CryptographicUnexpectedOperationException.java" t="Include" />
+                <e p="DES.java" t="Include" />
+                <e p="DSA.java" t="Include" />
+                <e p="DSAOpenSsl.java" t="Include" />
+                <e p="DSAParameters.java" t="Include" />
+                <e p="DSASignatureDeformatter.java" t="Include" />
+                <e p="DSASignatureFormatter.java" t="Include" />
+                <e p="DeriveBytes.java" t="Include" />
+                <e p="ECCurve.java" t="Include" />
+                <e p="ECCurveType.java" t="Include" />
+                <e p="ECDiffieHellman.java" t="Include" />
+                <e p="ECDiffieHellmanOpenSsl.java" t="Include" />
+                <e p="ECDiffieHellmanPublicKey.java" t="Include" />
+                <e p="ECDsa.java" t="Include" />
+                <e p="ECDsaOpenSsl.java" t="Include" />
+                <e p="ECParameters.java" t="Include" />
+                <e p="ECPoint.java" t="Include" />
+                <e p="FromBase64Transform.java" t="Include" />
+                <e p="FromBase64TransformMode.java" t="Include" />
+                <e p="HMAC.java" t="Include" />
+                <e p="HMACMD5.java" t="Include" />
+                <e p="HMACSHA1.java" t="Include" />
+                <e p="HMACSHA256.java" t="Include" />
+                <e p="HMACSHA384.java" t="Include" />
+                <e p="HMACSHA512.java" t="Include" />
+                <e p="HashAlgorithm.java" t="Include" />
+                <e p="HashAlgorithmName.java" t="Include" />
+                <e p="ICryptoTransform.java" t="Include" />
+                <e p="IncrementalHash.java" t="Include" />
+                <e p="KeySizes.java" t="Include" />
+                <e p="KeyedHashAlgorithm.java" t="Include" />
+                <e p="MD5.java" t="Include" />
+                <e p="MaskGenerationMethod.java" t="Include" />
+                <e p="NamedCurves.java" t="Include" />
+                <e p="Oid.java" t="Include" />
+                <e p="OidCollection.java" t="Include" />
+                <e p="OidEnumerator.java" t="Include" />
+                <e p="OidGroup.java" t="Include" />
+                <e p="PKCS1MaskGenerationMethod.java" t="Include" />
+                <e p="PaddingMode.java" t="Include" />
+                <e p="RC2.java" t="Include" />
+                <e p="RSA.java" t="Include" />
+                <e p="RSAEncryptionPadding.java" t="Include" />
+                <e p="RSAEncryptionPaddingMode.java" t="Include" />
+                <e p="RSAOAEPKeyExchangeDeformatter.java" t="Include" />
+                <e p="RSAOAEPKeyExchangeFormatter.java" t="Include" />
+                <e p="RSAOpenSsl.java" t="Include" />
+                <e p="RSAPKCS1KeyExchangeDeformatter.java" t="Include" />
+                <e p="RSAPKCS1KeyExchangeFormatter.java" t="Include" />
+                <e p="RSAPKCS1SignatureDeformatter.java" t="Include" />
+                <e p="RSAPKCS1SignatureFormatter.java" t="Include" />
+                <e p="RSAParameters.java" t="Include" />
+                <e p="RSASignaturePadding.java" t="Include" />
+                <e p="RSASignaturePaddingMode.java" t="Include" />
+                <e p="RandomNumberGenerator.java" t="Include" />
+                <e p="Rfc2898DeriveBytes.java" t="Include" />
+                <e p="Rijndael.java" t="Include" />
+                <e p="RijndaelManaged.java" t="Include" />
+                <e p="SHA1.java" t="Include" />
+                <e p="SHA1Managed.java" t="Include" />
+                <e p="SHA256.java" t="Include" />
+                <e p="SHA256Managed.java" t="Include" />
+                <e p="SHA384.java" t="Include" />
+                <e p="SHA384Managed.java" t="Include" />
+                <e p="SHA512.java" t="Include" />
+                <e p="SHA512Managed.java" t="Include" />
+                <e p="SafeEvpPKeyHandle.java" t="Include" />
+                <e p="SignatureDescription.java" t="Include" />
+                <e p="SymmetricAlgorithm.java" t="Include" />
+                <e p="ToBase64Transform.java" t="Include" />
+                <e p="TripleDES.java" t="Include" />
+                <e p="X509Certificates" t="Include">
+                  <e p="CertificateRequest.java" t="Include" />
+                  <e p="DSACertificateExtensions.java" t="Include" />
+                  <e p="ECDsaCertificateExtensions.java" t="Include" />
+                  <e p="OpenFlags.java" t="Include" />
+                  <e p="PublicKey.java" t="Include" />
+                  <e p="RSACertificateExtensions.java" t="Include" />
+                  <e p="StoreLocation.java" t="Include" />
+                  <e p="StoreName.java" t="Include" />
+                  <e p="SubjectAlternativeNameBuilder.java" t="Include" />
+                  <e p="X500DistinguishedName.java" t="Include" />
+                  <e p="X500DistinguishedNameFlags.java" t="Include" />
+                  <e p="X509BasicConstraintsExtension.java" t="Include" />
+                  <e p="X509Certificate.java" t="Include" />
+                  <e p="X509Certificate2.java" t="Include" />
+                  <e p="X509Certificate2Collection.java" t="Include" />
+                  <e p="X509Certificate2Enumerator.java" t="Include" />
+                  <e p="X509CertificateCollection.java" t="Include" />
+                  <e p="X509CertificateEnumerator.java" t="Include" />
+                  <e p="X509Chain.java" t="Include" />
+                  <e p="X509ChainElement.java" t="Include" />
+                  <e p="X509ChainElementCollection.java" t="Include" />
+                  <e p="X509ChainElementEnumerator.java" t="Include" />
+                  <e p="X509ChainPolicy.java" t="Include" />
+                  <e p="X509ChainStatus.java" t="Include" />
+                  <e p="X509ChainStatusFlags.java" t="Include" />
+                  <e p="X509ContentType.java" t="Include" />
+                  <e p="X509EnhancedKeyUsageExtension.java" t="Include" />
+                  <e p="X509Extension.java" t="Include" />
+                  <e p="X509ExtensionCollection.java" t="Include" />
+                  <e p="X509ExtensionEnumerator.java" t="Include" />
+                  <e p="X509FindType.java" t="Include" />
+                  <e p="X509IncludeOption.java" t="Include" />
+                  <e p="X509KeyStorageFlags.java" t="Include" />
+                  <e p="X509KeyUsageExtension.java" t="Include" />
+                  <e p="X509KeyUsageFlags.java" t="Include" />
+                  <e p="X509NameType.java" t="Include" />
+                  <e p="X509RevocationFlag.java" t="Include" />
+                  <e p="X509RevocationMode.java" t="Include" />
+                  <e p="X509SignatureGenerator.java" t="Include" />
+                  <e p="X509Store.java" t="Include" />
+                  <e p="X509SubjectKeyIdentifierExtension.java" t="Include" />
+                  <e p="X509SubjectKeyIdentifierHashAlgorithm.java" t="Include" />
+                  <e p="X509VerificationFlags.java" t="Include" />
+                </e>
+              </e>
+              <e p="IPermission.java" t="Include" />
+              <e p="ISecurityEncodable.java" t="Include" />
+              <e p="PartialTrustVisibilityLevel.java" t="Include" />
+              <e p="Permissions" t="Include">
+                <e p="CodeAccessSecurityAttribute.java" t="Include" />
+                <e p="SecurityAction.java" t="Include" />
+                <e p="SecurityAttribute.java" t="Include" />
+                <e p="SecurityPermissionAttribute.java" t="Include" />
+                <e p="SecurityPermissionFlag.java" t="Include" />
+              </e>
+              <e p="Principal" t="Include">
+                <e p="GenericIdentity.java" t="Include" />
+                <e p="GenericPrincipal.java" t="Include" />
+                <e p="IIdentity.java" t="Include" />
+                <e p="IPrincipal.java" t="Include" />
+                <e p="PrincipalPolicy.java" t="Include" />
+                <e p="TokenImpersonationLevel.java" t="Include" />
+              </e>
+              <e p="SecureString.java" t="Include" />
+              <e p="SecureStringMarshal.java" t="Include" />
+              <e p="SecurityCriticalAttribute.java" t="Include" />
+              <e p="SecurityCriticalScope.java" t="Include" />
+              <e p="SecurityElement.java" t="Include" />
+              <e p="SecurityException.java" t="Include" />
+              <e p="SecurityRuleSet.java" t="Include" />
+              <e p="SecurityRulesAttribute.java" t="Include" />
+              <e p="SecuritySafeCriticalAttribute.java" t="Include" />
+              <e p="SecurityTransparentAttribute.java" t="Include" />
+              <e p="SecurityTreatAsSafeAttribute.java" t="Include" />
+              <e p="SuppressUnmanagedCodeSecurityAttribute.java" t="Include" />
+              <e p="UnverifiableCodeAttribute.java" t="Include" />
+              <e p="VerificationException.java" t="Include" />
+            </e>
+            <e p="SequencePosition.java" t="Include" />
+            <e p="SerializableAttribute.java" t="Include" />
+            <e p="Single.java" t="Include" />
+            <e p="SpecialFolder.java" t="Include" />
+            <e p="SpecialFolderOption.java" t="Include" />
+            <e p="StackOverflowException.java" t="Include" />
+            <e p="String.java" t="Include" />
+            <e p="StringComparer.java" t="Include" />
+            <e p="StringComparison.java" t="Include" />
+            <e p="StringNormalizationExtensions.java" t="Include" />
+            <e p="StringSplitOptions.java" t="Include" />
+            <e p="SystemException.java" t="Include" />
+            <e p="Text" t="Include">
+              <e p="ASCIIEncoding.java" t="Include" />
+              <e p="Decoder.java" t="Include" />
+              <e p="DecoderExceptionFallback.java" t="Include" />
+              <e p="DecoderExceptionFallbackBuffer.java" t="Include" />
+              <e p="DecoderFallback.java" t="Include" />
+              <e p="DecoderFallbackBuffer.java" t="Include" />
+              <e p="DecoderFallbackException.java" t="Include" />
+              <e p="DecoderReplacementFallback.java" t="Include" />
+              <e p="DecoderReplacementFallbackBuffer.java" t="Include" />
+              <e p="Encoder.java" t="Include" />
+              <e p="EncoderExceptionFallback.java" t="Include" />
+              <e p="EncoderExceptionFallbackBuffer.java" t="Include" />
+              <e p="EncoderFallback.java" t="Include" />
+              <e p="EncoderFallbackBuffer.java" t="Include" />
+              <e p="EncoderFallbackException.java" t="Include" />
+              <e p="EncoderReplacementFallback.java" t="Include" />
+              <e p="EncoderReplacementFallbackBuffer.java" t="Include" />
+              <e p="Encoding.java" t="Include" />
+              <e p="EncodingInfo.java" t="Include" />
+              <e p="EncodingProvider.java" t="Include" />
+              <e p="NormalizationForm.java" t="Include" />
+              <e p="RegularExpressions" t="Include">
+                <e p="Capture.java" t="Include" />
+                <e p="CaptureCollection.java" t="Include" />
+                <e p="Group.java" t="Include" />
+                <e p="GroupCollection.java" t="Include" />
+                <e p="Match.java" t="Include" />
+                <e p="MatchCollection.java" t="Include" />
+                <e p="MatchEvaluator.java" t="Include" />
+                <e p="Regex.java" t="Include" />
+                <e p="RegexCompilationInfo.java" t="Include" />
+                <e p="RegexMatchTimeoutException.java" t="Include" />
+                <e p="RegexOptions.java" t="Include" />
+                <e p="RegexRunner.java" t="Include" />
+                <e p="RegexRunnerFactory.java" t="Include" />
+              </e>
+              <e p="StringBuilder.java" t="Include" />
+              <e p="UTF32Encoding.java" t="Include" />
+              <e p="UTF7Encoding.java" t="Include" />
+              <e p="UTF8Encoding.java" t="Include" />
+              <e p="UnicodeEncoding.java" t="Include" />
+            </e>
+            <e p="ThreadStaticAttribute.java" t="Include" />
+            <e p="Threading" t="Include">
+              <e p="AbandonedMutexException.java" t="Include" />
+              <e p="ApartmentState.java" t="Include" />
+              <e p="AsyncFlowControl.java" t="Include" />
+              <e p="AutoResetEvent.java" t="Include" />
+              <e p="Barrier.java" t="Include" />
+              <e p="BarrierPostPhaseException.java" t="Include" />
+              <e p="CancellationToken.java" t="Include" />
+              <e p="CancellationTokenRegistration.java" t="Include" />
+              <e p="CancellationTokenSource.java" t="Include" />
+              <e p="CompressedStack.java" t="Include" />
+              <e p="ContextCallback.java" t="Include" />
+              <e p="CountdownEvent.java" t="Include" />
+              <e p="EventResetMode.java" t="Include" />
+              <e p="EventWaitHandle.java" t="Include" />
+              <e p="ExecutionContext.java" t="Include" />
+              <e p="HostExecutionContext.java" t="Include" />
+              <e p="HostExecutionContextManager.java" t="Include" />
+              <e p="IOCompletionCallback.java" t="Include" />
+              <e p="Interlocked.java" t="Include" />
+              <e p="LazyInitializer.java" t="Include" />
+              <e p="LazyThreadSafetyMode.java" t="Include" />
+              <e p="LockCookie.java" t="Include" />
+              <e p="LockRecursionException.java" t="Include" />
+              <e p="LockRecursionPolicy.java" t="Include" />
+              <e p="ManualResetEvent.java" t="Include" />
+              <e p="ManualResetEventSlim.java" t="Include" />
+              <e p="Monitor.java" t="Include" />
+              <e p="Mutex.java" t="Include" />
+              <e p="NativeOverlapped.java" t="Include" />
+              <e p="Overlapped.java" t="Include" />
+              <e p="ParameterizedThreadStart.java" t="Include" />
+              <e p="PreAllocatedOverlapped.java" t="Include" />
+              <e p="ReaderWriterLock.java" t="Include" />
+              <e p="ReaderWriterLockSlim.java" t="Include" />
+              <e p="RegisteredWaitHandle.java" t="Include" />
+              <e p="Semaphore.java" t="Include" />
+              <e p="SemaphoreFullException.java" t="Include" />
+              <e p="SemaphoreSlim.java" t="Include" />
+              <e p="SendOrPostCallback.java" t="Include" />
+              <e p="SpinLock.java" t="Include" />
+              <e p="SpinWait.java" t="Include" />
+              <e p="SynchronizationContext.java" t="Include" />
+              <e p="SynchronizationLockException.java" t="Include" />
+              <e p="Tasks" t="Include">
+                <e p="ConcurrentExclusiveSchedulerPair.java" t="Include" />
+                <e p="Sources" t="Include">
+                  <e p="IValueTaskSource.java" t="Include" />
+                  <e p="ValueTaskSourceOnCompletedFlags.java" t="Include" />
+                  <e p="ValueTaskSourceStatus.java" t="Include" />
+                </e>
+                <e p="Task.java" t="Include" />
+                <e p="TaskCanceledException.java" t="Include" />
+                <e p="TaskContinuationOptions.java" t="Include" />
+                <e p="TaskCreationOptions.java" t="Include" />
+                <e p="TaskExtensions.java" t="Include" />
+                <e p="TaskFactory.java" t="Include" />
+                <e p="TaskScheduler.java" t="Include" />
+                <e p="TaskSchedulerException.java" t="Include" />
+                <e p="TaskStatus.java" t="Include" />
+                <e p="UnobservedTaskExceptionEventArgs.java" t="Include" />
+                <e p="ValueTask.java" t="Include" />
+              </e>
+              <e p="Thread.java" t="Include" />
+              <e p="ThreadAbortException.java" t="Include" />
+              <e p="ThreadExceptionEventArgs.java" t="Include" />
+              <e p="ThreadExceptionEventHandler.java" t="Include" />
+              <e p="ThreadInterruptedException.java" t="Include" />
+              <e p="ThreadPool.java" t="Include" />
+              <e p="ThreadPoolBoundHandle.java" t="Include" />
+              <e p="ThreadPriority.java" t="Include" />
+              <e p="ThreadStart.java" t="Include" />
+              <e p="ThreadStartException.java" t="Include" />
+              <e p="ThreadState.java" t="Include" />
+              <e p="ThreadStateException.java" t="Include" />
+              <e p="Timeout.java" t="Include" />
+              <e p="Timer.java" t="Include" />
+              <e p="TimerCallback.java" t="Include" />
+              <e p="Volatile.java" t="Include" />
+              <e p="WaitCallback.java" t="Include" />
+              <e p="WaitHandle.java" t="Include" />
+              <e p="WaitHandleCannotBeOpenedException.java" t="Include" />
+              <e p="WaitHandleExtensions.java" t="Include" />
+              <e p="WaitOrTimerCallback.java" t="Include" />
+            </e>
+            <e p="TimeSpan.java" t="Include" />
+            <e p="TimeZone.java" t="Include" />
+            <e p="TimeZoneInfo.java" t="Include" />
+            <e p="TimeZoneNotFoundException.java" t="Include" />
+            <e p="TimeoutException.java" t="Include" />
+            <e p="TransitionTime.java" t="Include" />
+            <e p="Tuple.java" t="Include" />
+            <e p="TupleExtensions.java" t="Include" />
+            <e p="Type.java" t="Include" />
+            <e p="TypeAccessException.java" t="Include" />
+            <e p="TypeCode.java" t="Include" />
+            <e p="TypeInitializationException.java" t="Include" />
+            <e p="TypeLoadException.java" t="Include" />
+            <e p="TypeUnloadedException.java" t="Include" />
+            <e p="TypedReference.java" t="Include" />
+            <e p="UInt16.java" t="Include" />
+            <e p="UInt32.java" t="Include" />
+            <e p="UInt64.java" t="Include" />
+            <e p="UIntPtr.java" t="Include" />
+            <e p="UnauthorizedAccessException.java" t="Include" />
+            <e p="UnhandledExceptionEventArgs.java" t="Include" />
+            <e p="UnhandledExceptionEventHandler.java" t="Include" />
+            <e p="UnitySerializationHolder.java" t="Include" />
+            <e p="Uri.java" t="Include" />
+            <e p="UriBuilder.java" t="Include" />
+            <e p="UriComponents.java" t="Include" />
+            <e p="UriFormat.java" t="Include" />
+            <e p="UriFormatException.java" t="Include" />
+            <e p="UriHostNameType.java" t="Include" />
+            <e p="UriKind.java" t="Include" />
+            <e p="UriParser.java" t="Include" />
+            <e p="UriPartial.java" t="Include" />
+            <e p="ValueTuple.java" t="Include" />
+            <e p="ValueType.java" t="Include" />
+            <e p="Version.java" t="Include" />
+            <e p="Void.java" t="Include" />
+            <e p="WeakReference.java" t="Include" />
+          </e>
+        </e>
+      </e>
+      <e p="JavaNet.sln" t="IncludeFlat" />
+      <e p="packages" t="ExcludeRecursive" />
+    </e>
+  </component>
+</project>

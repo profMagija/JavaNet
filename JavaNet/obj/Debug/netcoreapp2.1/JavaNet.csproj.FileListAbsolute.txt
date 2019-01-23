@@ -1,0 +1,9 @@
+/home/prof/RiderProjects/JavaNet/JavaNet/bin/Debug/netcoreapp2.1/JavaNet.deps.json
+/home/prof/RiderProjects/JavaNet/JavaNet/bin/Debug/netcoreapp2.1/JavaNet.dll
+/home/prof/RiderProjects/JavaNet/JavaNet/bin/Debug/netcoreapp2.1/JavaNet.pdb
+/home/prof/RiderProjects/JavaNet/JavaNet/obj/Debug/netcoreapp2.1/JavaNet.csprojAssemblyReference.cache
+/home/prof/RiderProjects/JavaNet/JavaNet/obj/Debug/netcoreapp2.1/JavaNet.csproj.CoreCompileInputs.cache
+/home/prof/RiderProjects/JavaNet/JavaNet/obj/Debug/netcoreapp2.1/JavaNet.AssemblyInfoInputs.cache
+/home/prof/RiderProjects/JavaNet/JavaNet/obj/Debug/netcoreapp2.1/JavaNet.AssemblyInfo.cs
+/home/prof/RiderProjects/JavaNet/JavaNet/obj/Debug/netcoreapp2.1/JavaNet.dll
+/home/prof/RiderProjects/JavaNet/JavaNet/obj/Debug/netcoreapp2.1/JavaNet.pdb

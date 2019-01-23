@@ -1,0 +1,44 @@
+﻿{
+  "version": "1.0.0",
+  "restore": {
+    "projectUniqueName": "/home/prof/RiderProjects/JavaNet/JavaNet.Console/JavaNet.Console.csproj",
+    "projectName": "JavaNet.Console",
+    "projectPath": "/home/prof/RiderProjects/JavaNet/JavaNet.Console/JavaNet.Console.csproj",
+    "outputPath": "/home/prof/RiderProjects/JavaNet/JavaNet.Console/obj/",
+    "projectStyle": "PackageReference",
+    "originalTargetFrameworks": [
+      "netcoreapp2.1"
+    ],
+    "frameworks": {
+      "netcoreapp2.1": {
+        "projectReferences": {
+          "/home/prof/RiderProjects/JavaNet/JavaNet/JavaNet.csproj": {
+            "projectPath": "/home/prof/RiderProjects/JavaNet/JavaNet/JavaNet.csproj"
+          }
+        }
+      }
+    },
+    "warningProperties": {
+      "warnAsError": [
+        "NU1605"
+      ]
+    }
+  },
+  "frameworks": {
+    "netcoreapp2.1": {
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "suppressParent": "All",
+          "target": "Package",
+          "version": "[2.1.0, )",
+          "autoReferenced": true
+        }
+      },
+      "imports": [
+        "net461"
+      ],
+      "assetTargetFallback": true,
+      "warn": true
+    }
+  }
+}

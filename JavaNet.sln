@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JavaNet", "JavaNet\JavaNet.csproj", "{51BE733E-06FC-4DF8-92EB-A7422A87B893}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JavaNet.Console", "JavaNet.Console\JavaNet.Console.csproj", "{F81CDED6-E040-4C5C-AB37-96E26D83894E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JavaNet.Mvn", "JavaNet.Mvn\JavaNet.Mvn.csproj", "{57C72378-1D76-4245-BAFA-B2302652DB51}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JavaNet.Runtime", "JavaNet.Runtime\JavaNet.Runtime.csproj", "{52684A89-46E4-4831-920E-F517CEDCBB82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JavaNet.RuntimeConverter", "JavaNet.RuntimeConverter\JavaNet.RuntimeConverter.csproj", "{2E84B96A-3A61-4ABE-8C1A-345AB792F629}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{51BE733E-06FC-4DF8-92EB-A7422A87B893}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51BE733E-06FC-4DF8-92EB-A7422A87B893}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51BE733E-06FC-4DF8-92EB-A7422A87B893}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51BE733E-06FC-4DF8-92EB-A7422A87B893}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F81CDED6-E040-4C5C-AB37-96E26D83894E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F81CDED6-E040-4C5C-AB37-96E26D83894E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F81CDED6-E040-4C5C-AB37-96E26D83894E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F81CDED6-E040-4C5C-AB37-96E26D83894E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57C72378-1D76-4245-BAFA-B2302652DB51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57C72378-1D76-4245-BAFA-B2302652DB51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57C72378-1D76-4245-BAFA-B2302652DB51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57C72378-1D76-4245-BAFA-B2302652DB51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52684A89-46E4-4831-920E-F517CEDCBB82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52684A89-46E4-4831-920E-F517CEDCBB82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52684A89-46E4-4831-920E-F517CEDCBB82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52684A89-46E4-4831-920E-F517CEDCBB82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E84B96A-3A61-4ABE-8C1A-345AB792F629}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E84B96A-3A61-4ABE-8C1A-345AB792F629}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E84B96A-3A61-4ABE-8C1A-345AB792F629}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E84B96A-3A61-4ABE-8C1A-345AB792F629}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
