@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -173,7 +174,8 @@ namespace JavaNet
 
         public override string ToString()
         {
-            return $"{Offset:X4} {Instr} " + string.Join(' ', Args);
+            return $"{Offset:X4} {Instr} " +
+                   string.Join(' ', Args.Select(x => x is CpInfo info ? info.Represent() : x.ToString()));
         }
     }
 }

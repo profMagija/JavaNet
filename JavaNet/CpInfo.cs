@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Security.Cryptography;
 
 namespace JavaNet
 {
@@ -34,6 +35,8 @@ namespace JavaNet
         public virtual void Fill(CpInfo[] cp)
         {
         }
+
+        public abstract string Represent();
     }
 
     public class ClassInfo : CpInfo
@@ -53,6 +56,8 @@ namespace JavaNet
         {
             Name = ((Utf8Info) cp[_nameIndex]).Data;
         }
+
+        public override string Represent() => Name;
     }
 
     public class FieldOrMethodrefInfo : CpInfo
@@ -76,6 +81,8 @@ namespace JavaNet
             Class = (ClassInfo) cp[_classIndex];
             NameAndType = (NameAndTypeInfo) cp[_nameAndTypeIndex];
         }
+
+        public override string Represent() => $"{Class}->{NameAndType.Name}:{NameAndType.Descriptor}";
     }
 
     public class StringInfo : CpInfo
@@ -94,6 +101,20 @@ namespace JavaNet
         {
             String = ((Utf8Info) cp[_stringIndex]).Data;
         }
+
+        public override string Represent() => String
+            .Replace("\\", "\\\\")
+            .Replace("\n", "\\n")
+            .Replace("\"", "\\\"")
+            .Replace("\a", "\\a")
+            .Replace("\b", "\\b")
+            .Replace("\f", "\\f")
+            .Replace("\n", "\\n")
+            .Replace("\r", "\\r")
+            .Replace("\t", "\\t")
+            .Replace("\v", "\\v")
+            .Replace("\0", "\\0");
+
     }
 
     public class IntegerInfo : CpInfo
@@ -106,6 +127,7 @@ namespace JavaNet
         }
 
         public override string ToString() => $"IntegerInfo [Value={Value}]";
+        public override string Represent() => Value.ToString();
     }
 
     public class FloatInfo : CpInfo
@@ -118,6 +140,7 @@ namespace JavaNet
         }
 
         public override string ToString() => $"FloatInfo [Value={Value}]";
+        public override string Represent() => Value.ToString();
     }
 
     public class LongInfo : CpInfo
@@ -130,6 +153,7 @@ namespace JavaNet
         }
 
         public override string ToString() => $"LongInfo [Value={Value}]";
+        public override string Represent() => Value.ToString();
     }
 
     public class DoubleInfo : CpInfo
@@ -143,6 +167,7 @@ namespace JavaNet
 
 
         public override string ToString() => $"DoubleInfo [Value={Value}]";
+        public override string Represent() => Value.ToString();
     }
 
     public class NameAndTypeInfo : CpInfo
@@ -167,6 +192,8 @@ namespace JavaNet
             Name = ((Utf8Info) cp[_nameIndex]).Data;
             Descriptor = ((Utf8Info) cp[_descriptorIndex]).Data;
         }
+
+        public override string Represent() => $"{Name}:{Descriptor}";
     }
 
     public class Utf8Info : CpInfo
@@ -179,11 +206,12 @@ namespace JavaNet
         }
 
         public override string ToString() => $"Utf8Info '{Data}'";
+        public override string Represent() => $"'{Data}'";
     }
 
     public class MethodHandleInfo : CpInfo
     {
-        public MethodHandleType ReferenceKind;
+        public readonly MethodHandleType ReferenceKind;
         private readonly ushort _referenceIndex;
         public FieldOrMethodrefInfo Reference;
 
@@ -200,6 +228,8 @@ namespace JavaNet
         {
             Reference = (FieldOrMethodrefInfo) cp[_referenceIndex];
         }
+
+        public override string Represent() => $"{ReferenceKind.ToString().ToLower()} {Reference}";
     }
 
     public enum MethodHandleType : byte
@@ -233,6 +263,8 @@ namespace JavaNet
         {
             Descriptor = ((Utf8Info) cp[_descriptorIndex]).Data;
         }
+
+        public override string Represent() => Descriptor;
     }
 
     public class InvokeDynamicInfo : CpInfo
@@ -256,6 +288,8 @@ namespace JavaNet
         {
             NameAndType = (NameAndTypeInfo) cp[_nameAndTypeIndex];
         }
+
+        public override string Represent() => $"bootstrap[{BootstrapMethodAttrIndex}] {NameAndType}";
     }
 
     public class ModuleOrPackageInfo : CpInfo
@@ -269,11 +303,13 @@ namespace JavaNet
             _nameIndex = nameIndex;
         }
 
-        public override string ToString() => $"ModuleInfo [Name={Name}]";
+        public override string ToString() => $"{Tag}Info [Name={Name}]";
 
         public override void Fill(CpInfo[] cp)
         {
             Name = ((Utf8Info) cp[_nameIndex]).Data;
         }
+
+        public override string Represent() => $"{Tag.ToString().ToLower()} {Name}";
     }
 }
