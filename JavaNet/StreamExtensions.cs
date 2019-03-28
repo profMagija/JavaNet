@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 
 namespace JavaNet
 {
@@ -76,30 +74,6 @@ namespace JavaNet
             var rv = new byte[len];
             s.Read(rv, 0, len);
             return rv;
-        }
-    }
-
-    public static class EnumExtensions
-    {
-        public static void TryForeach<T, TException>(this IEnumerable<T> enumerable, Action<T> act) 
-            where TException : Exception
-        {
-            var list = new List<Exception>();
-
-            foreach (var o in enumerable)
-            {
-                try
-                {
-                    act(o);
-                }
-                catch (TException e)
-                {
-                    list.Add(e);
-                }
-            }
-
-            if (list.Count > 0)
-                throw new AggregateException(list);
         }
     }
 }
