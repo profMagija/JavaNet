@@ -20,6 +20,13 @@ namespace JavaNet
                     Console.WriteLine(op);
             }
 
+            mg.BlockAnalyzer();
+
+            foreach (var block in mg._blocks.Values.OrderBy(x => x.JavaOffset))
+            {
+                Console.WriteLine(block);
+            }
+
             return null;
         }
 
@@ -33,6 +40,16 @@ namespace JavaNet
         /// some locations between the instructions are null.
         /// </summary>
         private JavaOp[] _ops;
+
+        /// <summary>
+        /// Offsets that are targets of jumps
+        /// </summary>
+        private bool[] _jumpTarget;
+
+        /// <summary>
+        /// Dictionary of methods ActionBlocks, keyed by their Java Offset
+        /// </summary>
+        private Dictionary<int, ActionBlock> _blocks;
 
         private MethodGenerator(MethodDefinition md, JavaMethodInfo mi, CodeAttribute ca, CpInfo[] cp)
         {
@@ -49,6 +66,7 @@ namespace JavaNet
         {
             var code = _ca.Code;
             _ops = new JavaOp[code.Length];
+            _jumpTarget = new bool[code.Length];
             var pc = 0;
 
             while (pc < code.Length)
@@ -70,8 +88,12 @@ namespace JavaNet
                         _ops[start] = new JavaOp(start, instr, (sbyte)code[pc++]);
                         break;
                     case JavaInstrArguments.BranchOffset:
-                        _ops[start] = new JavaOp(start, instr, I2(code, ref pc) + start);
+                    {
+                        var jumpTarget = I2(code, ref pc) + start;
+                        _jumpTarget[jumpTarget] = true;
+                        _ops[start] = new JavaOp(start, instr, jumpTarget);
                         break;
+                    }
                     case JavaInstrArguments.Short:
                         _ops[start] = new JavaOp(start, instr, I2(code, ref pc));
                         break;
@@ -116,6 +138,7 @@ namespace JavaNet
                         for (var i = 0; i < nPairs; i++)
                         {
                             mtp[i] = new KeyValuePair<int, int>(I4(code, ref pc), I4(code, ref pc) + start);
+                            _jumpTarget[mtp[i].Value] = true;
                         }
 
                         _ops[start] = new JavaOp(start, instr, defOffset, mtp);
@@ -133,6 +156,7 @@ namespace JavaNet
                         for (var i = 0; i < targets.Length; i++)
                         {
                             targets[i] = I4(code, ref pc) + start;
+                            _jumpTarget[targets[i]] = true;
                         }
 
                         _ops[start] = new JavaOp(start, instr, defOffset, low, high, targets);
@@ -144,8 +168,31 @@ namespace JavaNet
                 }
             }
         }
+        
+        /// <summary>
+        /// Divides the method into ActionBlocks
+        /// </summary>
+        private void BlockAnalyzer()
+        {
+            _blocks = new Dictionary<int, ActionBlock>();
 
+            ActionBlock curBlock = null;
 
+            for (var i = 0; i < _ops.Length; i++)
+            {
+                if (_ops[i] == null)
+                    continue;
+                if (curBlock == null || _jumpTarget[i])
+                {
+                    curBlock = new ActionBlock(i);
+                    _blocks.Add(i, curBlock);
+                }
+                curBlock.JavaOps.Add(_ops[i]);
+                
+            }
+        }
+
+        private void 
 
         private static short I2(byte[] code, ref int pc)
         {
@@ -174,7 +221,7 @@ namespace JavaNet
 
         public override string ToString()
         {
-            return $"{Offset:X4} {Instr} " +
+            return $"0x{Offset:X4} {Instr} " +
                    string.Join(' ', Args.Select(x =>
                    {
                        switch (x)
@@ -182,11 +229,36 @@ namespace JavaNet
                            case CpInfo info:
                                return info.Represent();
                            case IFormattable form:
-                               return form.ToString("X4", null);
+                               return "0x" + form.ToString("X4", null);
                            default:
                                return x.ToString();
                        }
                    }));
+        }
+    }
+
+    class ActionBlock
+    {
+        public int JavaOffset { get; }
+        public List<JavaOp> JavaOps { get; } = new List<JavaOp>();
+        public int NetOffset { get; set; }
+
+        public JavaState<object> StartingState { get; set; }
+
+        public ActionBlock(int javaOffset)
+        {
+            JavaOffset = javaOffset;
+        }
+
+        public override string ToString()
+        {
+            var s = $"actionBlock at 0x{JavaOffset:X4}\n";
+            foreach (var op in JavaOps)
+            {
+                s += $"  {op}\n";
+            }
+
+            return s;
         }
     }
 }
