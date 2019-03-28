@@ -57,7 +57,7 @@ namespace JavaNet
             Name = ((Utf8Info) cp[_nameIndex]).Data;
         }
 
-        public override string Represent() => Name;
+        public override string Represent() => Name.Replace('/', '.');
     }
 
     public class FieldOrMethodrefInfo : CpInfo
@@ -82,7 +82,7 @@ namespace JavaNet
             NameAndType = (NameAndTypeInfo) cp[_nameAndTypeIndex];
         }
 
-        public override string Represent() => $"{Class}->{NameAndType.Name}:{NameAndType.Descriptor}";
+        public override string Represent() => $"{Class.Represent()}.{NameAndType.Name}:{NameAndType.Descriptor}";
     }
 
     public class StringInfo : CpInfo

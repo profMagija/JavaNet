@@ -175,7 +175,18 @@ namespace JavaNet
         public override string ToString()
         {
             return $"{Offset:X4} {Instr} " +
-                   string.Join(' ', Args.Select(x => x is CpInfo info ? info.Represent() : x.ToString()));
+                   string.Join(' ', Args.Select(x =>
+                   {
+                       switch (x)
+                       {
+                           case CpInfo info:
+                               return info.Represent();
+                           case IFormattable form:
+                               return form.ToString("X4", null);
+                           default:
+                               return x.ToString();
+                       }
+                   }));
         }
     }
 }
