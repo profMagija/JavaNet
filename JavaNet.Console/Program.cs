@@ -15,6 +15,7 @@ namespace JavaNet.Console
     {
         public static void Main(string[] args)
         {
+            
             var compiled = CompileMaven(new MavenCoordinate("com.google.cloud", "google-cloud-core"));
         }
 

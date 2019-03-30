@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -22,6 +23,20 @@ namespace JavaNet
 
         private AssemblyDefinition _asm;
 
+        public TypeReference Import(Type t)
+        {
+            return _asm.MainModule.ImportReference(t);
+        }
+
+        public MethodReference Import(MethodBase m) => _asm.MainModule.ImportReference(m);
+
+        public static JavaAssemblyBuilder Instance;
+
+        public JavaAssemblyBuilder()
+        {
+            Instance = this;
+        }
+
         public void CreatePlugs(AssemblyDefinition asm)
         {
             _typePlugs["java/lang/Object"] = asm.MainModule.TypeSystem.Object;
@@ -29,12 +44,19 @@ namespace JavaNet
             _typePlugs["java/lang/Throwable"] = asm.MainModule.ImportReference(typeof(Exception));
         }
         
-        private TypeReference ResolveTypeReference(string name)
+        public TypeReference ResolveTypeReference(string name)
         {
+            if (name.StartsWith('['))
+                return ResolveTypeReference(name.Substring(1)).MakeArrayType();
+            if (name.EndsWith(';') && name.StartsWith('L'))
+                name = name.Substring(1, name.Length - 2);
+            if (name.Length == 1)
+                return ResolveFieldDescriptor(name);
+
             if (_typePlugs.TryGetValue(name, out var value)) return value;
             if (_typeReferences.TryGetValue(name, out value)) return value;
 
-            throw new Exception("Unknown type " + name);
+            throw new JavaNetException(JavaNetException.ReasonType.ClassLoad,"Unknown type " + name);
         }
 
         public void RegisterReferenceAssembly(string filename)
@@ -89,7 +111,7 @@ namespace JavaNet
                 Console.WriteLine("Skipping plugget type {0}", cf.ThisClass.Name);
                 return null;
             }
-            Console.WriteLine("Building type {0}", cf.ThisClass.Name);
+            //Console.WriteLine("Building type {0}", cf.ThisClass.Name);
             var cp = cf.ConstantPool;
             var className = cf.ThisClass.Name.Split('/');
             var attrs = (TypeAttributes) 0;
@@ -119,7 +141,14 @@ namespace JavaNet
 
             foreach (var fi in cf.Fields)
             {
-                td.Fields.Add(BuildField(fi, cp));
+                try
+                {
+                    td.Fields.Add(BuildField(fi, cp));
+                }
+                catch (JavaNetException ex) when (ex.Reason == JavaNetException.ReasonType.ClassLoad)
+                {
+                    Console.WriteLine("Failed to build field {0}::{1}", td.FullName, fi.Name);
+                }
             }
 
             cf.Methods.TryForeach<JavaMethodInfo, Exception>(mi =>
@@ -134,7 +163,14 @@ namespace JavaNet
                 }
                 else
                 {
-                    td.Methods.Add(BuildMethod(mi, cp));
+                    try
+                    {
+                        td.Methods.Add(BuildMethod(td, mi, cp));
+                    }
+                    catch (JavaNetException ex)
+                    {
+                        Console.WriteLine("Failed to build method {0}::{1}", td.FullName, mi.Name);
+                    }
                 }
             });
             
@@ -143,9 +179,9 @@ namespace JavaNet
             return td;
         }
 
-        private MethodDefinition BuildMethod(JavaMethodInfo mi, CpInfo[] cp)
+        private MethodDefinition BuildMethod(TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
         {
-            Console.WriteLine("  Building method {0} {1}", mi.Name, mi.Descriptor);
+            //Console.WriteLine("  Building method {0} {1}", mi.Name, mi.Descriptor);
             var attrs = (MethodAttributes) 0;
             if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Public))
                 attrs |= MethodAttributes.Public;
@@ -155,14 +191,24 @@ namespace JavaNet
                 attrs |= MethodAttributes.Private;
             if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static))
                 attrs |= MethodAttributes.Static;
-            if (!mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final) && mi.Name != "<init>")
+            if (!mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final) 
+                && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static) 
+                && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native)
+                && mi.Name != "<init>")
                 attrs |= MethodAttributes.Virtual;
             if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Abstract))
                 attrs |= MethodAttributes.Abstract;
+            if (mi.Name == "<init>" || mi.Name == "<clinit>")
+                attrs |= MethodAttributes.RTSpecialName | MethodAttributes.SpecialName;
+
             var (retType, paramType) = ResolveMethodDescriptor(mi.Descriptor);
-            
-            var md = new MethodDefinition(TranslateMethodName(mi.Name), attrs, retType);
-            
+
+            var md = new MethodDefinition(TranslateMethodName(mi.Name), attrs, retType)
+            {
+                DeclaringType = definingClass
+            };
+
+
             foreach (var param in paramType)
             {
                 md.Parameters.Add(new ParameterDefinition(param));
@@ -173,7 +219,19 @@ namespace JavaNet
                 switch (attributeInfo)
                 {
                     case CodeAttribute code:
-                        md.Body = MethodGenerator.GenerateMethod(md, mi, code, cp);
+                        try
+                        {
+                            md.Body = MethodGenerator.GenerateMethod(md, mi, code, cp);
+                        }
+                        catch (JavaNetException ex) when (ex.Reason == JavaNetException.ReasonType.ClassLoad)
+                        {
+                            md.Body = new MethodBody(md);
+                            var processor = md.Body.GetILProcessor();
+                            processor.Append(Instruction.Create(OpCodes.Ldstr, ex.Message));
+                            processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(typeof(TypeLoadException).GetConstructor(new[] {typeof(string)}))));
+                            processor.Append(Instruction.Create(OpCodes.Throw));
+                        }
+
                         break;
                 }
             }
@@ -981,14 +1039,14 @@ namespace JavaNet
             }
         }
 
-        private FieldReference ResolveFieldReference(FieldOrMethodrefInfo fmi)
+        public FieldReference ResolveFieldReference(FieldOrMethodrefInfo fmi)
         {
             var declType = ResolveTypeReference(fmi.Class.Name);
             var fldType = ResolveFieldDescriptor(fmi.NameAndType.Descriptor);
             return new FieldReference(fmi.NameAndType.Name, fldType, declType);
         }
 
-        private MethodReference ResolveMethodReference(FieldOrMethodrefInfo fmi, bool instance)
+        public MethodReference ResolveMethodReference(FieldOrMethodrefInfo fmi, bool instance)
         {
             var declType = ResolveTypeReference(fmi.Class.Name);
             var (retType, paramType) = ResolveMethodDescriptor(fmi.NameAndType.Descriptor);
@@ -1010,7 +1068,7 @@ namespace JavaNet
             {
                 case "<init>":
                     return ".ctor";
-                case "<cinit>":
+                case "<clinit>":
                     return ".cctor";
                 case "toString":
                     return "ToString";
@@ -1052,7 +1110,7 @@ namespace JavaNet
             }
         }
 
-        private (TypeReference retType, TypeReference[] paramType) ResolveMethodDescriptor(string desc)
+        internal (TypeReference retType, TypeReference[] paramType) ResolveMethodDescriptor(string desc)
         {
             var pos = 1;
             var parTypes = new List<TypeReference>();
@@ -1131,13 +1189,15 @@ namespace JavaNet
             return fd;
         }
 
-        private TypeReference ResolveFieldDescriptor(string desc)
+        public  TypeReference ResolveFieldDescriptor(string desc)
         {
             var length = 0;
             return ResolveFieldDescriptor(desc, ref length);
         }
 
-        private TypeReference ResolveFieldDescriptor(string desc, ref int pos)
+        public TypeSystem TypeSystem => _asm.MainModule.TypeSystem;
+
+        public TypeReference ResolveFieldDescriptor(string desc, ref int pos)
         {
             var typeSystem = _asm.MainModule.TypeSystem;
             switch (desc[pos++])

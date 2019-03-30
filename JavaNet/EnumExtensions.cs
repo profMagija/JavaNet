@@ -12,17 +12,18 @@ namespace JavaNet
 
             foreach (var o in enumerable)
             {
-                try
-                {
-                    act(o);
-                }
-                catch (TException e)
-                {
-                    if (e is AggregateException aggregateException)
-                        list.AddRange(aggregateException.InnerExceptions);
-                    else
-                        list.Add(e);
-                }
+                //try
+                //{
+                //    act(o);
+                //}
+                //catch (TException e)
+                //{
+                //    if (e is AggregateException aggregateException)
+                //        list.AddRange(aggregateException.InnerExceptions);
+                //    else
+                //        list.Add(e);
+                //}
+                act(o);
             }
 
             if (list.Count > 0)

@@ -25,6 +25,25 @@ namespace JavaNet
             return jf;
         }
 
+        public static JarFile BuildJarFile(string path)
+        {
+            if (Directory.Exists(path))
+            {
+                var jf = new JarFile();
+                var classFiles = new List<ClassFile>();
+                foreach (var entry in Directory.EnumerateFiles(path, "*.class", SearchOption.AllDirectories))
+                {
+                    classFiles.Add(BuildClassFile(File.OpenRead(entry)));
+                }
+                jf.ClassFiles = classFiles.ToArray();
+                return jf;
+            }
+            else
+            {
+                return BuildJarFile(File.OpenRead(path));
+            }
+        }
+
         private static ClassFile BuildClassFile(Stream s)
         {
             var cf = new ClassFile();
