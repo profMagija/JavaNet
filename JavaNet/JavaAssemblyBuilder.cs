@@ -422,7 +422,7 @@ namespace JavaNet
             }
 
             var signature = CreateMethodSignature(md.IsStatic, md.ReturnType.FullName, md.DeclaringType.FullName, md.Name, md.Parameters.Select(x => x.ParameterType.FullName));
-            if (_methodReferences.TryGetValue(signature, out var plug))
+            if (_methodReferences.TryGetValue(signature, out var plug) && plug.FullName != md.FullName)
             {
                 md.Body = new MethodBody(md);
                 var processor = md.Body.GetILProcessor();
