@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 // ReSharper disable InconsistentNaming
 
-namespace java.lang
+namespace java.util
 {
     public class Locale
     {

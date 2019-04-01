@@ -11,6 +11,7 @@ using Mono.Cecil.Rocks;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using MethodBody = Mono.Cecil.Cil.MethodBody;
+using MethodImplAttributes = Mono.Cecil.MethodImplAttributes;
 using TypeAttributes = Mono.Cecil.TypeAttributes;
 
 namespace JavaNet
@@ -47,6 +48,18 @@ namespace JavaNet
             _typePlugs["java/lang/String"] = asm.MainModule.TypeSystem.String;
             _typePlugs["java/lang/Throwable"] = asm.MainModule.ImportReference(typeof(Exception));
 
+            _typePlugs["java/lang/Class"] = asm.MainModule.ImportReference(typeof(Type));
+            _typePlugs["java/lang/annotation/Annotation"] = asm.MainModule.ImportReference(typeof(Attribute));
+            _typePlugs["java/lang/reflect/AccessibleObject"] = asm.MainModule.ImportReference(typeof(MemberInfo));
+            _typePlugs["java/lang/reflect/Constructor"] = asm.MainModule.ImportReference(typeof(ConstructorInfo));
+            _typePlugs["java/lang/reflect/Field"] = asm.MainModule.ImportReference(typeof(FieldInfo));
+            _typePlugs["java/lang/reflect/Method"] = asm.MainModule.ImportReference(typeof(MethodInfo));
+
+            _typePlugs["java/lang/NoSuchFieldException"] = asm.MainModule.ImportReference(typeof(MissingFieldException));
+            _typePlugs["java/lang/NoSuchMethodException"] = asm.MainModule.ImportReference(typeof(MissingMethodException));
+            _typePlugs["java/lang/NullPointerException"] = asm.MainModule.ImportReference(typeof(NullReferenceException));
+            _typePlugs["java/lang/ClassCastException"] = asm.MainModule.ImportReference(typeof(InvalidCastException));
+
             PlugAssembly(asm, typeof(StringPlugs).Assembly);
         }
 
@@ -63,7 +76,12 @@ namespace JavaNet
                 {
                     if (method.GetCustomAttribute<MethodPlugAttribute>() is MethodPlugAttribute mpa)
                     {
-                        _methodReferences[mpa.Name] = asm.MainModule.ImportReference(method);
+                        _methodReferences[CreateMethodSignature(
+                            mpa.IsStatic,
+                            mpa.ReturnType ?? method.ReturnType.FullName,
+                            mpa.DeclaringType,
+                            mpa.MethodName,
+                            mpa.ParamTypes)] = asm.MainModule.ImportReference(method);
                     }
 
                     if (method.GetCustomAttribute<CastPlugAttribute>() is CastPlugAttribute cpa)
@@ -87,6 +105,8 @@ namespace JavaNet
                 name = name.Substring(1, name.Length - 2);
             if (name.Length == 1)
                 return ResolveFieldDescriptor(name);
+
+            name.Replace('.', '/');
 
             if (_typePlugs.TryGetValue(name, out var value)) return value;
             if (_typeReferences.TryGetValue(name, out value)) return value;
@@ -218,7 +238,6 @@ namespace JavaNet
                     {
                         var md = BuildMethod(td, mi, cp);
                         td.Methods.Add(md);
-                        _methodReferences[cf.ThisClass.Name.Replace('/', '.') + "." + mi.Name + ":" + mi.Descriptor] = md;
                         maaaaa.Add((mi, md));
                     }
                     catch (JavaNetException ex)
@@ -227,6 +246,8 @@ namespace JavaNet
                     }
                 }
             }
+
+            _typeReferences[cf.ThisClass.Name] = td;
 
             return (td, maaaaa);
 
@@ -255,7 +276,8 @@ namespace JavaNet
             else if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Private))
                 attrs |= MethodAttributes.Private;
 
-            if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static) || mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native))
+            var isStatic = mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static) || mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native);
+            if (isStatic)
                 attrs |= MethodAttributes.Static;
 
             if (!mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final)
@@ -271,7 +293,7 @@ namespace JavaNet
             attrs |= MethodAttributes.HideBySig;
 
             var (retType, paramType) = ResolveMethodDescriptor(mi.Descriptor);
-
+            
             var md = new MethodDefinition(TranslateMethodName(mi.Name), attrs, retType)
             {
                 DeclaringType = definingClass
@@ -282,6 +304,8 @@ namespace JavaNet
             {
                 md.Parameters.Add(new ParameterDefinition(param));
             }
+
+            _methodReferences[CreateMethodSignature(isStatic, retType.FullName, definingClass.FullName, mi.Name, paramType.Select(x => x.FullName))] = md;
 
             return md;
         }
@@ -362,43 +386,51 @@ namespace JavaNet
         //    return td == null ? Enumerable.Empty<MethodReference>() : td.GetMethods().Concat(GetAllMethods(td.BaseType?.Resolve()));
         //}
 
-        public static string CreateMethodSignature(TypeDefinition type, string name, TypeReference[] paramTypes)
+        public static string CreateMethodSignature(bool isStatic, string returnType, string type, string name, IEnumerable<string> paramTypes)
         {
-            return $"{type.FullName}.{name}(" + string.Join(',', paramTypes.Select(x => x.FullName)) + ")";
+            return $"{(isStatic ? 's' : 'i')}:{type}.{name}(" + string.Join(',', paramTypes) + "):" + returnType;
         }
 
-        public MethodReference ResolveMethodReference(TypeDefinition type, string name, TypeReference[] paramTypes)
+        public MethodReference ResolveMethodReference(bool isStatic, TypeReference retType, TypeDefinition type, string name, TypeReference[] paramTypes)
         {
-            if (!_methodReferences.TryGetValue(CreateMethodSignature(type, name, paramTypes), out var resolvedMethod))
+            var signature = CreateMethodSignature(isStatic, retType.FullName, type.FullName, name, paramTypes.Select(x => x.FullName));
+            if (!_methodReferences.TryGetValue(signature, out var resolvedMethod))
             {
 
                 if (name == ".cctor")
                     resolvedMethod = type.GetStaticConstructor();
                 else
                 {
+                    var normalizedName = char.ToUpper(name[0]) + name.Substring(1);
 
-                    resolvedMethod =
-                        (name == ".ctor" ? type.GetConstructors() : type.GetMethods())
-                        .FirstOrDefault(x =>
-                            x.Name == name
+                    var resolvedMethods = (name == ".ctor" ? type.GetConstructors() : type.Methods)
+                        .Where(x =>
+                            (x.Name == name || x.Name == normalizedName)
+                            && x.IsStatic == isStatic
                             && x.Parameters.Count == paramTypes.Length
                             && x.Parameters.Zip(paramTypes, (param, typeDef) => param.ParameterType.FullName == typeDef.FullName).All(b => b));
 
-                    if (resolvedMethod == null)
-                        resolvedMethod = ResolveMethodReference(type.BaseType.Resolve(), name, paramTypes);
 
-                    _methodReferences[CreateMethodSignature(type, name, paramTypes)] = resolvedMethod;
+                    resolvedMethod = resolvedMethods.SingleOrDefault();
+
+                    if (resolvedMethod != null)
+                        resolvedMethod = _asm.MainModule.ImportReference(resolvedMethod);
+
+                    if (resolvedMethod == null && type.BaseType != null)
+                        resolvedMethod = ResolveMethodReference(isStatic, retType, type.BaseType.Resolve(), name, paramTypes);
+
+                    _methodReferences[signature] = resolvedMethod;
                 }
             }
 
             return resolvedMethod;
         }
 
-        public MethodReference ResolveMethodReference(FieldOrMethodrefInfo fmi)
+        public MethodReference ResolveMethodReference(bool isStatic, FieldOrMethodrefInfo fmi)
         {
             var declType = ResolveTypeReference(fmi.Class.Name).Resolve();
-            var paramTypes = ResolveMethodDescriptor(fmi.NameAndType.Descriptor).paramType.ToArray();
-            var resolvedMethod = ResolveMethodReference(declType, TranslateMethodName(fmi.NameAndType.Name), paramTypes);
+            var (retType, paramTypes) = ResolveMethodDescriptor(fmi.NameAndType.Descriptor);
+            var resolvedMethod = ResolveMethodReference(isStatic, retType, declType, TranslateMethodName(fmi.NameAndType.Name), paramTypes);
 
             return resolvedMethod
                    ?? throw new JavaNetException(JavaNetException.ReasonType.ClassLoad, "Could not resolve method " + fmi.Represent());

@@ -677,14 +677,17 @@ namespace JavaNet
                     case JavaInstruction.invokestatic:
                     {
                         var cp = (FieldOrMethodrefInfo) CpInfo;
-                        var method = asm.ResolveMethodReference(cp);
+                        var method = asm.ResolveMethodReference(Instr == JavaInstruction.invokestatic, cp);
                         var args = new JavaValue[method.Parameters.Count];
                         var state = curState;
                         for (var i = args.Length - 1; i >= 0; i--)
                         {
                             state = state.Pop(out args[i]);
                             if (args[i] == null)
+                            {
                                 state = state.Pop(out args[i]);
+                                Debug.Assert(args[i].ActualType.FullName == "System.Int64" || args[i].ActualType.FullName == "System.Double");
+                            }
                         }
 
                         JavaValue objRef = null;
@@ -802,7 +805,7 @@ namespace JavaNet
                 Dictionary<int, ActionBlock> blocks)
             {
                 var cp = (FieldOrMethodrefInfo)MethodRef;
-                var method = JavaAssemblyBuilder.Instance.ResolveMethodReference(cp);
+                var method = JavaAssemblyBuilder.Instance.ResolveMethodReference(false, cp);
                 var args = new JavaValue[method.Parameters.Count];
                 var state = curState;
                 for (var i = args.Length - 1; i >= 0; i--)

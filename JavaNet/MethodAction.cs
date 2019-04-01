@@ -679,17 +679,38 @@ namespace JavaNet
         public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
+
+            var args = new List<JavaValue>();
+
             if (Instance != null)
-                l.AddRange(Instance.GetValue());
-            foreach (var arg in Args)
+                args.Add(Instance);
+            
+            args.AddRange(Args);
+
+            Debug.Assert(Args.Length == Method.Parameters.Count);
+
+            foreach (var (value, definition) in Args.Zip(Method.Parameters, (value,  definition) => (value, definition)))
             {
-                l.AddRange(arg.GetValue());
+                l.AddRange(value.GetValue());
+                if (definition.CustomAttributes.FirstOrDefault(x => x.AttributeType.FullName == nameof(ActualTypeAttribute)) is CustomAttribute atr)
+                {
+                    var s = (string) atr.ConstructorArguments[0].Value;
+                    l.Add(Instruction.Create(OpCodes.Castclass, JavaAssemblyBuilder.Instance.ResolveTypeReference(s)));
+                }
             }
 
             l.Add(Instruction.Create(Virtual ? OpCodes.Callvirt : OpCodes.Call, Method));
 
             if (Target != null)
+            {
+                if (Method.MethodReturnType.CustomAttributes.FirstOrDefault(x => x.AttributeType.FullName == nameof(ActualTypeAttribute)) is CustomAttribute atr)
+                {
+                    var s = (string) atr.ConstructorArguments[0].Value;
+                    l.Add(Instruction.Create(OpCodes.Castclass, JavaAssemblyBuilder.Instance.ResolveTypeReference(s)));
+                }
                 l.AddRange(Target.StoreValue());
+            }
+
             return l;
         }
     }
