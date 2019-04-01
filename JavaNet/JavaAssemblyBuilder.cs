@@ -55,10 +55,13 @@ namespace JavaNet
             _typePlugs["java/lang/reflect/Field"] = asm.MainModule.ImportReference(typeof(FieldInfo));
             _typePlugs["java/lang/reflect/Method"] = asm.MainModule.ImportReference(typeof(MethodInfo));
 
+            _typePlugs["java/lang/ArgumentException"] = asm.MainModule.ImportReference(typeof(ArgumentException));
             _typePlugs["java/lang/NoSuchFieldException"] = asm.MainModule.ImportReference(typeof(MissingFieldException));
             _typePlugs["java/lang/NoSuchMethodException"] = asm.MainModule.ImportReference(typeof(MissingMethodException));
             _typePlugs["java/lang/NullPointerException"] = asm.MainModule.ImportReference(typeof(NullReferenceException));
             _typePlugs["java/lang/ClassCastException"] = asm.MainModule.ImportReference(typeof(InvalidCastException));
+            _typePlugs["java/lang/IllegalMonitorStateException"] = asm.MainModule.ImportReference(typeof(SynchronizationLockException));
+            _typePlugs["java/lang/InterruptedException"] = asm.MainModule.ImportReference(typeof(ThreadInterruptedException));
 
             PlugAssembly(asm, typeof(StringPlugs).Assembly);
         }
@@ -450,6 +453,8 @@ namespace JavaNet
                     return "Equals";
                 case "hashCode":
                     return "GetHashCode";
+                case "finalize":
+                    return "Finalize";
                 default:
                     return name;
             }
