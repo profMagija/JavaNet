@@ -7,7 +7,10 @@ namespace JavaNet
     {
         public enum ReasonType
         {
-            ClassLoad
+            ClassLoad,
+            MethodReference,
+            FieldReference,
+            NativeMethod
         }
 
         public ReasonType Reason { get; }

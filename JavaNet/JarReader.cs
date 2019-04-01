@@ -154,7 +154,7 @@ namespace JavaNet
                     var excTbl = new ExceptionTableEntry[excTblLength];
                     for (var i = 0; i < excTblLength; i++)
                     {
-                        excTbl[i] = new ExceptionTableEntry(s.U2(), s.U2(), s.U2(), s.U2());
+                        excTbl[i] = new ExceptionTableEntry(s.U2(), s.U2(), s.U2(), (ClassInfo)cp[s.U2()]);
                     }
 
                     var attrCount = s.U2();
@@ -165,6 +165,36 @@ namespace JavaNet
                     }
 
                     return new CodeAttribute(name, len, maxStack, maxLocals, code, excTbl, attrs);
+                }
+                case AttributeName.Exceptions:
+                {
+                    var numClasses = s.U2();
+                    var excs = new ClassInfo[numClasses];
+                    for (var i = 0; i < numClasses; i++)
+                    {
+                        excs[i] = (ClassInfo)cp[s.U2()];
+                    }
+
+                    return new ExceptionsAttribute(name, len, excs);
+                }
+                case AttributeName.InnerClasses:
+                {
+                    var numClasses = s.U2();
+                    var innerClasses = new InnerClassesEntry[numClasses];
+                    for (var i = 0; i < numClasses; i++)
+                    {
+                        innerClasses[i] = new InnerClassesEntry(
+                            (ClassInfo) cp[s.U2()],
+                            (ClassInfo) cp[s.U2()],
+                            (Utf8Info) cp[s.U2()],
+                            s.U2());
+                    }
+
+                    return new InnerClassesAttribute(name, len, innerClasses);
+                }
+                case AttributeName.Synthetic:
+                {
+                    return new SyntheticAttribute(name, len);
                 }
                 default:
                     return new UnknownAttribute(name, len, s.ReadNext((int) len));

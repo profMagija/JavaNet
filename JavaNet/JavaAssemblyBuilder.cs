@@ -22,6 +22,7 @@ namespace JavaNet
         public Dictionary<string, MethodReference> CastPlugs { get; } = new Dictionary<string, MethodReference>();
         public Dictionary<string, MethodReference> InstanceOfPlugs { get; } = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, TypeReference> _typeReferences = new Dictionary<string, TypeReference>();
+        private readonly Dictionary<string, TypeDefinition> _typeDefinitions = new Dictionary<string, TypeDefinition>();
         private readonly Dictionary<string, MethodReference> _methodReferences = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, FieldReference> _fieldReferences = new Dictionary<string, FieldReference>();
         private readonly HashSet<string> _annotations = new HashSet<string>();
@@ -36,32 +37,39 @@ namespace JavaNet
         public MethodReference Import(MethodBase m) => _asm.MainModule.ImportReference(m);
 
         public static JavaAssemblyBuilder Instance;
+        private List<(TypeDefinition, ClassFile, List<(JavaMethodInfo, MethodDefinition)>)> _typeThings;
+        private JarFile _jar;
 
         public JavaAssemblyBuilder()
         {
             Instance = this;
         }
 
+        private TypeReference SystemImport(Type type)
+        {
+            return _asm.MainModule.ImportReference(type);
+        }
+
         public void CreatePlugs(AssemblyDefinition asm)
         {
             _typePlugs["java/lang/Object"] = asm.MainModule.TypeSystem.Object;
             _typePlugs["java/lang/String"] = asm.MainModule.TypeSystem.String;
-            _typePlugs["java/lang/Throwable"] = asm.MainModule.ImportReference(typeof(Exception));
+            _typePlugs["java/lang/Throwable"] = SystemImport(typeof(Exception));
 
-            _typePlugs["java/lang/Class"] = asm.MainModule.ImportReference(typeof(Type));
-            _typePlugs["java/lang/annotation/Annotation"] = asm.MainModule.ImportReference(typeof(Attribute));
-            _typePlugs["java/lang/reflect/AccessibleObject"] = asm.MainModule.ImportReference(typeof(MemberInfo));
-            _typePlugs["java/lang/reflect/Constructor"] = asm.MainModule.ImportReference(typeof(ConstructorInfo));
-            _typePlugs["java/lang/reflect/Field"] = asm.MainModule.ImportReference(typeof(FieldInfo));
-            _typePlugs["java/lang/reflect/Method"] = asm.MainModule.ImportReference(typeof(MethodInfo));
+            _typePlugs["java/lang/Class"] = SystemImport(typeof(Type));
+            _typePlugs["java/lang/annotation/Annotation"] = SystemImport(typeof(Attribute));
+            _typePlugs["java/lang/reflect/AccessibleObject"] = SystemImport(typeof(MemberInfo));
+            _typePlugs["java/lang/reflect/Constructor"] = SystemImport(typeof(ConstructorInfo));
+            _typePlugs["java/lang/reflect/Field"] = SystemImport(typeof(FieldInfo));
+            _typePlugs["java/lang/reflect/Method"] = SystemImport(typeof(MethodInfo));
 
-            _typePlugs["java/lang/ArgumentException"] = asm.MainModule.ImportReference(typeof(ArgumentException));
-            _typePlugs["java/lang/NoSuchFieldException"] = asm.MainModule.ImportReference(typeof(MissingFieldException));
-            _typePlugs["java/lang/NoSuchMethodException"] = asm.MainModule.ImportReference(typeof(MissingMethodException));
-            _typePlugs["java/lang/NullPointerException"] = asm.MainModule.ImportReference(typeof(NullReferenceException));
-            _typePlugs["java/lang/ClassCastException"] = asm.MainModule.ImportReference(typeof(InvalidCastException));
-            _typePlugs["java/lang/IllegalMonitorStateException"] = asm.MainModule.ImportReference(typeof(SynchronizationLockException));
-            _typePlugs["java/lang/InterruptedException"] = asm.MainModule.ImportReference(typeof(ThreadInterruptedException));
+            _typePlugs["java/lang/ArgumentException"] = SystemImport(typeof(ArgumentException));
+            _typePlugs["java/lang/NoSuchFieldException"] = SystemImport(typeof(MissingFieldException));
+            _typePlugs["java/lang/NoSuchMethodException"] = SystemImport(typeof(MissingMethodException));
+            _typePlugs["java/lang/NullPointerException"] = SystemImport(typeof(NullReferenceException));
+            _typePlugs["java/lang/ClassCastException"] = SystemImport(typeof(InvalidCastException));
+            _typePlugs["java/lang/IllegalMonitorStateException"] = SystemImport(typeof(SynchronizationLockException));
+            _typePlugs["java/lang/InterruptedException"] = SystemImport(typeof(ThreadInterruptedException));
 
             PlugAssembly(asm, typeof(StringPlugs).Assembly);
         }
@@ -72,7 +80,8 @@ namespace JavaNet
             {
                 if (type.GetCustomAttribute<TypePlugAttribute>() is TypePlugAttribute tpa)
                 {
-                    _typePlugs[tpa.Name.Replace('.', '/')] = asm.MainModule.ImportReference(type);
+                    Console.WriteLine("plugging {0}", tpa.Name ?? type.FullName);
+                    _typePlugs[(tpa.Name ?? type.FullName).Replace('.', '/')] = asm.MainModule.ImportReference(type);
                 }
 
                 foreach (var method in type.GetMethods())
@@ -109,9 +118,13 @@ namespace JavaNet
             if (name.Length == 1)
                 return ResolveFieldDescriptor(name);
 
-            name.Replace('.', '/');
+            name = name.Replace('.', '/');
 
             if (_typePlugs.TryGetValue(name, out var value)) return value;
+
+            var td = GetOrDefineType(name);
+            if (td != null) return td;
+
             if (_typeReferences.TryGetValue(name, out value)) return value;
 
             throw new JavaNetException(JavaNetException.ReasonType.ClassLoad,"Unknown type " + name);
@@ -135,37 +148,67 @@ namespace JavaNet
         public AssemblyDefinition BuildAssembly(string name, Version version, JarFile jar)
         {
             var an = new AssemblyNameDefinition(name, version);
+            _jar = jar;
             _asm = AssemblyDefinition.CreateAssembly(an, name + ".dll", ModuleKind.Dll);
             
             CreatePlugs(_asm);
-            
+
+            var innerTypes = new Dictionary<string, (string, string)>();
+
+            var lastAnonName = 0;
+
+            foreach (var cf in jar.ClassFiles)
+            {
+                foreach (var ica in cf.Attributes.OfType<InnerClassesAttribute>().SelectMany(x => x.Classes).Where(x => x.InnerClass.Name == cf.ThisClass.Name))
+                {
+                    var innerName = ica.InnerClass.Name;
+                    Debug.Assert(innerName != null, nameof(innerName) + " != null");
+                    Debug.Assert(innerName.Contains('$'));
+                    var outerName = ica.OuterClass?.Name ?? innerName.Substring(0, innerName.LastIndexOf('$'));
+                    var newInnerName = ica.InnerClassName?.Data ?? "<>anon_" + (lastAnonName++);
+                    innerTypes[innerName] = (outerName, newInnerName);
+                }
+            }
+
             foreach (var classFile in jar.ClassFiles)
             {
                 var cn = classFile.ThisClass.Name.Split('/');
-                _typeReferences[classFile.ThisClass.Name] = new TypeReference(
-                    string.Join('.', cn.SkipLast(1)),
-                    cn.Last(),
-                    _asm.MainModule,
-                    _asm.MainModule);
+                //_typeReferences[classFile.ThisClass.Name] = new TypeReference(
+                //    string.Join('.', cn.SkipLast(1)),
+                //    cn.Last(),
+                //    _asm.MainModule,
+                //    _asm.MainModule);
                 if (classFile.AccessFlags.HasFlag(ClassFile.Flags.Annotation))
                 {
                     _annotations.Add(classFile.ThisClass.Name);
                 }
             }
-            var typeThings = new List<(TypeDefinition, ClassFile, List<(JavaMethodInfo, MethodDefinition)>)>();
+            _typeThings = new List<(TypeDefinition, ClassFile, List<(JavaMethodInfo, MethodDefinition)>)>();
 
-            jar.ClassFiles.TryForeach<ClassFile, Exception>(classFile =>
+            foreach (var classFile in jar.ClassFiles)
             {
-                var (typeDefinition, methods) = BuildClass(classFile);
-                if (typeDefinition != null)
+                BuildClass(classFile);
+            }
+
+            foreach (var classFile in jar.ClassFiles)
+            {
+                var key = classFile.ThisClass.Name;
+                if (!_typeDefinitions.TryGetValue(key, out var typeDefinition))
+                    continue;
+                if (innerTypes.TryGetValue(key, out var info))
                 {
-                    typeThings.Add((typeDefinition, classFile, methods));
-                    _asm.MainModule.Types.Add(typeDefinition);
+                    var (enclosingClass, innerName) = info;
+                    if (_typeDefinitions.TryGetValue(enclosingClass, out var outerType))
+                    {
+                        typeDefinition.Name = innerName;
+                        _asm.MainModule.Types.Remove(typeDefinition);
+                        outerType.NestedTypes.Add(typeDefinition);
+                        typeDefinition.DeclaringType = outerType;
+                    }
                 }
+            }
 
-            });
-
-            foreach (var (a, b, c) in typeThings)
+            foreach (var (a, b, c) in _typeThings)
             {
                 BuildClassPart2(a, b, c);
             }
@@ -173,13 +216,30 @@ namespace JavaNet
             return _asm;
         }
 
-        public (TypeDefinition td, List<(JavaMethodInfo, MethodDefinition)> maaaaa) BuildClass(ClassFile cf)
+        public TypeReference GetOrDefineType(string name)
+        {
+            if (_typePlugs.TryGetValue(name, out var tr)) return tr;
+            if (_typeDefinitions.TryGetValue(name, out var td)) return td.Module != _asm.MainModule ? _asm.MainModule.ImportReference(td) : td;
+
+            if (_jar.ClassFiles.FirstOrDefault(x => x.ThisClass.Name == name) is var cf && cf != null)
+            {
+                BuildClass(cf);
+                return _typeDefinitions.GetValueOrDefault(name);
+            }
+
+            return null;
+        }
+
+        public void BuildClass(ClassFile cf)
         {
             if (_typePlugs.ContainsKey(cf.ThisClass.Name))
             {
-                Console.WriteLine("Skipping plugget type {0}", cf.ThisClass.Name);
-                return (null, null);
+                //Console.WriteLine("Skipping plugget type {0}", cf.ThisClass.Name);
+                return;
             }
+
+            if (_typeDefinitions.ContainsKey(cf.ThisClass.Name))
+                return;
 
             //Console.WriteLine("Building type {0}", cf.ThisClass.Name);
             var cp = cf.ConstantPool;
@@ -187,26 +247,38 @@ namespace JavaNet
             var attrs = (TypeAttributes) 0;
 
             var isAnnot = cf.AccessFlags.HasFlag(ClassFile.Flags.Annotation);
+            var isInterface = cf.AccessFlags.HasFlag(ClassFile.Flags.Interface) && !isAnnot;
 
             if (cf.AccessFlags.HasFlag(ClassFile.Flags.Public))
                 attrs |= TypeAttributes.Public;
             if (cf.AccessFlags.HasFlag(ClassFile.Flags.Final))
                 attrs |= TypeAttributes.Sealed;
-            if (cf.AccessFlags.HasFlag(ClassFile.Flags.Interface) && !isAnnot)
+            if (isInterface)
                 attrs |= TypeAttributes.Interface;
             if (cf.AccessFlags.HasFlag(ClassFile.Flags.Abstract))
                 attrs |= TypeAttributes.Abstract;
 
             var td = new TypeDefinition(string.Join('.', className.SkipLast(1)), className.Last(), attrs);
 
-            td.BaseType = isAnnot
-                ? _asm.MainModule.ImportReference(typeof(Attribute))
-                : ResolveTypeReference(cf.SuperClass.Name);
+            td.Scope = _asm.MainModule;
+            _asm.MainModule.Types.Add(td);
 
-            foreach (var iface in cf.Interfaces)
+            _typeDefinitions[cf.ThisClass.Name] = td;
+
+            if (isAnnot)
+                td.BaseType = _asm.MainModule.ImportReference(typeof(Attribute));
+            else if (isInterface)
+                td.BaseType = null;
+            else
+                td.BaseType = GetOrDefineType(cf.SuperClass.Name) ?? ResolveTypeReference(cf.SuperClass.Name);
+
+            foreach (var info in cf.Interfaces)
             {
-                if (iface.Name != "java/lang/annotation/Annotation" && isAnnot)
-                    td.Interfaces.Add(new InterfaceImplementation(ResolveTypeReference(iface.Name)));
+                if (info.Name != "java/lang/annotation/Annotation" && !isAnnot)
+                {
+                    var interfaceType = GetOrDefineType(info.Name) ?? ResolveTypeReference(info.Name);
+                    td.Interfaces.Add(new InterfaceImplementation(interfaceType));
+                }
             }
 
             foreach (var fi in cf.Fields)
@@ -232,7 +304,6 @@ namespace JavaNet
                     // methods become public fields
                     var (rt, _) = ResolveMethodDescriptor(mi.Descriptor);
                     var anotFld = new FieldDefinition(mi.Name, FieldAttributes.Public, rt);
-                    Console.WriteLine("  Built annotation field {0}", anotFld);
                     td.Fields.Add(anotFld);
                 }
                 else
@@ -245,15 +316,12 @@ namespace JavaNet
                     }
                     catch (JavaNetException ex)
                     {
-                        Console.WriteLine("Failed to build method {0}::{1}", td.FullName, mi.Name);
+                        Console.WriteLine("Failed to build method {0}::{1}: {2}", td.FullName, mi.Name, ex.Message);
                     }
                 }
             }
 
-            _typeReferences[cf.ThisClass.Name] = td;
-
-            return (td, maaaaa);
-
+            _typeThings.Add((td, cf, maaaaa));
         }
 
         public void BuildClassPart2(TypeDefinition td, ClassFile cf, List<(JavaMethodInfo, MethodDefinition)> maaaaa)
@@ -271,6 +339,7 @@ namespace JavaNet
         private MethodDefinition BuildMethod(TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
         {
             //Console.WriteLine("  Building method {0} {1}", mi.Name, mi.Descriptor);
+
             var attrs = (MethodAttributes) 0;
             if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Public))
                 attrs |= MethodAttributes.Public;
@@ -279,7 +348,7 @@ namespace JavaNet
             else if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Private))
                 attrs |= MethodAttributes.Private;
 
-            var isStatic = mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static) || mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native);
+            var isStatic = mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static);
             if (isStatic)
                 attrs |= MethodAttributes.Static;
 
@@ -296,8 +365,34 @@ namespace JavaNet
             attrs |= MethodAttributes.HideBySig;
 
             var (retType, paramType) = ResolveMethodDescriptor(mi.Descriptor);
+
+            var myName = TranslateMethodName(mi.Name);
+
+            var equivalentMethod = definingClass.Methods.FirstOrDefault(x =>
+                x.Name == myName
+                && x.ReturnType.FullName == retType.FullName
+                && x.Parameters.Count == paramType.Length
+                && x.Parameters.Zip(paramType, (definition,  reference) => definition.ParameterType.FullName == reference.FullName).All(b => b));
+
+            if (equivalentMethod != null)
+            {
+                if (isStatic)
+                {
+                    if (equivalentMethod.IsStatic)
+                        throw new Exception("Two static methods with same everything");
+
+                    myName = "static_" + myName;
+                }
+                else
+                {
+                    if (!equivalentMethod.IsStatic)
+                        throw new Exception("Two instance methods with same everything");
+
+                    equivalentMethod.Name = "static_" + equivalentMethod.Name;
+                }
+            }
             
-            var md = new MethodDefinition(TranslateMethodName(mi.Name), attrs, retType)
+            var md = new MethodDefinition(myName, attrs, retType)
             {
                 DeclaringType = definingClass
             };
@@ -315,6 +410,36 @@ namespace JavaNet
 
         private void BuildMethodBody(MethodDefinition md, TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
         {
+            if ((mi.AccessFlags & JavaMethodInfo.Flags.Native) != 0)
+            {
+                md.Body = new MethodBody(md);
+                var processor = md.Body.GetILProcessor();
+                processor.Append(Instruction.Create(OpCodes.Ldstr, "Native method stub: " + md.FullName));
+                processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(typeof(TypeLoadException).GetConstructor(new[] { typeof(string) }))));
+                processor.Append(Instruction.Create(OpCodes.Throw));
+                processor.Append(Instruction.Create(OpCodes.Ret));
+                return;
+            }
+
+            var signature = CreateMethodSignature(md.IsStatic, md.ReturnType.FullName, md.DeclaringType.FullName, md.Name, md.Parameters.Select(x => x.ParameterType.FullName));
+            if (_methodReferences.TryGetValue(signature, out var plug))
+            {
+                md.Body = new MethodBody(md);
+                var processor = md.Body.GetILProcessor();
+                if (md.HasThis)
+                {
+                    processor.Append(Instruction.Create(OpCodes.Ldarg, md.Body.ThisParameter));
+                }
+
+                foreach (var parameter in md.Parameters)
+                {
+                    processor.Append(Instruction.Create(OpCodes.Ldarg, parameter));
+                }
+
+                processor.Append(Instruction.Create(OpCodes.Call, plug));
+                processor.Append(Instruction.Create(OpCodes.Ret));
+                return;
+            }
 
             foreach (var attributeInfo in mi.Attributes)
             {
@@ -325,14 +450,15 @@ namespace JavaNet
                         {
                             md.Body = MethodGenerator.GenerateMethod(md, mi, code, cp) ?? throw new Exception("NULL AAAAAAAAA");
                         }
-                        catch (JavaNetException ex) when (ex.Reason == JavaNetException.ReasonType.ClassLoad)
+                        catch (JavaNetException ex)
                         {
                             Console.WriteLine(ex.Message);
                             md.Body = new MethodBody(md);
                             var processor = md.Body.GetILProcessor();
-                            processor.Append(Instruction.Create(OpCodes.Ldstr, ex.Message));
+                            processor.Append(Instruction.Create(OpCodes.Ldstr, ex.Reason + " " + ex.Message));
                             processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(typeof(TypeLoadException).GetConstructor(new[] {typeof(string)}))));
                             processor.Append(Instruction.Create(OpCodes.Throw));
+                            processor.Append(Instruction.Create(OpCodes.Ret));
                         }
 
                         break;
@@ -380,6 +506,8 @@ namespace JavaNet
                 return f ?? throw new JavaNetException(JavaNetException.ReasonType.ClassLoad, "Could not resolve field " + fmi.Represent());
             var declType = ResolveTypeReference(fmi.Class.Name);
             var field = GetAllFields(declType.Resolve()).FirstOrDefault(x => x.Name == fmi.NameAndType.Name);
+            if (field != null)
+                field = _asm.MainModule.ImportReference(field);
             _fieldReferences[fmi.Represent()] = field;
             return field ?? throw new JavaNetException(JavaNetException.ReasonType.ClassLoad, "Could not resolve field " + fmi.Represent());
         }
@@ -410,8 +538,10 @@ namespace JavaNet
                         .Where(x =>
                             (x.Name == name || x.Name == normalizedName)
                             && x.IsStatic == isStatic
+                            && x.ReturnType.FullName == retType.FullName
                             && x.Parameters.Count == paramTypes.Length
-                            && x.Parameters.Zip(paramTypes, (param, typeDef) => param.ParameterType.FullName == typeDef.FullName).All(b => b));
+                            && x.Parameters.Zip(paramTypes, (param, typeDef) => param.ParameterType.FullName == typeDef.FullName).All(b => b))
+                        .ToList();
 
 
                     resolvedMethod = resolvedMethods.SingleOrDefault();
@@ -422,7 +552,14 @@ namespace JavaNet
                     if (resolvedMethod == null && type.BaseType != null)
                         resolvedMethod = ResolveMethodReference(isStatic, retType, type.BaseType.Resolve(), name, paramTypes);
 
-                    _methodReferences[signature] = resolvedMethod;
+                    if (type.IsInterface)
+                    {
+                        foreach (var sInterface in type.Interfaces)
+                        {
+                            if (resolvedMethod == null)
+                                resolvedMethod = ResolveMethodReference(isStatic, retType, sInterface.InterfaceType.Resolve(), name, paramTypes);
+                        }
+                    }
                 }
             }
 
@@ -433,7 +570,12 @@ namespace JavaNet
         {
             var declType = ResolveTypeReference(fmi.Class.Name).Resolve();
             var (retType, paramTypes) = ResolveMethodDescriptor(fmi.NameAndType.Descriptor);
-            var resolvedMethod = ResolveMethodReference(isStatic, retType, declType, TranslateMethodName(fmi.NameAndType.Name), paramTypes);
+            var translatedMethodName = TranslateMethodName(fmi.NameAndType.Name);
+            var resolvedMethod = ResolveMethodReference(isStatic, retType, declType, translatedMethodName, paramTypes);
+            var signature = CreateMethodSignature(isStatic, retType.FullName, declType.FullName, translatedMethodName, paramTypes.Select(x => x.FullName));
+            _methodReferences[signature] = resolvedMethod;
+
+            //Debug.Assert(resolvedMethod != null);
 
             return resolvedMethod
                    ?? throw new JavaNetException(JavaNetException.ReasonType.ClassLoad, "Could not resolve method " + fmi.Represent());
@@ -504,31 +646,31 @@ namespace JavaNet
                         switch (fi.Descriptor)
                         {
                             case "J":
-                                fd.Constant = ((LongInfo) cva.ConstantValue).Value;
+                                fd.Constant = ((LongInfo) cva.Value).Value;
                                 break;
                             case "F":
-                                fd.Constant = ((FloatInfo) cva.ConstantValue).Value;
+                                fd.Constant = ((FloatInfo) cva.Value).Value;
                                 break;
                             case "D":
-                                fd.Constant = ((DoubleInfo) cva.ConstantValue).Value;
+                                fd.Constant = ((DoubleInfo) cva.Value).Value;
                                 break;
                             case "I":
-                                fd.Constant = ((IntegerInfo) cva.ConstantValue).Value;
+                                fd.Constant = ((IntegerInfo) cva.Value).Value;
                                 break;
                             case "S":
-                                fd.Constant = (short) ((IntegerInfo) cva.ConstantValue).Value;
+                                fd.Constant = (short) ((IntegerInfo) cva.Value).Value;
                                 break;
                             case "B":
-                                fd.Constant = (byte) ((IntegerInfo) cva.ConstantValue).Value;
+                                fd.Constant = (byte) ((IntegerInfo) cva.Value).Value;
                                 break;
                             case "C":
-                                fd.Constant = (char) ((IntegerInfo) cva.ConstantValue).Value;
+                                fd.Constant = (char) ((IntegerInfo) cva.Value).Value;
                                 break;
                             case "Z":
-                                fd.Constant = ((IntegerInfo) cva.ConstantValue).Value != 0;
+                                fd.Constant = ((IntegerInfo) cva.Value).Value != 0;
                                 break;
                             case "Ljava/lang/String;":
-                                fd.Constant = ((StringInfo) cva.ConstantValue).String;
+                                fd.Constant = ((StringInfo) cva.Value).String;
                                 break;
                         }
 
@@ -571,6 +713,11 @@ namespace JavaNet
                 default:
                     throw new ArgumentException($"Unknown type descriptor '{desc[pos - 1]}'", nameof(desc));
             }
+        }
+
+        public TypeReference Import(TypeReference type)
+        {
+            return _asm.MainModule.ImportReference(type);
         }
     }
 }

@@ -20,13 +20,32 @@ namespace JavaNet.Runtime.Plugs
             return Type.GetType(name);
         }
 
-        [MethodPlug(nameof(Type), "forName", "System.String", "System.Boolean", "java.lang.ClassLoader", IsStatic = true)]
+        [MethodPlug("System.Type", "System.Type", "forName", "System.String", "System.Boolean", "java.lang.ClassLoader", IsStatic = true)]
         public static Type ForName(string name, bool initialize, [ActualType("java.lang.ClassLoader")] object loader)
         {
             if (loader != null)
                 throw new ArgumentException("Can't use a non-bootstrap loader", nameof(loader));
 
             return ForName(name);
+        }
+
+        [MethodPlug(typeof(Type), "getPrimitiveClass", typeof(string), IsStatic = true)]
+        public static Type GetPrimitiveClass(string name)
+        {
+            switch (name)
+            {
+                case "int": return typeof(int);
+                case "long": return typeof(long);
+                case "float": return typeof(float);
+                case "double": return typeof(double);
+                case "void": return typeof(void);
+                case "char": return typeof(char);
+                case "short": return typeof(short);
+                case "byte": return typeof(byte);
+                case "boolean": return typeof(bool);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(name));
+            }
         }
 
         [MethodPlug(typeof(Type), "newInstance")]
@@ -120,6 +139,9 @@ namespace JavaNet.Runtime.Plugs
 
         [MethodPlug(typeof(Type), "getComponentType")]
         public static Type GetComponentType(Type t) => t.GetElementType();
+
+        [MethodPlug("java.lang.reflect.Type[]", "System.Type", "getGenericInterfaces")]
+        public static Type[] GetGenericInterfaces(Type t) => GetInterfaces(t);
 
         [MethodPlug(typeof(Type), "getModifiers")]
         public static int GetModifiers(Type t)

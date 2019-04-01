@@ -646,7 +646,7 @@ namespace JavaNet
                     {
                         var cp = (FieldOrMethodrefInfo) CpInfo;
                         var fld = asm.ResolveFieldReference(cp);
-                        var result = new CalculatedValue(fld.FieldType);
+                        var result = new CalculatedValue(JavaAssemblyBuilder.Instance.Import(fld.FieldType));
                         var isDouble = cp.NameAndType.Descriptor == "J" || cp.NameAndType.Descriptor == "D";
                             return (curState.Push(result).PushIf(isDouble), new[] {new GetStaticAction(result, fld)});
                     }
@@ -661,7 +661,7 @@ namespace JavaNet
                     {
                         var cp = (FieldOrMethodrefInfo)CpInfo;
                         var fld = asm.ResolveFieldReference(cp);
-                        var target = new CalculatedValue(fld.FieldType);
+                        var target = new CalculatedValue(JavaAssemblyBuilder.Instance.Import(fld.FieldType));
                         var isDouble = cp.NameAndType.Descriptor == "J" || cp.NameAndType.Descriptor == "D";
                         return (curState.Pop(out var from).Push(target).PushIf(isDouble), new[] {new GetFieldAction(target, from, fld)});
                     }

@@ -14,6 +14,7 @@ namespace JavaNet
     {
         public static MethodBody GenerateMethod(MethodDefinition md, JavaMethodInfo mi, CodeAttribute ca, CpInfo[] cp)
         {
+
             var mg = new MethodGenerator(JavaAssemblyBuilder.Instance, md, mi, ca, cp);
 
             //Console.WriteLine(md.FullName);
@@ -318,7 +319,7 @@ namespace JavaNet
             {
                 _blocks[entry.StartPc].HandlerBlock.Add((
                     _blocks[entry.HandlerPc],
-                    entry.CatchType == 0 ? null : JavaAssemblyBuilder.Instance.ResolveTypeReference(((ClassInfo) _cp[entry.CatchType]).Name)
+                    entry.CatchType == null ? null : JavaAssemblyBuilder.Instance.ResolveTypeReference(entry.CatchType.Name)
                 ));
             }
 

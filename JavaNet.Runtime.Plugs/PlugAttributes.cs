@@ -34,7 +34,7 @@ namespace JavaNet.Runtime.Plugs
     public sealed class TypePlugAttribute : Attribute
     {
         public string Name { get; }
-        public TypePlugAttribute(string name)
+        public TypePlugAttribute(string name = null)
         {
             Name = name;
         }

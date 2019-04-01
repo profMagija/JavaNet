@@ -5,13 +5,13 @@ namespace JavaNet
 {
     public abstract class JavaAttributeInfo
     {
-        public readonly string AttributeName;
-        public readonly uint AttributeLength;
+        public string Name { get; }
+        public uint Length { get; }
 
-        protected JavaAttributeInfo(string attributeName, uint attributeLength)
+        protected JavaAttributeInfo(string name, uint length)
         {
-            AttributeName = attributeName;
-            AttributeLength = attributeLength;
+            Name = name;
+            Length = length;
         }
     }
 
@@ -41,28 +41,26 @@ namespace JavaNet
 
     public class ConstantValueAttribute : JavaAttributeInfo
     {
-        public readonly CpInfo ConstantValue;
+        public CpInfo Value { get; }
 
-        public ConstantValueAttribute(string attributeName, uint attributeLength, CpInfo constantValue) : base(
-            attributeName, attributeLength)
+        public ConstantValueAttribute(string name, uint length, CpInfo constantValue) : base(
+            name, length)
         {
-            ConstantValue = constantValue;
+            Value = constantValue;
         }
-        
-        
     }
 
     public class CodeAttribute : JavaAttributeInfo
     {
-        public readonly int MaxStack;
-        public readonly int MaxLocals;
-        public readonly byte[] Code;
-        public readonly ExceptionTableEntry[] ExceptionTable;
-        public readonly JavaAttributeInfo[] Attributes;
+        public int MaxStack { get; }
+        public int MaxLocals { get; }
+        public byte[] Code { get; }
+        public ExceptionTableEntry[] ExceptionTable { get; }
+        public JavaAttributeInfo[] Attributes { get; }
 
-        public CodeAttribute(string attributeName, uint attributeLength, int maxStack, int maxLocals, byte[] code,
+        public CodeAttribute(string name, uint length, int maxStack, int maxLocals, byte[] code,
             ExceptionTableEntry[] exceptionTable, JavaAttributeInfo[] attributes)
-            : base(attributeName, attributeLength)
+            : base(name, length)
         {
             MaxStack = maxStack;
             MaxLocals = maxLocals;
@@ -74,12 +72,12 @@ namespace JavaNet
 
     public class ExceptionTableEntry
     {
-        public readonly int StartPc;
-        public readonly int EndPc;
-        public readonly int HandlerPc;
-        public readonly int CatchType;
+        public int StartPc { get; }
+        public int EndPc { get; }
+        public int HandlerPc { get; }
+        public ClassInfo CatchType { get; }
 
-        public ExceptionTableEntry(int startPc, int endPc, int handlerPc, int catchType)
+        public ExceptionTableEntry(int startPc, int endPc, int handlerPc, ClassInfo catchType)
         {
             StartPc = startPc;
             EndPc = endPc;
@@ -88,10 +86,65 @@ namespace JavaNet
         }
     }
 
+    public class ExceptionsAttribute : JavaAttributeInfo
+    {
+        public ClassInfo[] ExceptionIndexTable { get; }
+
+        public ExceptionsAttribute(string name, uint length, ClassInfo[] exceptionIndexTable) : base(name, length)
+        {
+            ExceptionIndexTable = exceptionIndexTable;
+        }
+    }
+
+    public class InnerClassesAttribute : JavaAttributeInfo
+    {
+        public InnerClassesEntry[] Classes { get; }
+
+        public InnerClassesAttribute(string name, uint length, InnerClassesEntry[] classes) : base(name, length)
+        {
+            Classes = classes;
+        }
+    }
+
+    public class InnerClassesEntry
+    {
+        public ClassInfo InnerClass { get; }
+        public ClassInfo OuterClass { get; }
+        public Utf8Info InnerClassName { get; }
+        public int InnerClassAccessFlags { get; }
+
+        public InnerClassesEntry(ClassInfo innerClass, ClassInfo outerClass, Utf8Info innerClassName, int innerClassAccessFlags)
+        {
+            InnerClass = innerClass;
+            OuterClass = outerClass;
+            InnerClassName = innerClassName;
+            InnerClassAccessFlags = innerClassAccessFlags;
+        }
+    }
+
+    public class EnclosingMethodAttribute : JavaAttributeInfo
+    {
+        public ClassInfo Class { get; }
+        public NameAndTypeInfo Method { get; }
+        
+        public EnclosingMethodAttribute(string name, uint length, ClassInfo @class, NameAndTypeInfo method) : base(name, length)
+        {
+            Class = @class;
+            Method = method;
+        }
+    }
+
+    public class SyntheticAttribute : JavaAttributeInfo
+    {
+        public SyntheticAttribute(string name, uint length) : base(name, length)
+        {
+        }
+    }
+
     public class UnknownAttribute : JavaAttributeInfo
     {
         public byte[] Data;
-        public UnknownAttribute(string attributeName, uint attributeLength, byte[] data) : base(attributeName, attributeLength)
+        public UnknownAttribute(string name, uint length, byte[] data) : base(name, length)
         {
             Data = data;
         }

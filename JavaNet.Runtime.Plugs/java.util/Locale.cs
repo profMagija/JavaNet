@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using JavaNet.Runtime.Plugs;
+
 // ReSharper disable InconsistentNaming
 
 namespace java.util
 {
+    [TypePlug]
     public class Locale
     {
         public static readonly Locale ENGLISH = new Locale("en");

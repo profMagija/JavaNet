@@ -1,6 +1,8 @@
-﻿namespace java.lang
+﻿using JavaNet.Runtime.Plugs;
+
+namespace java.lang
 {
-    // ReSharper disable once InconsistentNaming
+    [TypePlug]
     public interface CharSequence
     {
         char charAt(int index);

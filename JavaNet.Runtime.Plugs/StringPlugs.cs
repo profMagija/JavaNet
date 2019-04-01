@@ -44,6 +44,9 @@ namespace JavaNet.Runtime.Plugs
         [MethodPlug(typeof(string), ".ctor", typeof(string))]
         public static string Ctor(string original) => original;
 
+        [MethodPlug(typeof(string), ".ctor", typeof(char[]), typeof(bool))]
+        public static string Ctor(char[] data, bool _) => new string(data);
+
         [MethodPlug(typeof(string), "charAt", typeof(int))]
         public static char CharAt(string str, int index) => str[index];
 
@@ -84,6 +87,36 @@ namespace JavaNet.Runtime.Plugs
 
         [MethodPlug(typeof(string), "equalsIgnoreCase", typeof(string))]
         public static bool EqualsIgnoreCase(string str, string other) => str.Equals(other, StringComparison.OrdinalIgnoreCase);
+
+        [MethodPlug(typeof(string), "getChars", typeof(char[]), typeof(int))]
+        public static void GetChars(string str, char[] dest, int offset) => str.CopyTo(0, dest, offset, str.Length);
+
+        [MethodPlug(typeof(string), "getChars", typeof(int), typeof(int), typeof(char[]), typeof(int))]
+        public static void GetChars(string str, int from, int to, char[] dest, int offset) => str.CopyTo(from, dest, offset, to - from);
+
+        [MethodPlug(typeof(string), "lastIndexOf", typeof(char[]), typeof(int), typeof(int), typeof(string), typeof(int), IsStatic = true)]
+        public static int LastIndexOf(char[] source, int sourceOffset, int sourceLen, string target, int searchStart)
+        {
+            return new string(source, sourceOffset, sourceLen).LastIndexOf(target, searchStart, StringComparison.Ordinal);
+        }
+
+        [MethodPlug(typeof(string), "lastIndexOf", typeof(char[]), typeof(int), typeof(int), typeof(char[]), typeof(int), typeof(int), typeof(int), IsStatic = true)]
+        public static int LastIndexOf(char[] source, int sourceOffset, int sourceLen, char[] target, int targetOffset, int targetLen, int startOffset)
+        {
+            return new string(source, sourceOffset, sourceLen).LastIndexOf(new string(target, targetOffset, targetOffset), startOffset, StringComparison.Ordinal);
+        }
+
+        [MethodPlug(typeof(string), "indexOf", typeof(char[]), typeof(int), typeof(int), typeof(string), typeof(int), IsStatic = true)]
+        public static int IndexOf(char[] source, int sourceOffset, int sourceLen, string target, int searchStart)
+        {
+            return new string(source, sourceOffset, sourceLen).IndexOf(target, searchStart, StringComparison.Ordinal);
+        }
+
+        [MethodPlug(typeof(string), "indexOf", typeof(char[]), typeof(int), typeof(int), typeof(char[]), typeof(int), typeof(int), typeof(int), IsStatic = true)]
+        public static int IndexOf(char[] source, int sourceOffset, int sourceLen, char[] target, int targetOffset, int targetLen, int startOffset)
+        {
+            return new string(source, sourceOffset, sourceLen).IndexOf(new string(target, targetOffset, targetOffset), startOffset, StringComparison.Ordinal);
+        }
 
         [MethodPlug(typeof(string), "indexOf", typeof(int))]
         public static int IndexOf(string s, int i) => s.IndexOf(char.ConvertFromUtf32(i), StringComparison.Ordinal);
