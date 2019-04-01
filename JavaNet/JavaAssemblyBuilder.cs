@@ -77,7 +77,7 @@ namespace JavaNet
 
                 foreach (var method in type.GetMethods())
                 {
-                    if (method.GetCustomAttribute<MethodPlugAttribute>() is MethodPlugAttribute mpa)
+                    foreach (var mpa in method.GetCustomAttributes<MethodPlugAttribute>())
                     {
                         _methodReferences[CreateMethodSignature(
                             mpa.IsStatic,

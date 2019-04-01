@@ -20,7 +20,7 @@ namespace JavaNet.Runtime.Plugs
             return Type.GetType(name);
         }
 
-        [MethodPlug(nameof(Type), "forName", nameof(String), nameof(Boolean), "java.lang.ClassLoader", IsStatic = true)]
+        [MethodPlug(nameof(Type), "forName", "System.String", "System.Boolean", "java.lang.ClassLoader", IsStatic = true)]
         public static Type ForName(string name, bool initialize, [ActualType("java.lang.ClassLoader")] object loader)
         {
             if (loader != null)
@@ -107,7 +107,8 @@ namespace JavaNet.Runtime.Plugs
             return "L" + t.FullName + ";";
         }
 
-        [MethodPlug(typeof(Type), "getClassLoader")]
+        [MethodPlug("java.lang.ClassLoader", "System.Type", "getClassLoader")]
+        [MethodPlug("java.lang.ClassLoader", "System.Type", "getClassLoader0")]
         [return: ActualType("java.lang.ClassLoader")]
         public static object GetClassLoader(Type t) => null;
 

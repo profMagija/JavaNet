@@ -14,6 +14,8 @@ namespace JavaNet.Runtime.Plugs
 
         public MethodPlugAttribute(Type declaringType, string methodName, params Type[] paramTypes)
         {
+            if (methodName == ".ctor")
+                ReturnType = "System.Void";
             DeclaringType = declaringType.FullName;
             MethodName = methodName;
             ParamTypes = paramTypes.Select(x => x.FullName).ToArray();
