@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using java.lang;
+using JavaNet.Runtime.Plugs;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -12,7 +14,7 @@ namespace JavaNet
     {
         public abstract IEnumerable<JavaValue> RequiredValues { get; }
         public abstract bool Pure { get; }
-        public abstract IEnumerable<Instruction> Generate();
+        public abstract IEnumerable<Instruction> Generate(ActionBlock curBlock);
     }
 
     class ConstantSetAction : MethodAction
@@ -34,7 +36,7 @@ namespace JavaNet
         public override IEnumerable<JavaValue> RequiredValues => new[] {Value};
         public override bool Pure => true;
 
-        public override IEnumerable<Instruction> Generate() => 
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock) => 
             Value.GetValue()
                 .Concat(Target.StoreValue());
     }
@@ -57,7 +59,7 @@ namespace JavaNet
 
         public override bool Pure => false;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Array.GetValue());
@@ -88,7 +90,7 @@ namespace JavaNet
 
         public override bool Pure => false;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Array.GetValue());
@@ -118,7 +120,7 @@ namespace JavaNet
         public override bool Pure => false;
 
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Array.GetValue());
@@ -158,7 +160,7 @@ namespace JavaNet
 
         public override bool Pure => true;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Value1.GetValue());
@@ -267,7 +269,7 @@ namespace JavaNet
 
         public override bool Pure => true;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Value.GetValue());
@@ -320,7 +322,7 @@ namespace JavaNet
         public override string ToString() => Value != null ? $"return {Value}" : "return";
         public override bool Pure => false;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             if (Value != null)
                 return Value.GetValue().Concat(new[] {Instruction.Create(OpCodes.Ret)});
@@ -342,7 +344,7 @@ namespace JavaNet
         public override string ToString() => $"throw {Value}";
         public override bool Pure => false;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             return Value.GetValue().Concat(new[] {Instruction.Create(OpCodes.Throw)});
         }
@@ -364,7 +366,7 @@ namespace JavaNet
         public override string ToString() => $"{(IsEnter ? "monitor_enter" : "monitor_exit")} {Value}";
         public override bool Pure => false;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             return Value.GetValue()
                 .Concat(new[]
@@ -397,7 +399,7 @@ namespace JavaNet
         }
         public override bool Pure => false;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Count.GetValue());
@@ -440,10 +442,12 @@ namespace JavaNet
         }
         public override bool Pure => false;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
-            var target = Target.FirstNetOp;
+            var useLeave = Target.HandlerNum != curBlock.HandlerNum;
+            var target = useLeave ? Instruction.Create(OpCodes.Leave, Target.FirstNetOp) : Target.FirstNetOp;
+
             l.AddRange(Value.GetValue());
             if (ValueCmp == null)
             {
@@ -481,6 +485,15 @@ namespace JavaNet
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
+            if (useLeave)
+            {
+                var afterLeave = Instruction.Create(OpCodes.Nop);
+                l.Add(Instruction.Create(OpCodes.Br, afterLeave));
+                l.Add(target);
+                l.Add(afterLeave);
+            }
+
             return l;
         }
     }
@@ -498,9 +511,9 @@ namespace JavaNet
 
         public override string ToString() => $"goto {Target.JavaOffset:X4}";
         public override bool Pure => false;
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
-            return new[] {Instruction.Create(OpCodes.Br, Target.FirstNetOp)};
+            return new[] {Instruction.Create(curBlock.HandlerNum == Target.HandlerNum ? OpCodes.Br : OpCodes.Leave, Target.FirstNetOp)};
         }
     }
 
@@ -522,7 +535,7 @@ namespace JavaNet
         public override string ToString() => $"{Target} = new {TargetType.FullName} [ {string.Join(", ", Dimensions.AsEnumerable())} ]";
         public override bool Pure => false;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             return new[] {Instruction.Create(OpCodes.Ldnull)};
         }
@@ -545,7 +558,7 @@ namespace JavaNet
             return $"{Target} = {Field.FullName}";
         }
         public override bool Pure => false;
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.Add(Instruction.Create(OpCodes.Ldsfld, Field));
@@ -571,7 +584,7 @@ namespace JavaNet
             return $"{Field.FullName} = {Value}";
         }
         public override bool Pure => false;
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Value.GetValue());
@@ -599,7 +612,7 @@ namespace JavaNet
             return $"{Target} = {From}.{Field.Name}";
         }
         public override bool Pure => false;
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(From.GetValue());
@@ -628,7 +641,7 @@ namespace JavaNet
             return $"{Target}.{Field.Name} = {Value}";
         }
         public override bool Pure => false;
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Target.GetValue());
@@ -663,7 +676,7 @@ namespace JavaNet
                                              $"{Method.FullName} ( " + string.Join(", ", Args.AsEnumerable()) + " )";
         public override bool Pure => false;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             if (Instance != null)
@@ -701,7 +714,7 @@ namespace JavaNet
         }
         public override bool Pure => false;
 
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             foreach (var arg in Args)
@@ -737,11 +750,19 @@ namespace JavaNet
             return $"{Target} = ({Type}) {Value}";
         }
         public override bool Pure => false;
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Value.GetValue());
-            l.Add(Instruction.Create(OpCodes.Castclass, Type));
+            if (JavaAssemblyBuilder.Instance.CastPlugs.TryGetValue(Type.FullName, out var method))
+            {
+                l.Add(Instruction.Create(OpCodes.Call, method));
+            }
+            else
+            {
+                l.Add(Instruction.Create(OpCodes.Castclass, Type));
+            }
+
             l.AddRange(Target.StoreValue());
             return l;
         }
@@ -766,13 +787,21 @@ namespace JavaNet
             return $"{Target} = {Value} instance_of {Type}";
         }
         public override bool Pure => true;
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Value.GetValue());
-            l.Add(Instruction.Create(OpCodes.Dup));
-            l.Add(Instruction.Create(OpCodes.Isinst, Type));
-            l.Add(Instruction.Create(OpCodes.Ceq));
+            if (JavaAssemblyBuilder.Instance.InstanceOfPlugs.TryGetValue(Type.FullName, out var method))
+            {
+                l.Add(Instruction.Create(OpCodes.Call, method));
+            }
+            else
+            {
+                l.Add(Instruction.Create(OpCodes.Dup));
+                l.Add(Instruction.Create(OpCodes.Isinst, Type));
+                l.Add(Instruction.Create(OpCodes.Ceq));
+            }
+
             l.AddRange(Target.StoreValue());
             return l;
         }
@@ -798,7 +827,7 @@ namespace JavaNet
             return $"switch.l [ {Value} ] {{ " + string.Join("; ", Table.Select(x => $"{x.Key} -> 0x{x.Value.JavaOffset:X4}")) + $"; * -> 0x{DefaultOffset:X4} }}";
         }
         public override bool Pure => false;
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Value.GetValue());
@@ -841,7 +870,7 @@ namespace JavaNet
             return $"switch.t [ {Value} ] {{ " + string.Join("; ", Table.Select((x, i)=> $"{i + Low} -> 0x{x:X4}")) + $"; * -> 0x{DefaultOffset:X4} }}";
         }
         public override bool Pure => false;
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             l.AddRange(Value.GetValue());
@@ -876,7 +905,7 @@ namespace JavaNet
             return "map { " + string.Join("; ", Mappings.Select(map => $"{map.to} <- {map.from}")) + " }";
         }
         public override bool Pure => true;
-        public override IEnumerable<Instruction> Generate()
+        public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
             foreach (var (lhs, rhs) in Mappings)

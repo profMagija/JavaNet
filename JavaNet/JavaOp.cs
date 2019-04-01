@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using Mono.Cecil;
@@ -676,7 +677,7 @@ namespace JavaNet
                     case JavaInstruction.invokestatic:
                     {
                         var cp = (FieldOrMethodrefInfo) CpInfo;
-                        var method = asm.ResolveMethodReference(cp, true);
+                        var method = asm.ResolveMethodReference(cp);
                         var args = new JavaValue[method.Parameters.Count];
                         var state = curState;
                         for (var i = args.Length - 1; i >= 0; i--)
@@ -687,7 +688,7 @@ namespace JavaNet
                         }
 
                         JavaValue objRef = null;
-                        if (Instr != JavaInstruction.invokestatic)
+                        if (method.HasThis)
                         {
                             state = state.Pop(out objRef);
                         }
@@ -703,10 +704,18 @@ namespace JavaNet
                                 state = state.Push(null);
                         }
 
-                        if (Instr == JavaInstruction.invokespecial && result == null && objRef is CalculatedValue cv)
+                        if (cp.NameAndType.Name == "<init>" && objRef is CalculatedValue cv)
                         {
+                            //var cv = (CalculatedValue) objRef;
                             // this is a constructor call
-                            return (state, new[] {new ConstructorAction(cv, method, args)});
+                            if (method.Name == ".ctor")
+                                return (state, new[] {new ConstructorAction(cv, method, args)});
+                            else
+                            {
+                                // this is a plugged constructor call
+                                Debug.Assert(!method.HasThis);
+                                return (state, new[] {new InvokeAction(cv, null, method, args)});
+                            }
                         }
 
                         return (state, new[] {new InvokeAction(result, objRef, method, args, Instr == JavaInstruction.invokevirtual)});
@@ -793,7 +802,7 @@ namespace JavaNet
                 Dictionary<int, ActionBlock> blocks)
             {
                 var cp = (FieldOrMethodrefInfo)MethodRef;
-                var method = JavaAssemblyBuilder.Instance.ResolveMethodReference(cp, true);
+                var method = JavaAssemblyBuilder.Instance.ResolveMethodReference(cp);
                 var args = new JavaValue[method.Parameters.Count];
                 var state = curState;
                 for (var i = args.Length - 1; i >= 0; i--)

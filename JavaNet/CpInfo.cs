@@ -57,7 +57,7 @@ namespace JavaNet
             Name = ((Utf8Info) cp[_nameIndex]).Data;
         }
 
-        public override string Represent() => Name.Replace('/', '.').Replace("]", "[]");
+        public override string Represent() => Name.Replace('/', '.');
     }
 
     public class FieldOrMethodrefInfo : CpInfo

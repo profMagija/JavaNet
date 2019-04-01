@@ -28,7 +28,7 @@ namespace JavaNet
             mg.DivideIntoOps();
 
             if (mg._ops.Any(x => x?.Instr == JavaInstruction.invokedynamic))
-                return null; // TODO
+                throw new JavaNetException(JavaNetException.ReasonType.ClassLoad, "invokedynamic");
 
             //foreach (var op in mg._ops)
             //{
@@ -67,34 +67,17 @@ namespace JavaNet
 
             mg.LocalAnalyzer();
 
-            var body = new MethodBody(mg._md);
+            _body = new MethodBody(mg._md);
 
             foreach (var local in mg._locals)
             {
-                body.Variables.Add(local);
+                _body.Variables.Add(local);
             }
 
             mg.HandlerAnalyzer();
 
             mg.ActionGenerator();
 
-            var ilp = body.GetILProcessor();
-
-            foreach (var (_, block) in mg._blocks.OrderBy(x => x.Key))
-            {
-                if (block.ExceptionValue != null)
-                {
-                    foreach (var instruction in block.ExceptionValue.StoreValue())
-                    {
-                        ilp.Append(instruction);
-                    }
-                }
-
-                foreach (var instruction in block.NetOps)
-                {
-                    ilp.Append(instruction);
-                }
-            }
 
             //foreach (var entry in mg._ca.ExceptionTable)
             //{
@@ -110,56 +93,21 @@ namespace JavaNet
             //    Debug.Assert(mg._blocks[entry.EndPc].JavaOps[0].Instr == JavaInstruction.@goto);
             //}
 
-            body.Optimize();
+            _body.Optimize();
 
-            return body;
+            return _body;
         }
 
         private void HandlerAnalyzer()
         {
-            var bfs = new Queue<ActionBlock>();
-            var regulars = new List<ActionBlock>();
-            _handlers = new Dictionary<int, List<ActionBlock>>();
-            var handlerNum = -1;
-            bfs.Enqueue(_blocks[0]);
-            regulars.Add(_blocks[0]);
-
-            while (bfs.Any())
+            var handlerNum = 0;
+            foreach (var entry in _ca.ExceptionTable.OrderBy(x => x.StartPc).ThenBy(x => x.EndPc))
             {
-                var c = bfs.Dequeue();
-                foreach (var op in c.JavaOps)
-                {
-                    foreach (var target in op.JumpTargets.Select(x => _blocks[x]).Where(x => !regulars.Contains(x) && x.ExceptionValue == null))
-                    {
-                        regulars.Add(target);
-                        bfs.Enqueue(target);
-                    }   
-                }
-
-                if (c.ProceedsToNext)
-                {
-                    var next = _blocks[c.JavaOffset + c.JavaLength];
-                    if (!regulars.Contains(next) && next.ExceptionValue == null)
-                    {
-                        regulars.Add(next);
-                        bfs.Enqueue(next);
-                    }
-                }
-            }
-
-            foreach (var block in _blocks.OrderBy(x => x.Key).Select(x => x.Value).Where(x => x.Generated))
-            {
-                if (block.ExceptionValue != null)
-                {
-                    block.HandlerNum = ++handlerNum;
-                    _handlers[handlerNum] = new List<ActionBlock> {block};
-                }
-                else if (!regulars.Contains(block))
+                handlerNum++;
+                foreach (var (_, block) in _blocks.Where(x => x.Key >= entry.StartPc && x.Key < entry.EndPc))
                 {
                     block.HandlerNum = handlerNum;
-                    _handlers[handlerNum].Add(block);
                 }
-
             }
         }
 
@@ -461,6 +409,7 @@ namespace JavaNet
 
         private List<VariableDefinition> _locals;
         private Dictionary<int, List<ActionBlock>> _handlers;
+        private static MethodBody _body;
 
         private void LocalAnalyzer()
         {
@@ -489,8 +438,43 @@ namespace JavaNet
             {
                 foreach (var action in block.Actions)
                 {
-                    block.NetOps.AddRange(action.Generate());
+                    block.NetOps.AddRange(action.Generate(block));
                 }
+            }
+
+            var ilp = _body.GetILProcessor();
+
+            foreach (var (_, block) in _blocks.OrderBy(x => x.Key))
+            {
+                if (block.ExceptionValue != null)
+                {
+                    foreach (var instruction in block.ExceptionValue.StoreValue())
+                    {
+                        ilp.Append(instruction);
+                    }
+                }
+
+                foreach (var instruction in block.NetOps)
+                {
+                    ilp.Append(instruction);
+                }
+            }
+
+            foreach (var entry in _ca.ExceptionTable)
+            {
+                var start = Instruction.Create(OpCodes.Leave, _blocks[entry.HandlerPc].FirstNetOp);
+                var end = Instruction.Create(OpCodes.Nop);
+
+                ilp.Append(start);
+                ilp.Append(end);
+
+                _md.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+                {
+                    TryStart = _blocks[entry.StartPc].FirstNetOp,
+                    TryEnd = _blocks[entry.EndPc].FirstNetOp,
+                    HandlerStart = start,
+                    HandlerEnd = end
+                });
             }
         }
 
@@ -511,7 +495,6 @@ namespace JavaNet
         public int JavaOffset { get; }
         public int JavaLength { get; set; }
         public List<JavaOp> JavaOps { get; } = new List<JavaOp>();
-        public int NetOffset { get; set; }
 
         public List<Instruction> NetOps { get; } = new List<Instruction>();
 
@@ -523,7 +506,7 @@ namespace JavaNet
         public List<MethodAction> Actions { get; } = new List<MethodAction>();
         public bool ProceedsToNext { get; set; }
 
-        public int? HandlerNum { get; set; }
+        public int HandlerNum { get; set; }
 
         public Instruction FirstNetOp
         {

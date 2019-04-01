@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using JavaNet.Runtime.Plugs;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using static JavaNet.JavaInstruction;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using MethodBody = Mono.Cecil.Cil.MethodBody;
@@ -18,7 +18,11 @@ namespace JavaNet
     public class JavaAssemblyBuilder
     {
         private readonly Dictionary<string, TypeReference> _typePlugs = new Dictionary<string, TypeReference>();
+        public Dictionary<string, MethodReference> CastPlugs { get; } = new Dictionary<string, MethodReference>();
+        public Dictionary<string, MethodReference> InstanceOfPlugs { get; } = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, TypeReference> _typeReferences = new Dictionary<string, TypeReference>();
+        private readonly Dictionary<string, MethodReference> _methodReferences = new Dictionary<string, MethodReference>();
+        private readonly Dictionary<string, FieldReference> _fieldReferences = new Dictionary<string, FieldReference>();
         private readonly HashSet<string> _annotations = new HashSet<string>();
 
         private AssemblyDefinition _asm;
@@ -42,8 +46,39 @@ namespace JavaNet
             _typePlugs["java/lang/Object"] = asm.MainModule.TypeSystem.Object;
             _typePlugs["java/lang/String"] = asm.MainModule.TypeSystem.String;
             _typePlugs["java/lang/Throwable"] = asm.MainModule.ImportReference(typeof(Exception));
+
+            PlugAssembly(asm, typeof(StringPlugs).Assembly);
         }
-        
+
+        private void PlugAssembly(AssemblyDefinition asm, Assembly assembly)
+        {
+            foreach (var type in assembly.ExportedTypes)
+            {
+                if (type.GetCustomAttribute<TypePlugAttribute>() is TypePlugAttribute tpa)
+                {
+                    _typePlugs[tpa.Name.Replace('.', '/')] = asm.MainModule.ImportReference(type);
+                }
+
+                foreach (var method in type.GetMethods())
+                {
+                    if (method.GetCustomAttribute<MethodPlugAttribute>() is MethodPlugAttribute mpa)
+                    {
+                        _methodReferences[mpa.Name] = asm.MainModule.ImportReference(method);
+                    }
+
+                    if (method.GetCustomAttribute<CastPlugAttribute>() is CastPlugAttribute cpa)
+                    {
+                        CastPlugs[cpa.TargetType.FullName] = asm.MainModule.ImportReference(method);
+                    }
+
+                    if (method.GetCustomAttribute<InstanceOfPlugAttribute>() is InstanceOfPlugAttribute iopa)
+                    {
+                        CastPlugs[iopa.TargetType.FullName] = asm.MainModule.ImportReference(method);
+                    }
+                }
+            }
+        }
+
         public TypeReference ResolveTypeReference(string name)
         {
             if (name.StartsWith('['))
@@ -69,7 +104,8 @@ namespace JavaNet
         {
             foreach (var type in mod.ExportedTypes)
             {
-                _typeReferences[type.FullName.Replace('.', '/')] = _asm.MainModule.ImportReference(type);
+                var typeName = type.FullName.Replace('.', '/');
+                _typeReferences[typeName] = _asm.MainModule.ImportReference(type);
             }
         }
         
@@ -93,31 +129,42 @@ namespace JavaNet
                     _annotations.Add(classFile.ThisClass.Name);
                 }
             }
+            var typeThings = new List<(TypeDefinition, ClassFile, List<(JavaMethodInfo, MethodDefinition)>)>();
 
             jar.ClassFiles.TryForeach<ClassFile, Exception>(classFile =>
             {
-                var typeDefinition = BuildClass(classFile);
+                var (typeDefinition, methods) = BuildClass(classFile);
                 if (typeDefinition != null)
+                {
+                    typeThings.Add((typeDefinition, classFile, methods));
                     _asm.MainModule.Types.Add(typeDefinition);
+                }
+
             });
+
+            foreach (var (a, b, c) in typeThings)
+            {
+                BuildClassPart2(a, b, c);
+            }
 
             return _asm;
         }
 
-        public TypeDefinition BuildClass(ClassFile cf)
+        public (TypeDefinition td, List<(JavaMethodInfo, MethodDefinition)> maaaaa) BuildClass(ClassFile cf)
         {
             if (_typePlugs.ContainsKey(cf.ThisClass.Name))
             {
                 Console.WriteLine("Skipping plugget type {0}", cf.ThisClass.Name);
-                return null;
+                return (null, null);
             }
+
             //Console.WriteLine("Building type {0}", cf.ThisClass.Name);
             var cp = cf.ConstantPool;
             var className = cf.ThisClass.Name.Split('/');
             var attrs = (TypeAttributes) 0;
 
             var isAnnot = cf.AccessFlags.HasFlag(ClassFile.Flags.Annotation);
-            
+
             if (cf.AccessFlags.HasFlag(ClassFile.Flags.Public))
                 attrs |= TypeAttributes.Public;
             if (cf.AccessFlags.HasFlag(ClassFile.Flags.Final))
@@ -126,7 +173,7 @@ namespace JavaNet
                 attrs |= TypeAttributes.Interface;
             if (cf.AccessFlags.HasFlag(ClassFile.Flags.Abstract))
                 attrs |= TypeAttributes.Abstract;
-            
+
             var td = new TypeDefinition(string.Join('.', className.SkipLast(1)), className.Last(), attrs);
 
             td.BaseType = isAnnot
@@ -143,7 +190,9 @@ namespace JavaNet
             {
                 try
                 {
-                    td.Fields.Add(BuildField(fi, cp));
+                    var fd = BuildField(fi, cp);
+                    td.Fields.Add(fd);
+                    _fieldReferences[cf.ThisClass.Name.Replace('/', '.') + "." + fi.Name + ":" + fi.Descriptor] = fd;
                 }
                 catch (JavaNetException ex) when (ex.Reason == JavaNetException.ReasonType.ClassLoad)
                 {
@@ -151,7 +200,9 @@ namespace JavaNet
                 }
             }
 
-            cf.Methods.TryForeach<JavaMethodInfo, Exception>(mi =>
+            var maaaaa  = new List<(JavaMethodInfo, MethodDefinition)>();
+
+            foreach (var mi in cf.Methods)
             {
                 if (isAnnot)
                 {
@@ -165,18 +216,32 @@ namespace JavaNet
                 {
                     try
                     {
-                        td.Methods.Add(BuildMethod(td, mi, cp));
+                        var md = BuildMethod(td, mi, cp);
+                        td.Methods.Add(md);
+                        _methodReferences[cf.ThisClass.Name.Replace('/', '.') + "." + mi.Name + ":" + mi.Descriptor] = md;
+                        maaaaa.Add((mi, md));
                     }
                     catch (JavaNetException ex)
                     {
                         Console.WriteLine("Failed to build method {0}::{1}", td.FullName, mi.Name);
                     }
                 }
-            });
-            
+            }
+
+            return (td, maaaaa);
+
+        }
+
+        public void BuildClassPart2(TypeDefinition td, ClassFile cf, List<(JavaMethodInfo, MethodDefinition)> maaaaa)
+        {
+
+            foreach (var (mi, md) in maaaaa)
+            {
+                BuildMethodBody(md, td, mi, cf.ConstantPool);
+            }
+
             //Console.WriteLine("Build {0}", td);
-            
-            return td;
+
         }
 
         private MethodDefinition BuildMethod(TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
@@ -189,10 +254,12 @@ namespace JavaNet
                 attrs |= MethodAttributes.Family;
             else if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Private))
                 attrs |= MethodAttributes.Private;
-            if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static))
+
+            if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static) || mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native))
                 attrs |= MethodAttributes.Static;
-            if (!mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final) 
-                && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static) 
+
+            if (!mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final)
+                && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static)
                 && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native)
                 && mi.Name != "<init>")
                 attrs |= MethodAttributes.Virtual;
@@ -200,6 +267,8 @@ namespace JavaNet
                 attrs |= MethodAttributes.Abstract;
             if (mi.Name == "<init>" || mi.Name == "<clinit>")
                 attrs |= MethodAttributes.RTSpecialName | MethodAttributes.SpecialName;
+
+            attrs |= MethodAttributes.HideBySig;
 
             var (retType, paramType) = ResolveMethodDescriptor(mi.Descriptor);
 
@@ -213,7 +282,13 @@ namespace JavaNet
             {
                 md.Parameters.Add(new ParameterDefinition(param));
             }
-            
+
+            return md;
+        }
+
+        private void BuildMethodBody(MethodDefinition md, TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
+        {
+
             foreach (var attributeInfo in mi.Attributes)
             {
                 switch (attributeInfo)
@@ -221,10 +296,11 @@ namespace JavaNet
                     case CodeAttribute code:
                         try
                         {
-                            md.Body = MethodGenerator.GenerateMethod(md, mi, code, cp);
+                            md.Body = MethodGenerator.GenerateMethod(md, mi, code, cp) ?? throw new Exception("NULL AAAAAAAAA");
                         }
                         catch (JavaNetException ex) when (ex.Reason == JavaNetException.ReasonType.ClassLoad)
                         {
+                            Console.WriteLine(ex.Message);
                             md.Body = new MethodBody(md);
                             var processor = md.Body.GetILProcessor();
                             processor.Append(Instruction.Create(OpCodes.Ldstr, ex.Message));
@@ -235,703 +311,6 @@ namespace JavaNet
                         break;
                 }
             }
-            
-            //Console.WriteLine("  Built {0}", md);
-
-            return md;
-        }
-
-        private MethodBody GenerateMethodBody(MethodDefinition md, JavaMethodInfo mi, CodeAttribute ca, CpInfo[] cp)
-        {
-            var mb = new MethodBody(md);
-            var codeProc = mb.GetILProcessor();
-            var code = ca.Code;
-            var jumps = new List<(Instruction, int)>();
-            var switches = new List<(Instruction, int[])>();
-            var instrs = new Instruction[code.Length];
-            var pc = 0;
-            var ilLoc = 0;
-
-            while (pc < code.Length)
-            {
-                var begin = pc;
-                Instruction[] res = null;
-                switch ((JavaInstruction) code[pc++])
-                {
-                    case nop:
-                        res = new[] {codeProc.Create(OpCodes.Nop)};
-                        break;
-
-                    #region constant loading
-
-                    case aconst_null:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I4_0)};
-                        break;
-                    case iconst_m1:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I4_M1)};
-                        break;
-                    case iconst_0:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I4_0)};
-                        break;
-                    case iconst_1:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I4_1)};
-                        break;
-                    case iconst_2:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I4_2)};
-                        break;
-                    case iconst_3:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I4_3)};
-                        break;
-                    case iconst_4:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I4_4)};
-                        break;
-                    case iconst_5:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I4_5)};
-                        break;
-                    case lconst_0:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I8, 0L)};
-                        break;
-                    case lconst_1:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I8, 1L)};
-                        break;
-                    case fconst_0:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_R4, 0.0f)};
-                        break;
-                    case fconst_1:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_R4, 1.0f)};
-                        break;
-                    case fconst_2:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_R4, 2.0f)};
-                        break;
-                    case dconst_0:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_R8, 0.0)};
-                        break;
-                    case dconst_1:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_R8, 1.0)};
-                        break;
-                    case bipush:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I4_S, (sbyte) code[pc++])};
-                        break;
-                    case sipush:
-                        res = new[] {codeProc.Create(OpCodes.Ldc_I4_S, (code[pc++] << 8) | code[pc++])};
-                        break;
-                    case ldc:
-                        res = PushCp(codeProc, cp[code[pc++]]);
-                        break;                    
-                    case ldc_w:
-                    case ldc2_w:
-                        res = PushCp(codeProc, cp[(code[pc++] << 8) | code[pc++]]);
-                        break;
-
-                    #endregion
-
-                    #region local loading
-
-                    case iload:
-                    case lload:
-                    case fload:
-                    case dload:
-                    case aload:
-                        res = new[] {LocalMangling(codeProc, mi, code[pc++], true)};
-                        break;
-                    case iload_0:
-                    case lload_0:
-                    case fload_0:
-                    case dload_0:
-                    case aload_0:
-                        res = new[] {LocalMangling(codeProc, mi, 0, true)};
-                        break;
-                    case iload_1:
-                    case lload_1:
-                    case fload_1:
-                    case dload_1:
-                    case aload_1:
-                        res = new[] {LocalMangling(codeProc, mi, 1, true)};
-                        break;
-                    case iload_2:
-                    case lload_2:
-                    case fload_2:
-                    case dload_2:
-                    case aload_2:
-                        res = new[] {LocalMangling(codeProc, mi, 2, true)};
-                        break;
-                    case iload_3:
-                    case lload_3:
-                    case fload_3:
-                    case dload_3:
-                    case aload_3:
-                        res = new[] {LocalMangling(codeProc, mi, 3, true)};
-                        break;
-
-                    #endregion
-
-                    #region array loading
-
-                    case iaload:
-                        res = new[] {codeProc.Create(OpCodes.Ldelem_I4)};
-                        break;
-                    case laload:
-                        res = new[] {codeProc.Create(OpCodes.Ldelem_I8)};
-                        break;
-                    case faload:
-                        res = new[] {codeProc.Create(OpCodes.Ldelem_R4)};
-                        break;
-                    case daload:
-                        res = new[] {codeProc.Create(OpCodes.Ldelem_R8)};
-                        break;
-                    case aaload:
-                        res = new[] {codeProc.Create(OpCodes.Ldelem_Ref)};
-                        break;
-
-                    #endregion
-                    
-                    #region local storing
-                    
-                    case istore:
-                    case lstore:
-                    case fstore:
-                    case dstore:
-                    case astore:
-                        res = new[] {LocalMangling(codeProc, mi, code[pc++], false)};
-                        break;
-                    case istore_0:
-                    case lstore_0:
-                    case fstore_0:
-                    case dstore_0:
-                    case astore_0:
-                        res = new[] {LocalMangling(codeProc, mi, 0, false)};
-                        break;
-                    case istore_1:
-                    case lstore_1:
-                    case fstore_1:
-                    case dstore_1:
-                    case astore_1:
-                        res = new[] {LocalMangling(codeProc, mi, 1, false)};
-                        break;
-                    case istore_2:
-                    case lstore_2:
-                    case fstore_2:
-                    case dstore_2:
-                    case astore_2:
-                        res = new[] {LocalMangling(codeProc, mi, 2, false)};
-                        break;
-                    case istore_3:
-                    case lstore_3:
-                    case fstore_3:
-                    case dstore_3:
-                    case astore_3:
-                        res = new[] {LocalMangling(codeProc, mi, 3, false)};
-                        break;
-                    
-                    #endregion
-
-                    #region array storing
-                    
-                    case iastore:
-                        res = new[] {codeProc.Create(OpCodes.Stelem_I4)};
-                        break;
-                    case lastore:
-                        res = new[] {codeProc.Create(OpCodes.Stelem_I8)};
-                        break;
-                    case fastore:
-                        res = new[] {codeProc.Create(OpCodes.Stelem_R4)};
-                        break;
-                    case dastore:
-                        res = new[] {codeProc.Create(OpCodes.Stelem_R8)};
-                        break;
-                    case aastore:
-                        res = new[] {codeProc.Create(OpCodes.Stelem_Ref)};
-                        break;
-
-                    #endregion
-                    
-                    case pop:
-                        res = new[] {codeProc.Create(OpCodes.Pop)};
-                        break;
-                    
-                    case dup:
-                        res = new[] {codeProc.Create(OpCodes.Dup)};
-                        break;
-
-                    #region arithmetic
-
-                    case iadd:
-                    case ladd:
-                    case fadd:
-                    case dadd:
-                        res = new[] {codeProc.Create(OpCodes.Add)};
-                        break;
-                    case isub:
-                    case lsub:
-                    case fsub:
-                    case dsub:
-                        res = new[] {codeProc.Create(OpCodes.Sub)};
-                        break;
-                    case imul:
-                    case lmul:
-                    case fmul:
-                    case dmul:
-                        res = new[] {codeProc.Create(OpCodes.Mul)};
-                        break;
-                    case idiv:
-                    case ldiv:
-                    case fdiv:
-                    case ddiv:
-                        res = new[] {codeProc.Create(OpCodes.Div)};
-                        break;
-                    case irem:
-                    case lrem:
-                    case frem:
-                    case drem:
-                        res = new[] {codeProc.Create(OpCodes.Rem)};
-                        break;
-                    case ineg:
-                    case lneg:
-                    case fneg:
-                    case dneg:
-                        res = new[] {codeProc.Create(OpCodes.Neg)};
-                        break;
-                    #endregion
-                    
-                    #region logical
-                    
-                    case ishl:
-                    case lshl:
-                        res = new[] {codeProc.Create(OpCodes.Shl)};
-                        break;
-                    case ishr:
-                    case lshr:
-                        res = new[] {codeProc.Create(OpCodes.Shr)};
-                        break;
-                    case iushr:
-                    case lushr:
-                        res = new[] {codeProc.Create(OpCodes.Shr_Un)};
-                        break;
-                    case iand:
-                    case land:
-                        res = new[] {codeProc.Create(OpCodes.And)};
-                        break;
-                    case ior:
-                    case lor:
-                        res = new[] {codeProc.Create(OpCodes.Or)};
-                        break;
-                    case ixor:
-                    case lxor:
-                        res = new[] {codeProc.Create(OpCodes.Xor)};
-                        break;
-                    #endregion
-
-                    case iinc:
-                    {
-                        var index = code[pc++];
-                        var dif = (sbyte) code[pc++];
-                        res = new[]
-                        {
-                            codeProc.Create(OpCodes.Ldloc_S, index),
-                            codeProc.Create(OpCodes.Ldc_I4_S, dif),
-                            codeProc.Create(OpCodes.Add),
-                            codeProc.Create(OpCodes.Stloc_S, index), 
-                        };
-                        break;
-                    }
-
-                    #region conversions
-
-                    case l2i:
-                    case f2i:
-                    case d2i:
-                        res = new[] {codeProc.Create(OpCodes.Conv_I4)};
-                        break;
-                    case i2l:
-                    case f2l:
-                    case d2l:
-                        res = new[] {codeProc.Create(OpCodes.Conv_I8)};
-                        break;
-                    case i2f:
-                    case l2f:
-                    case d2f:
-                        res = new[] {codeProc.Create(OpCodes.Conv_R4)};
-                        break;
-                    case i2d:
-                    case l2d:
-                    case f2d:
-                        res = new[] {codeProc.Create(OpCodes.Conv_R8)};
-                        break;
-                    case i2b:
-                        res = new[] {codeProc.Create(OpCodes.Conv_I1)};
-                        break;
-                    case i2s:
-                    case i2c:
-                        res = new[] {codeProc.Create(OpCodes.Conv_I2)};
-                        break;
-                    #endregion
-
-                    #region branches
-
-                    case ifeq:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[] {codeProc.Create(OpCodes.Brfalse, codeProc.Create(OpCodes.Nop))};
-                        jumps.Add((res[0], target));
-                        break;
-                    }
-                    case ifne:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[] {codeProc.Create(OpCodes.Brtrue, codeProc.Create(OpCodes.Nop))};
-                        jumps.Add((res[0], target));
-                        break;
-                    }
-                    case iflt:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[]
-                        {
-                            codeProc.Create(OpCodes.Ldc_I4_0),
-                            codeProc.Create(OpCodes.Blt, codeProc.Create(OpCodes.Nop))
-                        };
-                        jumps.Add((res[1], target));
-                        break;
-                    }
-                    case ifge:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[]
-                        {
-                            codeProc.Create(OpCodes.Ldc_I4_0),
-                            codeProc.Create(OpCodes.Bge, codeProc.Create(OpCodes.Nop))
-                        };
-                        jumps.Add((res[1], target));
-                        break;
-                    }
-                    case ifgt:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[]
-                        {
-                            codeProc.Create(OpCodes.Ldc_I4_0),
-                            codeProc.Create(OpCodes.Bgt, codeProc.Create(OpCodes.Nop))
-                        };
-                        jumps.Add((res[1], target));
-                        break;
-                    }
-                    case ifle:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[]
-                        {
-                            codeProc.Create(OpCodes.Ldc_I4_0),
-                            codeProc.Create(OpCodes.Ble, codeProc.Create(OpCodes.Nop))
-                        };
-                        jumps.Add((res[1], target));
-                        break;
-                    }
-                    
-                    case @goto:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[] {codeProc.Create(OpCodes.Br, codeProc.Create(OpCodes.Nop))};
-                        jumps.Add((res[0], target));
-                        break;
-                    }
-                    case goto_w:
-                    {
-                        var target = begin + I4(code, ref pc);
-                        res = new[] {codeProc.Create(OpCodes.Br, codeProc.Create(OpCodes.Nop))};
-                        jumps.Add((res[0], target));
-                        break;
-                    }
-
-                    #endregion
-
-                    #region compare and branch
-
-                    case if_icmpeq:
-                    case if_acmpeq:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[] {codeProc.Create(OpCodes.Beq, codeProc.Create(OpCodes.Nop))};
-                        jumps.Add((res[0], target));
-                        break;
-                    }
-                    case if_icmpne:
-                    case if_acmpne:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[] {codeProc.Create(OpCodes.Bne_Un, codeProc.Create(OpCodes.Nop))};
-                        jumps.Add((res[0], target));
-                        break;
-                    }
-                    
-                    case if_icmplt:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[] {codeProc.Create(OpCodes.Blt, codeProc.Create(OpCodes.Nop))};
-                        jumps.Add((res[0], target));
-                        break;
-                    }
-                    case if_icmpgt:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[] {codeProc.Create(OpCodes.Bgt, codeProc.Create(OpCodes.Nop))};
-                        jumps.Add((res[0], target));
-                        break;
-                    }
-                    case if_icmpge:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[] {codeProc.Create(OpCodes.Bge, codeProc.Create(OpCodes.Nop))};
-                        jumps.Add((res[0], target));
-                        break;
-                    }
-                    case if_icmple:
-                    {
-                        var target = begin + I2(code, ref pc);
-                        res = new[] {codeProc.Create(OpCodes.Ble, codeProc.Create(OpCodes.Nop))};
-                        jumps.Add((res[0], target));
-                        break;
-                    }
-
-                    #endregion
-
-                    #region switches
-
-                    case tableswitch:
-                    {
-                        while (pc % 4 != 0) pc++;
-                        var defaultTarget = begin + I4(code, ref pc);
-                        var low = I4(code, ref pc);
-                        var high = I4(code, ref pc);
-                        var targets = new int[high - low + 1];
-                        for (var i = 0; i < high - low + 1; i++)
-                        {
-                            targets[i] = begin + I4(code, ref pc);
-                        }
-
-                        res = new[]
-                        {
-                            codeProc.Create(OpCodes.Ldc_I4, low),
-                            codeProc.Create(OpCodes.Sub),
-                            codeProc.Create(OpCodes.Switch, new Instruction[high - low + 1]),
-                            codeProc.Create(OpCodes.Br, codeProc.Create(OpCodes.Nop)),
-                        };
-
-                        switches.Add((res[2], targets));
-                        jumps.Add((res[3], defaultTarget));
-                        break;
-                    }
-
-                    case lookupswitch:
-                    {
-                        while (pc % 4 != 0) pc++;
-                        var defaultTarget = begin + I4(code, ref pc);
-                        var npairs = I4(code, ref pc);
-                        var resList = new List<Instruction>();
-                        for (var i = 0; i < npairs; i++)
-                        {
-                            var m = I4(code, ref pc);
-                            var t = begin + I4(code, ref pc);
-                            if (i < npairs - 1)
-                                resList.Add(codeProc.Create(OpCodes.Dup));
-                            resList.Add(codeProc.Create(OpCodes.Ldc_I4, m));
-                            var br = codeProc.Create(OpCodes.Beq, codeProc.Create(OpCodes.Nop));
-                            jumps.Add((br, t));
-                            resList.Add(br);
-                        }
-                        var defBr = codeProc.Create(OpCodes.Br, codeProc.Create(OpCodes.Nop));
-                        jumps.Add((defBr, defaultTarget));
-                        resList.Add(defBr);
-                        res = resList.ToArray();
-                        break;
-                    }
-
-                    #endregion
-                    
-                    case ireturn:
-                    case lreturn:
-                    case freturn:
-                    case dreturn:
-                    case areturn:
-                    case @return:
-                        res = new[] {codeProc.Create(OpCodes.Ret)};
-                        break;
-                    
-                    case getstatic:
-                        res = new[] {codeProc.Create(OpCodes.Ldsfld, ResolveFieldReference((FieldOrMethodrefInfo)cp[I2(code, ref pc)]))};
-                        break;
-                    case putstatic:
-                        res = new[] {codeProc.Create(OpCodes.Stsfld, ResolveFieldReference((FieldOrMethodrefInfo)cp[I2(code, ref pc)]))};
-                        break;
-                    case getfield:
-                        res = new[] {codeProc.Create(OpCodes.Ldfld, ResolveFieldReference((FieldOrMethodrefInfo)cp[I2(code, ref pc)]))};
-                        break;
-                    case putfield:
-                        res = new[] {codeProc.Create(OpCodes.Stfld, ResolveFieldReference((FieldOrMethodrefInfo)cp[I2(code, ref pc)]))};
-                        break;
-                    
-                    case invokevirtual:    
-                        res = new[] {codeProc.Create(OpCodes.Callvirt, ResolveMethodReference((FieldOrMethodrefInfo) cp[I2(code, ref pc)], true))};
-                        break;                    
-                    case invokespecial:
-                        res = new[] {codeProc.Create(OpCodes.Call, ResolveMethodReference((FieldOrMethodrefInfo)cp[I2(code, ref pc)], true))};
-                        break;
-                    case invokestatic:
-                        res = new[] {codeProc.Create(OpCodes.Call, ResolveMethodReference((FieldOrMethodrefInfo)cp[I2(code, ref pc)], false))};
-                        break;
-
-                    case invokeinterface:
-                    {
-                        var fmr = (FieldOrMethodrefInfo) cp[I2(code, ref pc)];
-                        if (_annotations.Contains(fmr.Class.Name))
-                        {
-                            var (rt, _) = ResolveMethodDescriptor(fmr.NameAndType.Descriptor);
-                            res = new[]
-                            {
-                                codeProc.Create(
-                                    OpCodes.Ldfld,
-                                    new FieldReference(fmr.NameAndType.Name, rt, ResolveTypeReference(fmr.Class.Name)))
-                            };
-                        }
-                        else
-                        {
-                            res = new[] {codeProc.Create(OpCodes.Callvirt, ResolveMethodReference(fmr, true))};
-                        }
-                        break;
-                    }
-                        
-                    
-                    case anewarray:
-                    {
-                        var index = I2(code, ref pc);
-                        Console.WriteLine("newarr " + cp[index]);
-//                        res = new[]
-//                        {
-//                            codeProc.Create(OpCodes.Newarr,
-//                                ResolveFieldDescriptor(((ClassInfo) cp[index]).Name))
-//                        };
-                        throw new NotImplementedException();
-                    }
-                    case newarray:
-                    {
-                        var atype = I2(code, ref pc);
-                        switch (atype)
-                        {
-                            case 4:
-                                res = new[] {codeProc.Create(OpCodes.Newarr, _asm.MainModule.TypeSystem.Boolean)};
-                                break;
-
-                            case 5:
-                                res = new[] {codeProc.Create(OpCodes.Newarr, _asm.MainModule.TypeSystem.Char)};
-                                break;
-
-                            case 6:
-                                res = new[] {codeProc.Create(OpCodes.Newarr, _asm.MainModule.TypeSystem.Single)};
-                                break;
-
-                            case 7:
-                                res = new[] {codeProc.Create(OpCodes.Newarr, _asm.MainModule.TypeSystem.Double)};
-                                break;
-
-                            case 8:
-                                res = new[] {codeProc.Create(OpCodes.Newarr, _asm.MainModule.TypeSystem.SByte)};
-                                break;
-
-                            case 9:
-                                res = new[] {codeProc.Create(OpCodes.Newarr, _asm.MainModule.TypeSystem.Int16)};
-                                break;
-
-                            case 10:
-                                res = new[] {codeProc.Create(OpCodes.Newarr, _asm.MainModule.TypeSystem.Int32)};
-                                break;
-
-                            case 11:
-                                res = new[] {codeProc.Create(OpCodes.Newarr, _asm.MainModule.TypeSystem.Int64)};
-                                break;
-                        }
-
-                        break;
-                    }
-
-                    case @new:
-                    {
-                        var index = I2(code, ref pc);
-                        Console.WriteLine("new -> {0} -> {1}", (JavaInstruction) code[pc],
-                            (JavaInstruction) code[pc + 1]);
-                        break;
-                    }
-                    
-                    case arraylength:
-                        res = new[] {codeProc.Create(OpCodes.Ldlen)};
-                        break;
-                    case athrow:
-                        res = new[] {codeProc.Create(OpCodes.Throw)};
-                        break;
-                    case baload:
-                        res = new[] {codeProc.Create(OpCodes.Ldelem_I1)};
-                        break;
-                    case bastore:
-                        res = new[] {codeProc.Create(OpCodes.Stelem_I1)};
-                        break;
-                    case caload:
-                        res = new[] {codeProc.Create(OpCodes.Ldelem_I2)};
-                        break;
-                    case castore:
-                        res = new[] {codeProc.Create(OpCodes.Stelem_I2)};
-                        break;
-                    case checkcast:
-                    {
-                        var index = (code[pc++] << 8) | code[pc++];
-                        Console.WriteLine("checkcast " + cp[index]);
-//                        res = new[]
-//                        {
-//                            codeProc.Create(OpCodes.Newarr,
-//                                ResolveFieldDescriptor(((ClassInfo) cp[index]).Name))
-//                        };
-                        throw new NotImplementedException();
-                    }
-                    default:
-                        throw new NotImplementedException("No implementation for " + (JavaInstruction) code[pc - 1]);
-                }
-
-                instrs[begin] = res[0];
-
-                //Console.WriteLine("    // {0} {1}", (JavaInstruction) code[begin], GitEm(code, begin + 1, pc));
-                
-                foreach (var instruction in res)
-                {
-                    instruction.Offset = ilLoc;
-                    ilLoc += instruction.OpCode.Size +
-                             OperandLength(instruction.OpCode.OperandType, instruction.Operand);
-                    // Console.WriteLine("    {0}", instruction);
-                    codeProc.Append(instruction);
-                }
-            }
-            
-            foreach (var (instruction, target) in jumps)
-            {
-                instruction.Operand = instrs[target];
-            }
-
-            foreach (var (instruction, targets) in switches)
-            {
-                instruction.Operand = targets.Select(x => instrs[x]).ToArray();
-            }
-
-            return mb;
-        }
-
-        private string GitEm(byte[] a, int from, int to)
-        {
-            if (from == to)
-                return "";
-            
-            var res = 0L;
-            for (var i = from; i < to; i++)
-            {
-                res = (res << 8) | a[i];
-            }
-
-            return res.ToString("X" + (to - from));
         }
 
         private (bool isArg, int index) LocalIndex(JavaMethodInfo mi, int index)
@@ -963,103 +342,66 @@ namespace JavaNet
             return (false, index - counter);
         }
 
-        private Instruction LocalMangling(ILProcessor codeProc, JavaMethodInfo mi, byte local, bool load)
+        public static IEnumerable<FieldReference> GetAllFields(TypeDefinition td)
         {
-            var (isArg, index) = LocalIndex(mi, local);
-            var toUse = load
-                ? (isArg
-                    ? new[]
-                    {
-                        OpCodes.Ldarg_0, OpCodes.Ldarg_1, OpCodes.Ldarg_2, OpCodes.Ldarg_3, OpCodes.Ldarg_S,
-                        OpCodes.Ldarg
-                    }
-                    : new[]
-                    {
-                        OpCodes.Ldloc_0, OpCodes.Ldloc_1, OpCodes.Ldloc_2, OpCodes.Ldloc_3, OpCodes.Ldloc_S,
-                        OpCodes.Ldloc
-                    })
-                : (isArg
-                    ? new[]
-                    {
-                        OpCodes.Starg_S, OpCodes.Starg_S, OpCodes.Starg_S, OpCodes.Starg_S, OpCodes.Starg_S, OpCodes.Starg
-                    }
-                    : new[]
-                    {
-                        OpCodes.Stloc_0, OpCodes.Stloc_1, OpCodes.Stloc_2, OpCodes.Stloc_3, OpCodes.Stloc_S,
-                        OpCodes.Stloc
-                    });
-            if (load || !isArg)
-                switch (index)
-                {
-                    case 0: return codeProc.Create(toUse[0]);
-                    case 1: return codeProc.Create(toUse[1]);
-                    case 2: return codeProc.Create(toUse[2]);
-                    case 3: return codeProc.Create(toUse[3]);
-                }
-
-            if (index <= byte.MaxValue)
-            {
-                return codeProc.Create(toUse[4], (byte) index);
-            }
-
-            return codeProc.Create(toUse[5], (ushort) index);
-        }
-
-        private int OperandLength(OperandType opCodeOperandType, object operand)
-        {
-            switch (opCodeOperandType)
-            {
-                case OperandType.InlineBrTarget:
-                case OperandType.InlineField:
-                case OperandType.InlineI:
-                case OperandType.InlineI8:
-                case OperandType.ShortInlineR:
-                case OperandType.InlineSig:
-                case OperandType.InlineString:
-                case OperandType.InlineTok:
-                case OperandType.InlineType:
-                case OperandType.InlineMethod: 
-                    return 4;
-                case OperandType.InlineNone: 
-                    return 0;
-                case OperandType.InlineSwitch: 
-                    return ((object[]) operand).Length * 4;
-                case OperandType.InlineVar:
-                case OperandType.InlineArg:
-                case OperandType.ShortInlineBrTarget:
-                case OperandType.ShortInlineI:
-                    return 2;
-                case OperandType.InlineR:
-                    return 8;
-                case OperandType.ShortInlineVar:
-                case OperandType.ShortInlineArg:
-                    return 1;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(opCodeOperandType), opCodeOperandType, null);
-            }
+            return td == null ? Enumerable.Empty<FieldReference>() : td.Fields.Concat(GetAllFields(td.BaseType?.Resolve()));
         }
 
         public FieldReference ResolveFieldReference(FieldOrMethodrefInfo fmi)
         {
+            if (_fieldReferences.TryGetValue(fmi.Represent(), out var f))
+                return f ?? throw new JavaNetException(JavaNetException.ReasonType.ClassLoad, "Could not resolve field " + fmi.Represent());
             var declType = ResolveTypeReference(fmi.Class.Name);
-            var fldType = ResolveFieldDescriptor(fmi.NameAndType.Descriptor);
-            return new FieldReference(fmi.NameAndType.Name, fldType, declType);
+            var field = GetAllFields(declType.Resolve()).FirstOrDefault(x => x.Name == fmi.NameAndType.Name);
+            _fieldReferences[fmi.Represent()] = field;
+            return field ?? throw new JavaNetException(JavaNetException.ReasonType.ClassLoad, "Could not resolve field " + fmi.Represent());
         }
 
-        public MethodReference ResolveMethodReference(FieldOrMethodrefInfo fmi, bool instance)
+        //public static IEnumerable<MethodReference> GetAllMethods(TypeDefinition td)
+        //{
+        //    return td == null ? Enumerable.Empty<MethodReference>() : td.GetMethods().Concat(GetAllMethods(td.BaseType?.Resolve()));
+        //}
+
+        public static string CreateMethodSignature(TypeDefinition type, string name, TypeReference[] paramTypes)
         {
-            var declType = ResolveTypeReference(fmi.Class.Name);
-            var (retType, paramType) = ResolveMethodDescriptor(fmi.NameAndType.Descriptor);
-            var mr = new MethodReference(TranslateMethodName(fmi.NameAndType.Name), retType, declType);
+            return $"{type.FullName}.{name}(" + string.Join(',', paramTypes.Select(x => x.FullName)) + ")";
+        }
 
-            mr.HasThis = instance;
-
-            foreach (var param in paramType)
+        public MethodReference ResolveMethodReference(TypeDefinition type, string name, TypeReference[] paramTypes)
+        {
+            if (!_methodReferences.TryGetValue(CreateMethodSignature(type, name, paramTypes), out var resolvedMethod))
             {
-                mr.Parameters.Add(new ParameterDefinition(param));
+
+                if (name == ".cctor")
+                    resolvedMethod = type.GetStaticConstructor();
+                else
+                {
+
+                    resolvedMethod =
+                        (name == ".ctor" ? type.GetConstructors() : type.GetMethods())
+                        .FirstOrDefault(x =>
+                            x.Name == name
+                            && x.Parameters.Count == paramTypes.Length
+                            && x.Parameters.Zip(paramTypes, (param, typeDef) => param.ParameterType.FullName == typeDef.FullName).All(b => b));
+
+                    if (resolvedMethod == null)
+                        resolvedMethod = ResolveMethodReference(type.BaseType.Resolve(), name, paramTypes);
+
+                    _methodReferences[CreateMethodSignature(type, name, paramTypes)] = resolvedMethod;
+                }
             }
-            
-            return mr;
+
+            return resolvedMethod;
+        }
+
+        public MethodReference ResolveMethodReference(FieldOrMethodrefInfo fmi)
+        {
+            var declType = ResolveTypeReference(fmi.Class.Name).Resolve();
+            var paramTypes = ResolveMethodDescriptor(fmi.NameAndType.Descriptor).paramType.ToArray();
+            var resolvedMethod = ResolveMethodReference(declType, TranslateMethodName(fmi.NameAndType.Name), paramTypes);
+
+            return resolvedMethod
+                   ?? throw new JavaNetException(JavaNetException.ReasonType.ClassLoad, "Could not resolve method " + fmi.Represent());
         }
 
         private string TranslateMethodName(string name)
@@ -1072,41 +414,12 @@ namespace JavaNet
                     return ".cctor";
                 case "toString":
                     return "ToString";
+                case "equals":
+                    return "Equals";
                 case "hashCode":
                     return "GetHashCode";
                 default:
                     return name;
-            }
-        }
-
-        private static short I2(byte[] code, ref int pc)
-        {
-            return (short) ((code[pc++] << 8) | code[pc++]);
-        }
-
-        private static int I4(byte[] code, ref int pc)
-        {
-            return (code[pc++] << 24) | (code[pc++] << 16) | (code[pc++] << 8) | code[pc++];
-        }
-
-        private Instruction[] PushCp(ILProcessor codeProc, CpInfo cpInfo)
-        {
-            switch (cpInfo)
-            {
-                case StringInfo si:
-                    return new[] {codeProc.Create(OpCodes.Ldstr, si.String)};
-                case IntegerInfo ii:
-                    return new[] {codeProc.Create(OpCodes.Ldc_I4, ii.Value)};
-                case FloatInfo fi:
-                    return new[] {codeProc.Create(OpCodes.Ldc_R4, fi.Value)};
-                case ClassInfo ci:
-                    return new[] {codeProc.Create(OpCodes.Ldtoken, ResolveTypeReference(ci.Name))};
-                case DoubleInfo di:
-                    return new[] {codeProc.Create(OpCodes.Ldc_R8, di.Value)};
-                case LongInfo li:
-                    return new[] {codeProc.Create(OpCodes.Ldc_I8, li.Value)};
-                default:
-                    throw new ArgumentException("Unknown constant type " + cpInfo.Tag, nameof(cpInfo));
             }
         }
 
