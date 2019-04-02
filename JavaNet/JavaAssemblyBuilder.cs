@@ -230,6 +230,7 @@ namespace JavaNet
                         _asm.MainModule.Types.Remove(typeDefinition);
                         outerType.NestedTypes.Add(typeDefinition);
                         typeDefinition.DeclaringType = outerType;
+                        typeDefinition.IsNestedPublic = true;
                     }
                 }
             }
