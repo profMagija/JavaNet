@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace JavaNet.Runtime.Plugs.NativeImpl
@@ -18,6 +19,14 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             DeclaringType = declaringType;
             MethodName = methodName;
             ArgTypes = argTypes;
+        }
+
+        public NativeImplAttribute(Type returnType, string declaringType, string methodName, params Type[] artTypes)
+        {
+            ReturnType = returnType.FullName;
+            DeclaringType = declaringType;
+            MethodName = methodName;
+            ArgTypes = artTypes.Select(x => x.FullName).ToArray();
         }
     }
 

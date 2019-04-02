@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -69,6 +70,9 @@ namespace JavaNet
 
         public override string ToString() => Value?.ToString() ?? "null";
 
+        private static readonly MethodInfo _getType = typeof(Type).GetMethod("GetTypeFromHandle");
+        private static readonly MethodInfo _getMethod = typeof(Type).GetMethod("GetMethodFromHandle");
+
         public override bool IsConst => true;
         public override Instruction[] GetValue()
         {
@@ -93,9 +97,16 @@ namespace JavaNet
                 case float f: return new[] {Instruction.Create(OpCodes.Ldc_R4, f)};
                 case double d: return new[] {Instruction.Create(OpCodes.Ldc_R8, d)};
                 case TypeReference tr:
-                    return new[] {Instruction.Create(OpCodes.Ldtoken, tr)};
+                    return new[]
+                    {
+                        Instruction.Create(OpCodes.Ldtoken, tr),
+                        Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(_getType))
+                    };
                 case MethodReference mr:
-                    return new[] {Instruction.Create(OpCodes.Ldtoken, mr)};
+                    return new[]
+                    {
+                        Instruction.Create(OpCodes.Ldtoken, mr),
+                    };
                 default:
                     throw new Exception("Invalid constant " + Value);
             }

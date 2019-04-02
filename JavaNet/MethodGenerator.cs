@@ -331,6 +331,9 @@ namespace JavaNet
             {
                 var curState = curBlock.StartingState;
 
+                Debug.Assert(curState.Locals.Values.All(x => x?.IsConst != true));
+                Debug.Assert(curState.Stack.All(x => x?.IsConst != true));
+
                 if (curBlock.ExceptionValue != null)
                 {
                     curBlock.NetOps.AddRange(curBlock.ExceptionValue.StoreValue());
@@ -339,6 +342,9 @@ namespace JavaNet
                 foreach (var (handlerBlock, catchType) in curBlock.HandlerBlock)
                 {
                     handlerBlock.ExceptionValue = new CalculatedValue(catchType ?? JavaAssemblyBuilder.Instance.TypeSystem.Object);
+                    var (acts, state) = curState.Unconst();
+                    curBlock.Actions.AddRange(acts);
+                    curState = state;
                     handlerBlock.StartingState = new JavaState(ImmutableStack.Create<JavaValue>(handlerBlock.ExceptionValue), curState.Locals);
                 }
 
@@ -373,7 +379,7 @@ namespace JavaNet
                             if (_blocks[target].StartingState == null)
                             {
                                 // block is not yet 'discovered', so we just set it's starting state
-                                _blocks[target].StartingState = curState;
+                                _blocks[target].StartingState = targetState;
                             }
                             else
                             {
@@ -390,11 +396,15 @@ namespace JavaNet
                 if (curState != null && _blocks.TryGetValue(curBlock.JavaOffset + curBlock.JavaLength, out var nextBlock))
                 {
                     curBlock.ProceedsToNext = true;
+
+                    IEnumerable<MethodAction> acts;
+                    (acts, curState) = curState.Unconst();
+                    curBlock.Actions.AddRange(acts);
+
                     if (nextBlock.StartingState == null)
                         nextBlock.StartingState = curState;
                     else
                     {
-                        IEnumerable<MethodAction> acts;
                         (acts, curState, nextBlock.StartingState) = curState.MapTo(nextBlock.StartingState);
                         curBlock.Actions.AddRange(acts);
                     }

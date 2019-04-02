@@ -429,15 +429,20 @@ namespace JavaNet
             var isStatic = mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static);
             if (isStatic)
                 attrs |= MethodAttributes.Static;
+            else
+            {
+                if (isInterface
+                    || !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final)
+                    && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static)
+                    && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native)
+                    && mi.Name != "<init>")
+                    attrs |= MethodAttributes.Virtual;
 
-            if (isInterface
-                || !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final)
-                && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static)
-                && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native)
-                && mi.Name != "<init>")
-                attrs |= MethodAttributes.Virtual;
-            if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Abstract))
-                attrs |= MethodAttributes.Abstract;
+
+                if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Abstract))
+                    attrs |= MethodAttributes.Abstract;
+            }
+
             if (mi.Name == "<init>" || mi.Name == "<clinit>")
                 attrs |= MethodAttributes.RTSpecialName | MethodAttributes.SpecialName;
 

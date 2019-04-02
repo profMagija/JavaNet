@@ -29,6 +29,7 @@ namespace JavaNet
         }
 
         public ImmutableDictionary<int, JavaValue> Locals => _locals;
+        public ImmutableStack<JavaValue> Stack => _stack;
 
         public JavaState Push(JavaValue o)
         {
