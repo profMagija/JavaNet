@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using java.lang;
 using JavaNet.Runtime.Plugs;
@@ -139,6 +140,10 @@ namespace JavaNet
         public JavaValue Value1 { get; }
         public JavaValue Value2 { get; }
 
+        private readonly MethodInfo _fcmpl = typeof(Intrinsics).GetMethod("Fcmpl") ?? throw new NullReferenceException();
+        private readonly MethodInfo _fcmpg = typeof(Intrinsics).GetMethod("Fcmpg") ?? throw new NullReferenceException();
+        private readonly MethodInfo _lcmp = typeof(Intrinsics).GetMethod("Lcmp") ?? throw new NullReferenceException();
+
         public BinaryOperationAction(CalculatedValue target, Op operation, JavaValue value1, JavaValue value2)
         {
             Target = target ?? throw new ArgumentNullException(nameof(target));
@@ -202,40 +207,15 @@ namespace JavaNet
                     l.Add(Instruction.Create(OpCodes.Xor));
                     break;
                 case Op.Lcmp:
-                {
-                    /*
-                     * IL_0007: ldloc.0 // we already have these
-	                 * IL_0008: ldloc.1 // two
-	                 * IL_0009: blt.s IL_0015
-	                 * IL_000b: ldloc.0
-	                 * IL_000c: ldloc.1
-	                 * IL_000d: beq.s IL_0012
-	                 * IL_000f: ldc.i4.1
-	                 * IL_0010: br.s IL_0016
-	                 * IL_0012: ldc.i4.0
-	                 * IL_0013: br.s IL_0016
-	                 * IL_0015: ldc.i4.m1
-	                 * IL_0016: nop
-                     */
-                    var il15 = Instruction.Create(OpCodes.Ldc_I4_M1);
-                    var il12 = Instruction.Create(OpCodes.Ldc_I4_0);
-                    var il16 = Instruction.Create(OpCodes.Nop);
-                    l.Add(Instruction.Create(OpCodes.Blt_S, il15));
-                    l.AddRange(Value1.GetValue());
-                    l.AddRange(Value2.GetValue());
-                    l.Add(Instruction.Create(OpCodes.Beq_S, il12));
-                    l.Add(Instruction.Create(OpCodes.Ldc_I4_1));
-                    l.Add(Instruction.Create(OpCodes.Br_S, il16));
-                    l.Add(il12);
-                    l.Add(Instruction.Create(OpCodes.Br_S, il16));
-                    l.Add(il15);
-                    l.Add(il16);
+                    l.Add(Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(_lcmp)));
+                    break;
+                case Op.Fcmpg:
+                    l.Add(Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(_fcmpg)));
+                    break;
+                case Op.Fcmpl:
+                    l.Add(Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(_fcmpl)));
                     break;
 
-                }
-                case Op.Fcmpg:
-                case Op.Fcmpl:
-                    throw new JavaNetException(JavaNetException.ReasonType.ClassLoad, "Mnogo me mrzi");
                 default:
                     throw new ArgumentOutOfRangeException();
             }
