@@ -17,6 +17,7 @@ namespace JavaNet
 
             var mg = new MethodGenerator(JavaAssemblyBuilder.Instance, md, mi, ca, cp);
 
+
             //Console.WriteLine(md.FullName);
 
             //foreach (var entry in ca.ExceptionTable)
@@ -49,6 +50,8 @@ namespace JavaNet
             //    }
             //}
 
+            mg._body = new MethodBody(mg._md);
+
             mg.ValueAnalyzer();
 
             //foreach (var block in mg._blocks.Values.OrderBy(x => x.JavaOffset))
@@ -68,11 +71,9 @@ namespace JavaNet
 
             mg.LocalAnalyzer();
 
-            _body = new MethodBody(mg._md);
-
             foreach (var local in mg._locals)
             {
-                _body.Variables.Add(local);
+                mg._body.Variables.Add(local);
             }
 
             mg.HandlerAnalyzer();
@@ -94,9 +95,9 @@ namespace JavaNet
             //    Debug.Assert(mg._blocks[entry.EndPc].JavaOps[0].Instr == JavaInstruction.@goto);
             //}
 
-            _body.Optimize();
+            mg._body.Optimize();
 
-            return _body;
+            return mg._body;
         }
 
         private void HandlerAnalyzer()
@@ -217,8 +218,8 @@ namespace JavaNet
                         pc += 2;
                         break;
                     case JavaInstrArguments.InvokeInterface:
-                        _ops[start] = new JavaOp.InvokeInterface(start, instr, _cp[I2(code, ref pc)], code[pc++]);
-                        pc++;
+                        _ops[start] = new JavaOp.ConstPool(start, instr, _cp[I2(code, ref pc)]);
+                        pc += 2;
                         break;
                     case JavaInstrArguments.LookupSwitch:
                     {
@@ -304,8 +305,9 @@ namespace JavaNet
                     return new[] {x, null};
                 return new[] {x};
             });
-            if (!_md.IsStatic)
-                paramTypes = new[] {_md.Body.ThisParameter}.Concat(paramTypes);
+            //Debug.Assert(_md.Name != "getOrDefault_defaultImpl");
+            if (_body.ThisParameter != null)
+                paramTypes = new[] {_body.ThisParameter}.Concat(paramTypes);
 
             startingBlock.StartingState = new JavaState(
                 ImmutableStack<JavaValue>.Empty,
@@ -410,7 +412,7 @@ namespace JavaNet
 
         private List<VariableDefinition> _locals;
         private Dictionary<int, List<ActionBlock>> _handlers;
-        private static MethodBody _body;
+        private MethodBody _body;
 
         private void LocalAnalyzer()
         {
@@ -469,12 +471,13 @@ namespace JavaNet
                 ilp.Append(start);
                 ilp.Append(end);
 
-                _md.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+                _body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
                 {
                     TryStart = _blocks[entry.StartPc].GetFirstNetOp(),
                     TryEnd = _blocks[entry.EndPc].GetFirstNetOp(),
                     HandlerStart = start,
-                    HandlerEnd = end
+                    HandlerEnd = end,
+                    CatchType = JavaAssemblyBuilder.Instance.ResolveTypeReference(entry.CatchType?.Name ?? "java/lang/Throwable")
                 });
             }
         }

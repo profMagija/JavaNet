@@ -13,6 +13,7 @@ using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using MethodBody = Mono.Cecil.Cil.MethodBody;
 using MethodImplAttributes = Mono.Cecil.MethodImplAttributes;
+using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 using TypeAttributes = Mono.Cecil.TypeAttributes;
 
 namespace JavaNet
@@ -40,6 +41,15 @@ namespace JavaNet
         public MethodReference Import(MethodBase m) => _asm.MainModule.ImportReference(m);
 
         public static JavaAssemblyBuilder Instance;
+
+        /// <summary>
+        /// Contains a list of the following: <br/>
+        /// - TypeDefinition (.NET representation of a type) <br/>
+        /// - ClassFile (Java representation of the same type) <br/>
+        /// - A list, with an element for each method of the type, with: <br/>
+        ///   - JavaMethodInfo (Java representation of the method) <br/>
+        ///   - MethodDefinition (.NET representation of the same method) <br/>
+        /// </summary>
         private List<(TypeDefinition, ClassFile, List<(JavaMethodInfo, MethodDefinition)>)> _typeThings;
         private JarFile _jar;
 
@@ -290,11 +300,10 @@ namespace JavaNet
 
             foreach (var info in cf.Interfaces)
             {
-                if (info.Name != "java/lang/annotation/Annotation" && !isAnnot)
-                {
-                    var interfaceType = GetOrDefineType(info.Name) ?? ResolveTypeReference(info.Name);
-                    td.Interfaces.Add(new InterfaceImplementation(interfaceType));
-                }
+                if (info.Name == "java/lang/annotation/Annotation" && isAnnot) continue;
+
+                var interfaceType = GetOrDefineType(info.Name) ?? ResolveTypeReference(info.Name);
+                td.Interfaces.Add(new InterfaceImplementation(interfaceType));
             }
 
             foreach (var fi in cf.Fields)
@@ -311,7 +320,8 @@ namespace JavaNet
                 }
             }
 
-            var maaaaa  = new List<(JavaMethodInfo, MethodDefinition)>();
+            // this thing will contain all the javaMethod-dotnetMethod pairs, for later definition
+            var methodPairs  = new List<(JavaMethodInfo, MethodDefinition)>();
 
             foreach (var mi in cf.Methods)
             {
@@ -326,9 +336,7 @@ namespace JavaNet
                 {
                     try
                     {
-                        var md = BuildMethod(td, mi, cp);
-                        td.Methods.Add(md);
-                        maaaaa.Add((mi, md));
+                        var md = BuildMethod(td, mi, cp, methodPairs);
                     }
                     catch (JavaNetException ex)
                     {
@@ -337,13 +345,64 @@ namespace JavaNet
                 }
             }
 
-            _typeThings.Add((td, cf, maaaaa));
+            if (td.IsClass)
+            {
+                foreach (var tdInterface in td.Interfaces)
+                {
+                    foreach (var ifMethod in tdInterface.InterfaceType.Resolve().Methods.Where(x => !x.IsStatic))
+                    {
+                        var hasMatch = ResolveMethodReference(false, ifMethod.ReturnType, td, ifMethod.Name, ifMethod.Parameters.Select(x => x.ParameterType).ToArray());
+
+                        if (hasMatch != null) continue;
+
+                        var sign = CreateMethodSignature(false, ifMethod.ReturnType.FullName, ifMethod.DeclaringType.FullName, ifMethod.Name, ifMethod.Parameters.Select(x => x.ParameterType.FullName));
+                        if (!_methodReferences.TryGetValue(sign + "$default", out var impl) || impl == null)
+                        {
+                            if (!td.IsAbstract)
+                                throw new Exception($"Unimplemented non-default interface method {ifMethod.FullName} in class {td.FullName}");
+                        }
+
+                        var md = new MethodDefinition(ifMethod.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig, ifMethod.ReturnType);
+                        md.DeclaringType = td;
+                        td.Methods.Add(md);
+
+                        foreach (var parameter in ifMethod.Parameters)
+                        {
+                            md.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, parameter.ParameterType));
+                        }
+
+                        if (impl != null)
+                        {
+                            md.Body = new MethodBody(md);
+                            var il = md.Body.GetILProcessor();
+
+                            il.Append(Instruction.Create(OpCodes.Ldarg, md.Body.ThisParameter));
+
+                            foreach (var parameter in md.Parameters)
+                            {
+                                il.Append(Instruction.Create(OpCodes.Ldarg, parameter));
+                            }
+
+                            il.Append(Instruction.Create(OpCodes.Call, impl));
+                            il.Append(Instruction.Create(OpCodes.Ret));
+                            md.Body.Optimize();
+                        }
+                        else
+                        {
+                            md.IsAbstract = true;
+                        }
+
+                    }
+                }
+            }
+
+            _typeThings.Add((td, cf, methodPairs));
         }
 
-        public void BuildClassPart2(TypeDefinition td, ClassFile cf, List<(JavaMethodInfo, MethodDefinition)> maaaaa)
+        public void BuildClassPart2(TypeDefinition td, ClassFile cf, List<(JavaMethodInfo, MethodDefinition)> methodPairs)
         {
 
-            foreach (var (mi, md) in maaaaa)
+            foreach (var (mi, md) in methodPairs)
             {
                 BuildMethodBody(md, td, mi, cf.ConstantPool);
             }
@@ -352,11 +411,13 @@ namespace JavaNet
 
         }
 
-        private MethodDefinition BuildMethod(TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
+        private MethodDefinition BuildMethod(TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp, List<(JavaMethodInfo, MethodDefinition)> methodPairs)
         {
             //Console.WriteLine("  Building method {0} {1}", mi.Name, mi.Descriptor);
 
-            var attrs = (MethodAttributes) 0;
+            var isInterface = definingClass.IsInterface;
+
+            var attrs = MethodAttributes.HideBySig;
             if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Public))
                 attrs |= MethodAttributes.Public;
             else if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Protected))
@@ -368,7 +429,7 @@ namespace JavaNet
             if (isStatic)
                 attrs |= MethodAttributes.Static;
 
-            if (!mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final)
+            if (isInterface || !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final)
                 && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static)
                 && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native)
                 && mi.Name != "<init>")
@@ -383,45 +444,56 @@ namespace JavaNet
             var (retType, paramType) = ResolveMethodDescriptor(mi.Descriptor);
 
             var myName = TranslateMethodName(mi.Name);
-
-            var equivalentMethod = definingClass.Methods.FirstOrDefault(x =>
-                x.Name == myName
-                && x.ReturnType.FullName == retType.FullName
-                && x.Parameters.Count == paramType.Length
-                && x.Parameters.Zip(paramType, (definition,  reference) => definition.ParameterType.FullName == reference.FullName).All(b => b));
-
-            if (equivalentMethod != null)
-            {
-                if (isStatic)
-                {
-                    if (equivalentMethod.IsStatic)
-                        throw new Exception("Two static methods with same everything");
-
-                    myName = "static_" + myName;
-                }
-                else
-                {
-                    if (!equivalentMethod.IsStatic)
-                        throw new Exception("Two instance methods with same everything");
-
-                    equivalentMethod.Name = "static_" + equivalentMethod.Name;
-                }
-            }
             
             var md = new MethodDefinition(myName, attrs, retType)
             {
                 DeclaringType = definingClass
             };
 
-
             foreach (var param in paramType)
             {
                 md.Parameters.Add(new ParameterDefinition(param));
             }
 
-            _methodReferences[CreateMethodSignature(isStatic, retType.FullName, definingClass.FullName, mi.Name, paramType.Select(x => x.FullName))] = md;
+            var methodSignature = CreateMethodSignature(isStatic, retType.FullName, definingClass.FullName, mi.Name, paramType.Select(x => x.FullName));
+            _methodReferences[methodSignature] = md;
+
+
+            if (!isStatic && isInterface && mi.Attributes.OfType<CodeAttribute>().Any())
+            {
+                // this is a default-implemented interface method (* fuck Java and their creators *)
+                // we need to create a new method that will implement it
+                // AND later wire up all implementing classes to it (that didn't implement it explicitly)
+
+                CreateInterfaceDefaultImplementation(definingClass, mi, md, cp, methodPairs, methodSignature);
+                md.Attributes |= MethodAttributes.Abstract;
+            }
+
+            definingClass.Methods.Add(md);
+            methodPairs.Add((mi, md));
 
             return md;
+        }
+
+        private void CreateInterfaceDefaultImplementation(
+            TypeDefinition definingClass, 
+            JavaMethodInfo mi, 
+            MethodDefinition md, 
+            CpInfo[] cp, 
+            List<(JavaMethodInfo, MethodDefinition)> methodPairs, 
+            string methodSignature)
+        {
+            var defMethod = new MethodDefinition(md.Name + "_defaultImpl", md.Attributes | MethodAttributes.Static, md.ReturnType);
+            defMethod.Parameters.Add(new ParameterDefinition("this", ParameterAttributes.None, definingClass));
+            foreach (var parameter in md.Parameters)
+            {
+                defMethod.Parameters.Add(new ParameterDefinition(parameter.Name, parameter.Attributes, parameter.ParameterType));
+            }
+
+            _methodReferences[methodSignature + "$default"] = defMethod;
+
+            definingClass.Methods.Add(defMethod);
+            methodPairs.Add((mi, defMethod));
         }
 
         private void BuildMethodBody(MethodDefinition md, TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
@@ -549,7 +621,8 @@ namespace JavaNet
                     case CodeAttribute code:
                         try
                         {
-                            md.Body = MethodGenerator.GenerateMethod(md, mi, code, cp) ?? throw new Exception("NULL AAAAAAAAA");
+                            md.Body = MethodGenerator.GenerateMethod(md, mi, code, cp);
+                            Debug.Assert(md.Body != null);
                         }
                         catch (JavaNetException ex)
                         {

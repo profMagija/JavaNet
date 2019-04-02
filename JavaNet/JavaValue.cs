@@ -140,6 +140,7 @@ namespace JavaNet
 
         public override Instruction[] GetValue()
         {
+            Debug.Assert(Param != null);
             return new[] {Instruction.Create(OpCodes.Ldarg, Param)};
         }
     }

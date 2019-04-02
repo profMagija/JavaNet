@@ -675,9 +675,11 @@ namespace JavaNet
                     case JavaInstruction.invokevirtual:
                     case JavaInstruction.invokespecial:
                     case JavaInstruction.invokestatic:
+                    case JavaInstruction.invokeinterface:
                     {
                         var cp = (FieldOrMethodrefInfo) CpInfo;
-                        var method = asm.ResolveMethodReference(Instr == JavaInstruction.invokestatic, cp);
+                        var isStatic = Instr == JavaInstruction.invokestatic;
+                        var method = asm.ResolveMethodReference(isStatic, cp);
                         var args = new JavaValue[method.Parameters.Count];
                         var state = curState;
                         for (var i = args.Length - 1; i >= 0; i--)
@@ -691,7 +693,7 @@ namespace JavaNet
                         }
 
                         JavaValue objRef = null;
-                        if (method.HasThis)
+                        if (!method.Resolve().IsStatic)
                         {
                             state = state.Pop(out objRef);
                         }
@@ -721,7 +723,7 @@ namespace JavaNet
                             }
                         }
 
-                        return (state, new[] {new InvokeAction(result, objRef, method, args, Instr == JavaInstruction.invokevirtual)});
+                        return (state, new[] {new InvokeAction(result, objRef, method, args, Instr == JavaInstruction.invokevirtual || Instr == JavaInstruction.invokeinterface)});
                     }
                     case JavaInstruction.@new:
                     {
@@ -785,50 +787,6 @@ namespace JavaNet
                 var typeRef = JavaAssemblyBuilder.Instance.ResolveTypeReference(Type.Name);
                 var calc = new CalculatedValue(typeRef);
                 return (state.Push(calc), new[] {new MultiNewArrayAction(calc, typeRef, dims)});
-            }
-        }
-
-        public class InvokeInterface : JavaOp
-        {
-            public CpInfo MethodRef { get; }
-            public byte ArgCount { get; }
-
-            public InvokeInterface(int start, JavaInstruction instr, CpInfo methodRef, byte argCount) : base(start, instr)
-            {
-                MethodRef = methodRef;
-                ArgCount = argCount;
-            }
-
-            public override string ArgsString { get; }
-
-            internal override (JavaState newState, IEnumerable<MethodAction> actions) ActUpon(JavaState curState,
-                Dictionary<int, ActionBlock> blocks)
-            {
-                var cp = (FieldOrMethodrefInfo)MethodRef;
-                var method = JavaAssemblyBuilder.Instance.ResolveMethodReference(false, cp);
-                var args = new JavaValue[method.Parameters.Count];
-                var state = curState;
-                for (var i = args.Length - 1; i >= 0; i--)
-                {
-                    state = state.Pop(out args[i]);
-                    if (args[i] == null)
-                        state = state.Pop(out args[i]);
-                }
-
-                state = state.Pop(out var objRef);
-
-                CalculatedValue result = null;
-                if (method.ReturnType.FullName != typeof(void).FullName)
-                {
-                    result = new CalculatedValue(method.ReturnType);
-                    state = state.Push(result);
-                    var lc = cp.NameAndType.Descriptor.LastIndexOf(')');
-                    var retTyp = cp.NameAndType.Descriptor.Substring(lc + 1);
-                    if (retTyp == "J" || retTyp == "D")
-                        state = state.Push(null);
-                }
-
-                return (state, new[] {new InvokeAction(result, objRef, method, args, true)});
             }
         }
 

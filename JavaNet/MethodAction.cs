@@ -667,6 +667,9 @@ namespace JavaNet
             Method = method;
             Args = args;
             Virtual = virt;
+
+            if (Instance == null)
+                Debug.Assert(!Virtual || !Method.Resolve().IsVirtual);
         }
 
         public override IEnumerable<JavaValue> RequiredValues => (Instance == null ? new JavaValue[0] : new[] {Instance}).Concat(Args);
@@ -688,20 +691,17 @@ namespace JavaNet
             
             args.AddRange(Args);
 
-            Debug.Assert(Args.Length == Method.Parameters.Count);
+            if (Method.Resolve().IsStatic)
+                Debug.Assert(args.Count == Method.Parameters.Count);
+            else
+                Debug.Assert(args.Count == Method.Parameters.Count + 1);
 
-            foreach (var (value, definition) in Args.Zip(Method.Parameters, (value,  definition) => (value, definition)))
+            foreach (var value in args)
             {
                 l.AddRange(value.GetValue());
-
-                if (definition.CustomAttributes.FirstOrDefault(x => x.AttributeType.FullName == typeof(ActualTypeAttribute).FullName) is CustomAttribute atr)
-                {
-                    var s = (string) atr.ConstructorArguments[0].Value;
-                    l.Add(Instruction.Create(OpCodes.Castclass, JavaAssemblyBuilder.Instance.ResolveTypeReference(s)));
-                }
             }
 
-            l.Add(Instruction.Create(Virtual ? OpCodes.Callvirt : OpCodes.Call, Method));
+            l.Add(Instruction.Create(Virtual && Method.Resolve().IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Method));
 
             if (Target != null)
             {
