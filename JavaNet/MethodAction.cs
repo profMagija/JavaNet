@@ -647,7 +647,7 @@ namespace JavaNet
             var l = new List<Instruction>();
             l.AddRange(Target.GetValue());
             l.AddRange(Value.GetValue());
-            l.Add(Instruction.Create(OpCodes.Stsfld, Field));
+            l.Add(Instruction.Create(OpCodes.Stfld, Field));
             return l;
         }
     }

@@ -429,7 +429,8 @@ namespace JavaNet
             if (isStatic)
                 attrs |= MethodAttributes.Static;
 
-            if (isInterface || !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final)
+            if (isInterface
+                || !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final)
                 && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static)
                 && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native)
                 && mi.Name != "<init>")
@@ -483,7 +484,7 @@ namespace JavaNet
             List<(JavaMethodInfo, MethodDefinition)> methodPairs, 
             string methodSignature)
         {
-            var defMethod = new MethodDefinition(md.Name + "_defaultImpl", md.Attributes | MethodAttributes.Static, md.ReturnType);
+            var defMethod = new MethodDefinition(md.Name + "_defaultImpl", (md.Attributes | MethodAttributes.Static) & ~MethodAttributes.Virtual, md.ReturnType);
             defMethod.Parameters.Add(new ParameterDefinition("this", ParameterAttributes.None, definingClass));
             foreach (var parameter in md.Parameters)
             {
