@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using java.lang;
 using JavaNet.Runtime.Plugs;
+using JavaNet.Runtime.Plugs.NativeImpl;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -95,7 +96,7 @@ namespace JavaNet
             var l = new List<Instruction>();
             l.AddRange(Array.GetValue());
             l.AddRange(Index.GetValue());
-            l.AddRange(Index.GetValue());
+            l.AddRange(Value.GetValue());
             l.Add(Instruction.Create(OpCodes.Stelem_Any, Array.ActualType.GetElementType()));
             return l;
         }
@@ -446,7 +447,7 @@ namespace JavaNet
         {
             var l = new List<Instruction>();
             var useLeave = Target.HandlerNum != curBlock.HandlerNum;
-            var target = useLeave ? Instruction.Create(OpCodes.Leave, Target.FirstNetOp) : Target.FirstNetOp;
+            var target = useLeave ? Instruction.Create(OpCodes.Leave, Target.GetFirstNetOp()) : Target.GetFirstNetOp();
 
             l.AddRange(Value.GetValue());
             if (ValueCmp == null)
@@ -513,7 +514,7 @@ namespace JavaNet
         public override bool Pure => false;
         public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
-            return new[] {Instruction.Create(curBlock.HandlerNum == Target.HandlerNum ? OpCodes.Br : OpCodes.Leave, Target.FirstNetOp)};
+            return new[] {Instruction.Create(curBlock.HandlerNum == Target.HandlerNum ? OpCodes.Br : OpCodes.Leave, Target.GetFirstNetOp())};
         }
     }
 
@@ -692,7 +693,8 @@ namespace JavaNet
             foreach (var (value, definition) in Args.Zip(Method.Parameters, (value,  definition) => (value, definition)))
             {
                 l.AddRange(value.GetValue());
-                if (definition.CustomAttributes.FirstOrDefault(x => x.AttributeType.FullName == nameof(ActualTypeAttribute)) is CustomAttribute atr)
+
+                if (definition.CustomAttributes.FirstOrDefault(x => x.AttributeType.FullName == typeof(ActualTypeAttribute).FullName) is CustomAttribute atr)
                 {
                     var s = (string) atr.ConstructorArguments[0].Value;
                     l.Add(Instruction.Create(OpCodes.Castclass, JavaAssemblyBuilder.Instance.ResolveTypeReference(s)));
@@ -703,7 +705,7 @@ namespace JavaNet
 
             if (Target != null)
             {
-                if (Method.MethodReturnType.CustomAttributes.FirstOrDefault(x => x.AttributeType.FullName == nameof(ActualTypeAttribute)) is CustomAttribute atr)
+                if (Method.MethodReturnType.CustomAttributes.FirstOrDefault(x => x.AttributeType.FullName == typeof(ActualTypeAttribute).FullName) is CustomAttribute atr)
                 {
                     var s = (string) atr.ConstructorArguments[0].Value;
                     l.Add(Instruction.Create(OpCodes.Castclass, JavaAssemblyBuilder.Instance.ResolveTypeReference(s)));
@@ -857,11 +859,11 @@ namespace JavaNet
             {
                 l.Add(Instruction.Create(OpCodes.Dup));
                 l.Add(Instruction.Create(OpCodes.Ldc_I4, cmpValue));
-                l.Add(Instruction.Create(OpCodes.Beq, target.FirstNetOp));
+                l.Add(Instruction.Create(OpCodes.Beq, target.GetFirstNetOp()));
             }
 
             l.Add(Instruction.Create(OpCodes.Pop));
-            l.Add(Instruction.Create(OpCodes.Br, DefaultOffset.FirstNetOp));
+            l.Add(Instruction.Create(OpCodes.Br, DefaultOffset.GetFirstNetOp()));
 
             return l;
         }
@@ -901,8 +903,8 @@ namespace JavaNet
                 l.Add(Instruction.Create(OpCodes.Add));
             }
 
-            l.Add(Instruction.Create(OpCodes.Switch, Table.Select(x => x.FirstNetOp).ToArray()));
-            l.Add(Instruction.Create(OpCodes.Br, DefaultOffset.FirstNetOp));
+            l.Add(Instruction.Create(OpCodes.Switch, Table.Select(x => x.GetFirstNetOp()).ToArray()));
+            l.Add(Instruction.Create(OpCodes.Br, DefaultOffset.GetFirstNetOp()));
             return l;
         }
 

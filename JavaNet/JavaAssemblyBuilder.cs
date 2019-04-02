@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using JavaNet.Runtime.Plugs;
+using JavaNet.Runtime.Plugs.NativeImpl;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -24,6 +25,8 @@ namespace JavaNet
         private readonly Dictionary<string, TypeReference> _typeReferences = new Dictionary<string, TypeReference>();
         private readonly Dictionary<string, TypeDefinition> _typeDefinitions = new Dictionary<string, TypeDefinition>();
         private readonly Dictionary<string, MethodReference> _methodReferences = new Dictionary<string, MethodReference>();
+        private readonly Dictionary<string, MethodReference> _methodPlugs = new Dictionary<string, MethodReference>();
+        private readonly Dictionary<string, MethodReference> _methodImpl = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, FieldReference> _fieldReferences = new Dictionary<string, FieldReference>();
         private readonly HashSet<string> _annotations = new HashSet<string>();
 
@@ -88,12 +91,25 @@ namespace JavaNet
                 {
                     foreach (var mpa in method.GetCustomAttributes<MethodPlugAttribute>())
                     {
-                        _methodReferences[CreateMethodSignature(
+                        var signature = CreateMethodSignature(
                             mpa.IsStatic,
                             mpa.ReturnType ?? method.ReturnType.FullName,
                             mpa.DeclaringType,
                             mpa.MethodName,
-                            mpa.ParamTypes)] = asm.MainModule.ImportReference(method);
+                            mpa.ParamTypes);
+                        _methodPlugs[signature] = asm.MainModule.ImportReference(method);
+                        _methodReferences[signature] = asm.MainModule.ImportReference(method);
+                    }
+
+                    foreach (var mpa in method.GetCustomAttributes<NativeImplAttribute>())
+                    {
+                        var signature = CreateMethodSignature(
+                            mpa.IsStatic,
+                            mpa.ReturnType ?? method.ReturnType.FullName,
+                            mpa.DeclaringType,
+                            mpa.MethodName,
+                            mpa.ArgTypes);
+                        _methodImpl[signature] = asm.MainModule.ImportReference(method);
                     }
 
                     if (method.GetCustomAttribute<CastPlugAttribute>() is CastPlugAttribute cpa)
@@ -410,6 +426,111 @@ namespace JavaNet
 
         private void BuildMethodBody(MethodDefinition md, TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
         {
+            var signature = CreateMethodSignature(md.IsStatic, md.ReturnType.FullName, md.DeclaringType.FullName, md.Name, md.Parameters.Select(x => x.ParameterType.FullName));
+            if (_methodImpl.TryGetValue(signature, out var impl))
+            {
+                var resolvedImpl = impl.Resolve();
+                md.Body = new MethodBody(md);
+                var processor = md.Body.GetILProcessor();
+
+                var i = 0;
+
+                if (md.HasThis)
+                {
+                    processor.Append(Instruction.Create(OpCodes.Ldarg, md.Body.ThisParameter));
+                    i++;
+                }
+
+                foreach (var parameter in md.Parameters)
+                {
+                    processor.Append(Instruction.Create(OpCodes.Ldarg, parameter));
+                    i++;
+                }
+
+                foreach (var param in resolvedImpl.Parameters.Skip(i))
+                {
+                    switch (param.CustomAttributes.FirstOrDefault())
+                    {
+                        case null: throw new Exception("Unattributed extra parameter: " + param.Name);
+                        case var nativeDataParam when nativeDataParam.AttributeType.FullName == typeof(NativeDataParamAttribute).FullName:
+                        {
+                            if (md.HasThis)
+                            {
+                                processor.Append(Instruction.Create(OpCodes.Ldarg, md.Body.ThisParameter));
+                                processor.Append(Instruction.Create(OpCodes.Ldflda, definingClass.Fields.Single(x => x.Name == "__nativeData")));
+                            }
+                            else
+                            {
+                                processor.Append(Instruction.Create(OpCodes.Ldsflda, definingClass.Fields.Single(x => x.Name == "__staticNativeData")));
+                            }
+
+                            break;
+                        }
+                        case var typeHandle when typeHandle.AttributeType.FullName == typeof(TypeHandleAttribute).FullName:
+                        {
+                            var s = (string) typeHandle.ConstructorArguments[0].Value;
+                            processor.Append(Instruction.Create(OpCodes.Ldtoken, ResolveTypeReference(s)));
+                            processor.Append(Instruction.Create(OpCodes.Call, Import(typeof(Type).GetMethod("GetTypeFromHandle"))));
+                            break;
+                        }
+                        case var methodPtr when methodPtr.AttributeType.FullName == typeof(MethodPtrAttribute).FullName:
+                        {
+                            var isStatic = (bool) methodPtr.ConstructorArguments[0].Value;
+                            var retType = (string) methodPtr.ConstructorArguments[1].Value;
+                            var name = (string) methodPtr.ConstructorArguments[2].Value;
+                            var argTypes = ((CustomAttributeArgument[]) methodPtr.ConstructorArguments[3].Value).Select(x => (string)x.Value).ToArray();
+
+                            if (!isStatic && !md.HasThis)
+                                throw new Exception("Can't handle instance method reference in static method");
+
+                            processor.Append(md.HasThis && !isStatic ? Instruction.Create(OpCodes.Ldarg, md.Body.ThisParameter) : Instruction.Create(OpCodes.Ldnull));
+                            var targetMethod = definingClass.Methods.Single(x =>
+                                x.IsStatic == isStatic
+                                && x.ReturnType.FullName == retType
+                                && x.Name == name
+                                && x.Parameters.Count == argTypes.Length
+                                && x.Parameters.Zip(argTypes, (definition,  s) => definition.ParameterType.FullName == s).All(b => b));
+                            processor.Append(Instruction.Create(OpCodes.Ldftn, targetMethod));
+
+                            if (targetMethod.ReturnType.FullName == "System.Void")
+                            {
+                                var numParams = targetMethod.Parameters.Count;
+                                TypeDefinition actionType;
+                                if (numParams == 0)
+                                {
+                                    actionType = SystemImport(typeof(Action)).Resolve();
+                                }
+                                else
+                                {
+                                    actionType = SystemImport(Type.GetType($"System.Action`{numParams}"))
+                                        .MakeGenericInstanceType(targetMethod.Parameters.Select(x => x.ParameterType).ToArray())
+                                        .Resolve();
+                                }
+
+                                processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(actionType.GetConstructors().Single())));
+                            }
+                            else
+                            {
+                                var numParams = targetMethod.Parameters.Count;
+                                var funcType = SystemImport(Type.GetType($"System.Func`{numParams + 1}"))
+                                    .MakeGenericInstanceType(new[] {targetMethod.ReturnType}.Concat(targetMethod.Parameters.Select(x => x.ParameterType)).ToArray())
+                                    .Resolve();
+
+                                processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(funcType.GetConstructors().Single())));
+                            }
+                            break;
+                        }
+                        case var unknown:
+                            throw new Exception("Unknown attribute " + unknown.AttributeType.FullName);
+                    }
+                }
+
+                processor.Append(Instruction.Create(OpCodes.Call, impl));
+                processor.Append(Instruction.Create(OpCodes.Ret));
+                return;
+            }
+
+
             if ((mi.AccessFlags & JavaMethodInfo.Flags.Native) != 0)
             {
                 md.Body = new MethodBody(md);
@@ -417,26 +538,6 @@ namespace JavaNet
                 processor.Append(Instruction.Create(OpCodes.Ldstr, "Native method stub: " + md.FullName));
                 processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(typeof(TypeLoadException).GetConstructor(new[] { typeof(string) }))));
                 processor.Append(Instruction.Create(OpCodes.Throw));
-                processor.Append(Instruction.Create(OpCodes.Ret));
-                return;
-            }
-
-            var signature = CreateMethodSignature(md.IsStatic, md.ReturnType.FullName, md.DeclaringType.FullName, md.Name, md.Parameters.Select(x => x.ParameterType.FullName));
-            if (_methodReferences.TryGetValue(signature, out var plug) && plug.FullName != md.FullName)
-            {
-                md.Body = new MethodBody(md);
-                var processor = md.Body.GetILProcessor();
-                if (md.HasThis)
-                {
-                    processor.Append(Instruction.Create(OpCodes.Ldarg, md.Body.ThisParameter));
-                }
-
-                foreach (var parameter in md.Parameters)
-                {
-                    processor.Append(Instruction.Create(OpCodes.Ldarg, parameter));
-                }
-
-                processor.Append(Instruction.Create(OpCodes.Call, plug));
                 processor.Append(Instruction.Create(OpCodes.Ret));
                 return;
             }

@@ -463,7 +463,7 @@ namespace JavaNet
 
             foreach (var entry in _ca.ExceptionTable)
             {
-                var start = Instruction.Create(OpCodes.Leave, _blocks[entry.HandlerPc].FirstNetOp);
+                var start = Instruction.Create(OpCodes.Leave, _blocks[entry.HandlerPc].GetFirstNetOp());
                 var end = Instruction.Create(OpCodes.Nop);
 
                 ilp.Append(start);
@@ -471,8 +471,8 @@ namespace JavaNet
 
                 _md.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
                 {
-                    TryStart = _blocks[entry.StartPc].FirstNetOp,
-                    TryEnd = _blocks[entry.EndPc].FirstNetOp,
+                    TryStart = _blocks[entry.StartPc].GetFirstNetOp(),
+                    TryEnd = _blocks[entry.EndPc].GetFirstNetOp(),
                     HandlerStart = start,
                     HandlerEnd = end
                 });
@@ -509,14 +509,11 @@ namespace JavaNet
 
         public int HandlerNum { get; set; }
 
-        public Instruction FirstNetOp
+        public Instruction GetFirstNetOp()
         {
-            get
-            {
-                if (NetOps.Count == 0)
-                    NetOps.Add(Instruction.Create(OpCodes.Nop));
-                return NetOps[0];
-            }
+            if (NetOps.Count == 0)
+                NetOps.Add(Instruction.Create(OpCodes.Nop));
+            return NetOps[0];
         }
 
         public CalculatedValue ExceptionValue { get; set; }
