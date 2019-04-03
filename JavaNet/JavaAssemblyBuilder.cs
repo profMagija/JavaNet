@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -31,7 +32,7 @@ namespace JavaNet
 
         private readonly Dictionary<string, MethodReference> _methodReferences = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, MethodReference> _methodPlugs = new Dictionary<string, MethodReference>();
-        private readonly Dictionary<string, MethodReference> _methodImpl = new Dictionary<string, MethodReference>();
+        private readonly Dictionary<string, MethodReference> _nativeMethodImpl = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, FieldReference> _fieldReferences = new Dictionary<string, FieldReference>();
         private readonly Dictionary<string, TypeReference> _nativeDataTypes = new Dictionary<string, TypeReference>();
         private readonly HashSet<string> _annotations = new HashSet<string>();
@@ -88,6 +89,10 @@ namespace JavaNet
             _typePlugs["java/lang/ClassCastException"] = SystemImport(typeof(InvalidCastException));
             _typePlugs["java/lang/IllegalMonitorStateException"] = SystemImport(typeof(SynchronizationLockException));
             _typePlugs["java/lang/InterruptedException"] = SystemImport(typeof(ThreadInterruptedException));
+            _typePlugs["java/lang/InterruptedException"] = SystemImport(typeof(ThreadInterruptedException));
+
+            _typePlugs["java/io/IOException"] = SystemImport(typeof(IOException));
+            _typePlugs["java/io/FileNotFoundException"] = SystemImport(typeof(FileNotFoundException));
 
             PlugAssembly(asm, typeof(StringPlugs).Assembly);
         }
@@ -128,7 +133,7 @@ namespace JavaNet
                             mpa.DeclaringType,
                             mpa.MethodName,
                             mpa.ArgTypes);
-                        _methodImpl[signature] = Import(method);
+                        _nativeMethodImpl[signature] = Import(method);
                     }
 
                     if (method.GetCustomAttribute<CastPlugAttribute>() is CastPlugAttribute cpa)
@@ -263,6 +268,8 @@ namespace JavaNet
                 reference.HasPublicKey = false;
                 reference.Culture = null;
             }
+
+            Debug.Assert(_nativeMethodImpl.Count == 0);
 
             return _asm;
         }
@@ -678,8 +685,9 @@ namespace JavaNet
         private void BuildMethodBody(MethodDefinition md, TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
         {
             var signature = CreateMethodSignature(md.IsStatic, md.ReturnType.FullName, md.DeclaringType.FullName, md.Name, md.Parameters.Select(x => x.ParameterType.FullName));
-            if (_methodImpl.TryGetValue(signature, out var impl))
+            if (_nativeMethodImpl.TryGetValue(signature, out var impl))
             {
+                _nativeMethodImpl.Remove(signature);
                 var resolvedImpl = impl.Resolve();
                 md.Body = new MethodBody(md);
                 var processor = md.Body.GetILProcessor();
