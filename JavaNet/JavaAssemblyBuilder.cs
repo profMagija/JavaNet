@@ -20,11 +20,13 @@ namespace JavaNet
 {
     public class JavaAssemblyBuilder
     {
-        private readonly Dictionary<string, TypeReference> _typePlugs = new Dictionary<string, TypeReference>();
-        public Dictionary<string, MethodReference> CastPlugs { get; } = new Dictionary<string, MethodReference>();
-        public Dictionary<string, MethodReference> InstanceOfPlugs { get; } = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, TypeReference> _typeReferences = new Dictionary<string, TypeReference>();
         private readonly Dictionary<string, TypeDefinition> _typeDefinitions = new Dictionary<string, TypeDefinition>();
+        private readonly Dictionary<string, TypeReference> _typePlugs = new Dictionary<string, TypeReference>();
+
+        public Dictionary<string, MethodReference> CastPlugs { get; } = new Dictionary<string, MethodReference>();
+        public Dictionary<string, MethodReference> InstanceOfPlugs { get; } = new Dictionary<string, MethodReference>();
+
         private readonly Dictionary<string, MethodReference> _methodReferences = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, MethodReference> _methodPlugs = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, MethodReference> _methodImpl = new Dictionary<string, MethodReference>();
@@ -213,7 +215,12 @@ namespace JavaNet
 
             foreach (var classFile in jar.ClassFiles)
             {
-                BuildClass(classFile);
+                BuildClassDefinition(classFile);
+            }
+
+            foreach (var classFile in jar.ClassFiles)
+            {
+                BuildClassFieldsAndMethods(jar, classFile);
             }
 
             foreach (var classFile in jar.ClassFiles)
@@ -237,10 +244,44 @@ namespace JavaNet
 
             foreach (var (a, b, c) in _typeThings)
             {
-                BuildClassPart2(a, b, c);
+                BuildClassMethodBodies(a, b, c);
             }
 
             return _asm;
+        }
+
+        private HashSet<string> _builtTypes = new HashSet<string>();
+
+        private void BuildClassFieldsAndMethods(JarFile jar, ClassFile classFile)
+        {
+            if (_builtTypes.Contains(classFile.ThisClass.Name))
+                return;
+
+            var td = classFile.TypeDefinition;
+            if (td == null)
+                return;
+
+            if (td.BaseType != null)
+                BuildClassFieldsAndMethodsFromType(jar, td.BaseType);
+
+            foreach (var ifType in td.Interfaces.Select(i => i.InterfaceType))
+            {
+                BuildClassFieldsAndMethodsFromType(jar, ifType);
+            }
+
+            Debug.Assert(!_builtTypes.Contains(classFile.ThisClass.Name));
+
+            BuildClassFieldsAndMethodsInternal(td, classFile, classFile.ConstantPool);
+
+            Debug.Assert(!_builtTypes.Contains(classFile.ThisClass.Name));
+            _builtTypes.Add(classFile.ThisClass.Name);
+        }
+
+        private void BuildClassFieldsAndMethodsFromType(JarFile jar, TypeReference ifType)
+        {
+            var ccf = jar.ClassFiles.FirstOrDefault(c => c.TypeDefinition?.FullName == ifType.FullName);
+            if (ccf != null)
+                BuildClassFieldsAndMethods(jar, ccf);
         }
 
         public TypeReference GetOrDefineType(string name)
@@ -250,18 +291,17 @@ namespace JavaNet
 
             if (_jar.ClassFiles.FirstOrDefault(x => x.ThisClass.Name == name) is var cf && cf != null)
             {
-                BuildClass(cf);
+                BuildClassDefinition(cf);
                 return _typeDefinitions.GetValueOrDefault(name);
             }
 
             return null;
         }
 
-        public void BuildClass(ClassFile cf)
+        public void BuildClassDefinition(ClassFile cf)
         {
-            if (_typePlugs.ContainsKey(cf.ThisClass.Name))
+            if (_typePlugs.TryGetValue(cf.ThisClass.Name, out var _))
             {
-                //Console.WriteLine("Skipping plugget type {0}", cf.ThisClass.Name);
                 return;
             }
 
@@ -287,9 +327,10 @@ namespace JavaNet
 
             var td = new TypeDefinition(string.Join('.', className.SkipLast(1)), className.Last(), attrs);
 
+
             td.Scope = _asm.MainModule;
             _asm.MainModule.Types.Add(td);
-
+            cf.TypeDefinition = td;
             _typeDefinitions[cf.ThisClass.Name] = td;
 
             if (isAnnot)
@@ -306,6 +347,11 @@ namespace JavaNet
                 var interfaceType = GetOrDefineType(info.Name) ?? ResolveTypeReference(info.Name);
                 td.Interfaces.Add(new InterfaceImplementation(interfaceType));
             }
+        }
+
+
+        public void BuildClassFieldsAndMethodsInternal(TypeDefinition td, ClassFile cf, CpInfo[] cp)
+        {
 
             foreach (var fi in cf.Fields)
             {
@@ -324,8 +370,12 @@ namespace JavaNet
             // this thing will contain all the javaMethod-dotnetMethod pairs, for later definition
             var methodPairs  = new List<(JavaMethodInfo, MethodDefinition)>();
 
+            var isAnnot = td.BaseType?.FullName == typeof(Attribute).FullName;
+
+
             foreach (var mi in cf.Methods)
             {
+
                 if (isAnnot)
                 {
                     // methods become public fields
@@ -337,7 +387,7 @@ namespace JavaNet
                 {
                     try
                     {
-                        var md = BuildMethod(td, mi, cp, methodPairs);
+                        BuildMethod(td, mi, cp, methodPairs);
                     }
                     catch (JavaNetException ex)
                     {
@@ -346,22 +396,38 @@ namespace JavaNet
                 }
             }
 
+
             if (td.IsClass)
             {
-                foreach (var tdInterface in td.Interfaces)
+                //BreakWhen(td.Name == "AbstractCollection");
+                var interfaces = AllInterfaces(td);
+                foreach (var tdInterface in interfaces)
                 {
                     foreach (var ifMethod in tdInterface.InterfaceType.Resolve().Methods.Where(x => !x.IsStatic))
                     {
-                        var hasMatch = ResolveMethodReference(false, ifMethod.ReturnType, td, ifMethod.Name, ifMethod.Parameters.Select(x => x.ParameterType).ToArray());
+                        var hasMatch = ResolveMethodReference(false,
+                            ifMethod.ReturnType,
+                            td,
+                            ifMethod.Name,
+                            ifMethod.Parameters.Select(x => x.ParameterType).ToArray(),
+                            false);
 
-                        if (hasMatch != null) continue;
 
-                        var sign = CreateMethodSignature(false, ifMethod.ReturnType.FullName, ifMethod.DeclaringType.FullName, ifMethod.Name, ifMethod.Parameters.Select(x => x.ParameterType.FullName));
-                        if (!_methodReferences.TryGetValue(sign + "$default", out var impl) || impl == null)
+                        if (hasMatch != null && !hasMatch.Resolve().IsAbstract)
+                            continue;
+
+                        var impl = CheckMatchingMethodInInterface(td, ifMethod.ReturnType,
+                            new TypeReference[] {null}.Concat(ifMethod.Parameters.Select(x => x.ParameterType)).ToArray(),
+                            ifMethod.Name + "$default");
+                        if (impl == null)
                         {
                             if (!td.IsAbstract)
                                 throw new Exception($"Unimplemented non-default interface method {ifMethod.FullName} in class {td.FullName}");
                         }
+
+                        if (hasMatch != null && impl == null)
+                            continue; // we have a abstract match, and would create an abstract implementation - no need to do that
+
 
                         var md = new MethodDefinition(ifMethod.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig, ifMethod.ReturnType);
                         md.DeclaringType = td;
@@ -400,7 +466,20 @@ namespace JavaNet
             _typeThings.Add((td, cf, methodPairs));
         }
 
-        public void BuildClassPart2(TypeDefinition td, ClassFile cf, List<(JavaMethodInfo, MethodDefinition)> methodPairs)
+        public IEnumerable<InterfaceImplementation> AllInterfaces(TypeDefinition tr)
+        {
+
+            return tr?.Interfaces.SelectMany(ii => AllInterfaces(ii.InterfaceType.Resolve()).Concat(new[] {ii})).Concat(AllInterfaces(tr.BaseType?.Resolve())).Distinct(new ByNameInterfaceComparer())
+                   ?? new InterfaceImplementation[0];
+        }
+
+        private class ByNameInterfaceComparer : IEqualityComparer<InterfaceImplementation>
+        {
+            public bool Equals(InterfaceImplementation x, InterfaceImplementation y) => x.InterfaceType.FullName == y.InterfaceType.FullName;
+            public int GetHashCode(InterfaceImplementation obj) => obj.InterfaceType.FullName.GetHashCode();
+        }
+
+        public void BuildClassMethodBodies(TypeDefinition td, ClassFile cf, List<(JavaMethodInfo, MethodDefinition)> methodPairs)
         {
 
             foreach (var (mi, md) in methodPairs)
@@ -412,11 +491,13 @@ namespace JavaNet
 
         }
 
-        private MethodDefinition BuildMethod(TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp, List<(JavaMethodInfo, MethodDefinition)> methodPairs)
+        private void BuildMethod(TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp, List<(JavaMethodInfo, MethodDefinition)> methodPairs)
         {
             //Console.WriteLine("  Building method {0} {1}", mi.Name, mi.Descriptor);
 
             var isInterface = definingClass.IsInterface;
+            var isStatic = mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static);
+
 
             var attrs = MethodAttributes.HideBySig;
             if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Public))
@@ -426,11 +507,12 @@ namespace JavaNet
             else if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Private))
                 attrs |= MethodAttributes.Private;
 
-            var isStatic = mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static);
             if (isStatic)
                 attrs |= MethodAttributes.Static;
             else
             {
+                // interface methods are not marked virtual in JVM
+                // but we need to in CLI
                 if (isInterface
                     || !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final)
                     && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static)
@@ -459,12 +541,11 @@ namespace JavaNet
 
             foreach (var param in paramType)
             {
+                // TODO: parse parameter names for prettier methods
                 md.Parameters.Add(new ParameterDefinition(param));
             }
 
             var methodSignature = CreateMethodSignature(isStatic, retType.FullName, definingClass.FullName, mi.Name, paramType.Select(x => x.FullName));
-            _methodReferences[methodSignature] = md;
-
 
             if (!isStatic && isInterface && mi.Attributes.OfType<CodeAttribute>().Any())
             {
@@ -476,10 +557,47 @@ namespace JavaNet
                 md.Attributes |= MethodAttributes.Abstract;
             }
 
+
+            if (isInterface && !isStatic && definingClass.Interfaces.Any(ii => CheckMatchingMethodInInterface(ii.InterfaceType.Resolve(), mi) != null))
+            {
+                // this method would hide a inherited one
+                // we don't want that
+
+                // HOWEVER, if this is a default implementation of an inherited method WE KEEP
+                // THE IMPLEMENTATION, but DISCARD THIS
+                return;
+            }
+
+            // add the method to all indices, we are doing this
+
+            Debug.Assert(!_methodReferences.ContainsKey(methodSignature));
+            Debug.Assert(!definingClass.Methods.Any(x => x.FullName == md.FullName));
+            _methodReferences[methodSignature] = md;
             definingClass.Methods.Add(md);
             methodPairs.Add((mi, md));
 
-            return md;
+        }
+
+        private static void BreakWhen(bool cond)
+        {
+            Debug.Assert(!cond);
+        }
+
+        private MethodDefinition CheckMatchingMethodInInterface(TypeDefinition type, JavaMethodInfo mi)
+        {
+            var (retType, paramTypes) = ResolveMethodDescriptor(mi.Descriptor);
+            return CheckMatchingMethodInInterface(type, retType, paramTypes, TranslateMethodName(mi.Name));
+        }
+
+        private MethodDefinition CheckMatchingMethodInInterface(TypeDefinition type, TypeReference retType, TypeReference[] paramTypes, string name)
+        {
+            var resolved = type.Methods.FirstOrDefault(md =>
+                md.Name == name
+                && md.ReturnType.FullName == retType.FullName
+                && md.Parameters.Count == paramTypes.Length
+                && md.Parameters.Zip(paramTypes, (p1, p2) => p1.ParameterType.FullName == (p2?.FullName ?? type.FullName)).All(b => b));
+
+            return resolved ?? type.Interfaces.Select(ii => CheckMatchingMethodInInterface(ii.InterfaceType.Resolve(), retType, paramTypes, name)).FirstOrDefault(m => m != null);
         }
 
         private void CreateInterfaceDefaultImplementation(
@@ -490,7 +608,7 @@ namespace JavaNet
             List<(JavaMethodInfo, MethodDefinition)> methodPairs, 
             string methodSignature)
         {
-            var defMethod = new MethodDefinition(md.Name + "_defaultImpl", (md.Attributes | MethodAttributes.Static) & ~MethodAttributes.Virtual, md.ReturnType);
+            var defMethod = new MethodDefinition(md.Name + "$default", (md.Attributes | MethodAttributes.Static) & ~MethodAttributes.Virtual, md.ReturnType);
             defMethod.Parameters.Add(new ParameterDefinition("this", ParameterAttributes.None, definingClass));
             foreach (var parameter in md.Parameters)
             {
@@ -647,35 +765,6 @@ namespace JavaNet
             }
         }
 
-        private (bool isArg, int index) LocalIndex(JavaMethodInfo mi, int index)
-        {
-            var counter = 0;
-            var argCount = 0;
-
-            if (!mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static))
-            {
-                if (counter == index) 
-                    return (true, argCount);
-                counter++;
-                argCount++;
-            }
-
-            var (_, paramTypes) = ResolveMethodDescriptor(mi.Descriptor);
-
-            foreach (var type in paramTypes)
-            {
-                if (counter == index) 
-                    return (true, argCount);
-                counter++;
-                argCount++;
-
-                if (type.FullName == "System.Double" || type.FullName == "System.Long")
-                    counter++;
-            }
-
-            return (false, index - counter);
-        }
-
         public static IEnumerable<FieldReference> GetAllFields(TypeDefinition td)
         {
             return td == null ? Enumerable.Empty<FieldReference>() : td.Fields.Concat(GetAllFields(td.BaseType?.Resolve()));
@@ -700,12 +789,13 @@ namespace JavaNet
 
         public static string CreateMethodSignature(bool isStatic, string returnType, string type, string name, IEnumerable<string> paramTypes)
         {
-            return $"{(isStatic ? 's' : 'i')}:{type}.{name}(" + string.Join(',', paramTypes) + "):" + returnType;
+            return $"{type}.{name}(" + string.Join(',', paramTypes) + "):" + returnType;
         }
 
-        public MethodReference ResolveMethodReference(bool isStatic, TypeReference retType, TypeDefinition type, string name, TypeReference[] paramTypes)
+        public MethodReference ResolveMethodReference(bool isStatic, TypeReference retType, TypeDefinition type, string name, TypeReference[] paramTypes, bool goIntoInterfaces = true)
         {
             var signature = CreateMethodSignature(isStatic, retType.FullName, type.FullName, name, paramTypes.Select(x => x.FullName));
+            if (_methodPlugs.TryGetValue(signature, out var plug)) return plug;
             if (!_methodReferences.TryGetValue(signature, out var resolvedMethod))
             {
 
@@ -731,28 +821,33 @@ namespace JavaNet
                         resolvedMethod = _asm.MainModule.ImportReference(resolvedMethod);
 
                     if (resolvedMethod == null && type.BaseType != null)
-                        resolvedMethod = ResolveMethodReference(isStatic, retType, type.BaseType.Resolve(), name, paramTypes);
+                        resolvedMethod = ResolveMethodReference(isStatic, retType, type.BaseType.Resolve(), name, paramTypes, goIntoInterfaces);
 
-                    if (type.IsInterface)
+                    if (resolvedMethod == null && type.IsInterface) // interfaces don't have a base type, but we still need to check in the Object class
+                        resolvedMethod = ResolveMethodReference(isStatic, retType, _asm.MainModule.TypeSystem.Object.Resolve(), name, paramTypes, goIntoInterfaces);
+
+                    if (goIntoInterfaces)
                     {
                         foreach (var sInterface in type.Interfaces)
                         {
                             if (resolvedMethod == null)
-                                resolvedMethod = ResolveMethodReference(isStatic, retType, sInterface.InterfaceType.Resolve(), name, paramTypes);
+                                resolvedMethod = ResolveMethodReference(isStatic, retType, sInterface.InterfaceType.Resolve(), name, paramTypes, goIntoInterfaces);
                         }
                     }
                 }
             }
 
+            Debug.Assert(name != "getKey" || resolvedMethod != null);
+
             return resolvedMethod;
         }
 
-        public MethodReference ResolveMethodReference(bool isStatic, FieldOrMethodrefInfo fmi)
+        public MethodReference ResolveMethodReference(bool isStatic, FieldOrMethodrefInfo fmi, bool goIntoInterfaces)
         {
             var declType = ResolveTypeReference(fmi.Class.Name).Resolve();
             var (retType, paramTypes) = ResolveMethodDescriptor(fmi.NameAndType.Descriptor);
             var translatedMethodName = TranslateMethodName(fmi.NameAndType.Name);
-            var resolvedMethod = ResolveMethodReference(isStatic, retType, declType, translatedMethodName, paramTypes);
+            var resolvedMethod = ResolveMethodReference(isStatic, retType, declType, translatedMethodName, paramTypes, goIntoInterfaces);
             var signature = CreateMethodSignature(isStatic, retType.FullName, declType.FullName, translatedMethodName, paramTypes.Select(x => x.FullName));
             _methodReferences[signature] = resolvedMethod;
 

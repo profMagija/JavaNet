@@ -679,7 +679,7 @@ namespace JavaNet
                     {
                         var cp = (FieldOrMethodrefInfo) CpInfo;
                         var isStatic = Instr == JavaInstruction.invokestatic;
-                        var method = asm.ResolveMethodReference(isStatic, cp);
+                        var method = asm.ResolveMethodReference(isStatic, cp, Instr == JavaInstruction.invokeinterface);
                         var args = new JavaValue[method.Parameters.Count];
                         var state = curState;
                         for (var i = args.Length - 1; i >= 0; i--)

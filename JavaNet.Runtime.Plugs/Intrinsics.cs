@@ -25,4 +25,16 @@ namespace JavaNet.Runtime.Plugs
             return a > b ? 1 : a == b ? 0 : -1;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Method, Inherited = false)]
+    public sealed class SignaturePolymorphicAttribute : Attribute
+    {
+        // See the attribute guidelines at 
+        //  http://go.microsoft.com/fwlink/?LinkId=85236
+        public SignaturePolymorphicAttribute()
+        {
+            // TODO: Implement code here
+            throw new NotImplementedException();
+        }
+    }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using Mono.Cecil;
 
 namespace JavaNet
 {
@@ -17,6 +18,8 @@ namespace JavaNet
         public JavaFieldInfo[] Fields;
         public JavaMethodInfo[] Methods;
         public JavaAttributeInfo[] Attributes;
+
+        public TypeDefinition TypeDefinition;
 
         [Flags]
         public enum Flags
