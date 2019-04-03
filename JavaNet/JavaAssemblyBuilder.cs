@@ -33,6 +33,7 @@ namespace JavaNet
         private readonly Dictionary<string, MethodReference> _methodPlugs = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, MethodReference> _methodImpl = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, FieldReference> _fieldReferences = new Dictionary<string, FieldReference>();
+        private readonly Dictionary<string, TypeReference> _nativeDataTypes = new Dictionary<string, TypeReference>();
         private readonly HashSet<string> _annotations = new HashSet<string>();
 
         private AssemblyDefinition _asm;
@@ -97,8 +98,12 @@ namespace JavaNet
             {
                 if (type.GetCustomAttribute<TypePlugAttribute>() is TypePlugAttribute tpa)
                 {
-                    Console.WriteLine("plugging {0}", tpa.Name ?? type.FullName);
                     _typePlugs[(tpa.Name ?? type.FullName).Replace('.', '/')] = asm.MainModule.ImportReference(type);
+                }
+
+                foreach (var nda in type.GetCustomAttributes<NativeDataAttribute>())
+                {
+                    _nativeDataTypes[nda.TargetClass.Replace('.', '/')] = asm.MainModule.ImportReference(type);
                 }
 
                 foreach (var method in type.GetMethods())
@@ -382,6 +387,11 @@ namespace JavaNet
                 {
                     Console.WriteLine("Failed to build field {0}::{1}", td.FullName, fi.Name);
                 }
+            }
+
+            if (_nativeDataTypes.TryGetValue(cf.ThisClass.Name, out var nativeData))
+            {
+                td.Fields.Add(new FieldDefinition("__nativeData", FieldAttributes.CompilerControlled, nativeData));
             }
 
             // this thing will contain all the javaMethod-dotnetMethod pairs, for later definition
@@ -734,6 +744,25 @@ namespace JavaNet
                                     .Resolve();
 
                                 processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(funcType.GetConstructors().Single())));
+                            }
+                            break;
+                        }
+                        case var fieldPtr when fieldPtr.AttributeType.FullName == typeof(FieldPtrAttribute).FullName:
+                        {
+                            var name = (string) fieldPtr.ConstructorArguments[0].Value;
+                            var isStatic = (bool) fieldPtr.ConstructorArguments[1].Value;
+                            var tgtField = definingClass.Fields.Single(f => f.IsStatic == isStatic && f.Name == name);
+                            if (isStatic)
+                            {
+
+                                processor.Append(Instruction.Create(OpCodes.Ldsflda, tgtField));
+                            }
+                            else
+                            {
+                                if (!md.HasThis)
+                                    throw new Exception("Can't handle instance field reference in static method");
+                                processor.Append(Instruction.Create(OpCodes.Ldarg, md.Body.ThisParameter));
+                                processor.Append(Instruction.Create(OpCodes.Ldflda, tgtField));
                             }
                             break;
                         }

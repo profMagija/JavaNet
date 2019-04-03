@@ -34,12 +34,10 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
     public sealed class NativeDataAttribute : Attribute
     {
         public string TargetClass { get; }
-        public bool IsStatic { get; }
 
-        public NativeDataAttribute(string targetClass, bool isStatic)
+        public NativeDataAttribute(string targetClass)
         {
             TargetClass = targetClass;
-            IsStatic = isStatic;
         }
     }
 
@@ -69,10 +67,12 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
     public sealed class FieldPtrAttribute : Attribute
     {
         public string FieldName { get; }
+        public bool IsStatic { get; }
 
-        public FieldPtrAttribute(string fieldName)
+        public FieldPtrAttribute(string fieldName, bool isStatic)
         {
             FieldName = fieldName;
+            IsStatic = isStatic;
         }
     }
 
