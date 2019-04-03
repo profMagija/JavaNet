@@ -730,7 +730,7 @@ namespace JavaNet
                             {
                                 var numParams = targetMethod.Parameters.Count;
                                 var funcType = SystemImport(Type.GetType($"System.Func`{numParams + 1}"))
-                                    .MakeGenericInstanceType(new[] {targetMethod.ReturnType}.Concat(targetMethod.Parameters.Select(x => x.ParameterType)).ToArray())
+                                    .MakeGenericInstanceType(targetMethod.Parameters.Select(x => x.ParameterType).Concat(new[] {targetMethod.ReturnType}).ToArray())
                                     .Resolve();
 
                                 processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(funcType.GetConstructors().Single())));
@@ -755,7 +755,6 @@ namespace JavaNet
                 processor.Append(Instruction.Create(OpCodes.Ldstr, "Native method stub: " + md.FullName));
                 processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(typeof(TypeLoadException).GetConstructor(new[] { typeof(string) }))));
                 processor.Append(Instruction.Create(OpCodes.Throw));
-                processor.Append(Instruction.Create(OpCodes.Ret));
                 return;
             }
 
@@ -777,7 +776,6 @@ namespace JavaNet
                             processor.Append(Instruction.Create(OpCodes.Ldstr, ex.Reason + " " + ex.Message));
                             processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(typeof(TypeLoadException).GetConstructor(new[] {typeof(string)}))));
                             processor.Append(Instruction.Create(OpCodes.Throw));
-                            processor.Append(Instruction.Create(OpCodes.Ret));
                         }
 
                         break;
