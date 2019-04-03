@@ -9,6 +9,7 @@
     </Reference>
     <Reference Include="JavaNet.Runtime.Plugs">
       <HintPath>..\JavaNet.RuntimeConverter\bin\Debug\netcoreapp2.1\JavaNet.Runtime.Plugs.dll</HintPath>
+      <Private></Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
