@@ -503,7 +503,7 @@ namespace JavaNet
             if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Public))
                 attrs |= MethodAttributes.Public;
             else if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Protected))
-                attrs |= MethodAttributes.Family;
+                attrs |= MethodAttributes.FamORAssem;
             else if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Private))
                 attrs |= MethodAttributes.Private;
 
