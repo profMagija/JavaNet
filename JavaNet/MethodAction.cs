@@ -800,9 +800,9 @@ namespace JavaNet
             }
             else
             {
-                l.Add(Instruction.Create(OpCodes.Dup));
                 l.Add(Instruction.Create(OpCodes.Isinst, Type));
-                l.Add(Instruction.Create(OpCodes.Ceq));
+                l.Add(Instruction.Create(OpCodes.Ldnull));
+                l.Add(Instruction.Create(OpCodes.Cgt_Un));
             }
 
             l.AddRange(Target.StoreValue());
