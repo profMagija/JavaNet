@@ -40,7 +40,7 @@ namespace JavaNet
 
         public TypeReference Import(Type t)
         {
-            return _asm.MainModule.ImportReference(t);
+            return t.Assembly.FullName == "System.Private.CoreLib" ? SystemImport(t) : _asm.MainModule.ImportReference(t);
         }
 
         public MethodReference Import(MethodBase m) => _asm.MainModule.ImportReference(m);
@@ -70,8 +70,8 @@ namespace JavaNet
 
         public void CreatePlugs(AssemblyDefinition asm)
         {
-            _typePlugs["java/lang/Object"] = asm.MainModule.TypeSystem.Object;
-            _typePlugs["java/lang/String"] = asm.MainModule.TypeSystem.String;
+            _typePlugs["java/lang/Object"] = SystemImport(typeof(object));
+            _typePlugs["java/lang/String"] = SystemImport(typeof(string));
             _typePlugs["java/lang/Throwable"] = SystemImport(typeof(Exception));
 
             _typePlugs["java/lang/Class"] = SystemImport(typeof(Type));
@@ -98,12 +98,12 @@ namespace JavaNet
             {
                 if (type.GetCustomAttribute<TypePlugAttribute>() is TypePlugAttribute tpa)
                 {
-                    _typePlugs[(tpa.Name ?? type.FullName).Replace('.', '/')] = asm.MainModule.ImportReference(type);
+                    _typePlugs[(tpa.Name ?? type.FullName).Replace('.', '/')] = Import(type);
                 }
 
                 foreach (var nda in type.GetCustomAttributes<NativeDataAttribute>())
                 {
-                    _nativeDataTypes[nda.TargetClass.Replace('.', '/')] = asm.MainModule.ImportReference(type);
+                    _nativeDataTypes[nda.TargetClass.Replace('.', '/')] = Import(type);
                 }
 
                 foreach (var method in type.GetMethods())
@@ -116,8 +116,8 @@ namespace JavaNet
                             mpa.DeclaringType,
                             mpa.MethodName,
                             mpa.ParamTypes);
-                        _methodPlugs[signature] = asm.MainModule.ImportReference(method);
-                        _methodReferences[signature] = asm.MainModule.ImportReference(method);
+                        _methodPlugs[signature] = Import(method);
+                        _methodReferences[signature] = Import(method);
                     }
 
                     foreach (var mpa in method.GetCustomAttributes<NativeImplAttribute>())
@@ -128,17 +128,17 @@ namespace JavaNet
                             mpa.DeclaringType,
                             mpa.MethodName,
                             mpa.ArgTypes);
-                        _methodImpl[signature] = asm.MainModule.ImportReference(method);
+                        _methodImpl[signature] = Import(method);
                     }
 
                     if (method.GetCustomAttribute<CastPlugAttribute>() is CastPlugAttribute cpa)
                     {
-                        CastPlugs[cpa.TargetType.FullName] = asm.MainModule.ImportReference(method);
+                        CastPlugs[cpa.TargetType.FullName] = Import(method);
                     }
 
                     if (method.GetCustomAttribute<InstanceOfPlugAttribute>() is InstanceOfPlugAttribute iopa)
                     {
-                        CastPlugs[iopa.TargetType.FullName] = asm.MainModule.ImportReference(method);
+                        CastPlugs[iopa.TargetType.FullName] = Import(method);
                     }
                 }
             }
@@ -176,7 +176,7 @@ namespace JavaNet
             foreach (var type in mod.ExportedTypes)
             {
                 var typeName = type.FullName.Replace('.', '/');
-                _typeReferences[typeName] = _asm.MainModule.ImportReference(type);
+                _typeReferences[typeName] = Import(type);
             }
         }
         
@@ -254,6 +254,16 @@ namespace JavaNet
                 BuildClassMethodBodies(a, b, c);
             }
 
+            foreach (var reference in _asm.MainModule.AssemblyReferences)
+            {
+                if (reference.Name != "System.Private.CoreLib") continue;
+                reference.Name = "mscorlib";
+                reference.PublicKey = null;
+                reference.PublicKeyToken = null;
+                reference.HasPublicKey = false;
+                reference.Culture = null;
+            }
+
             return _asm;
         }
 
@@ -294,7 +304,7 @@ namespace JavaNet
         public TypeReference GetOrDefineType(string name)
         {
             if (_typePlugs.TryGetValue(name, out var tr)) return tr;
-            if (_typeDefinitions.TryGetValue(name, out var td)) return td.Module != _asm.MainModule ? _asm.MainModule.ImportReference(td) : td;
+            if (_typeDefinitions.TryGetValue(name, out var td)) return Import(td);
 
             if (_jar.ClassFiles.FirstOrDefault(x => x.ThisClass.Name == name) is var cf && cf != null)
             {
@@ -342,7 +352,7 @@ namespace JavaNet
             _typeDefinitions[cf.ThisClass.Name] = td;
 
             if (isAnnot)
-                td.BaseType = _asm.MainModule.ImportReference(typeof(Attribute));
+                td.BaseType = Import(typeof(Attribute));
             else if (isInterface)
                 td.BaseType = null;
             else
@@ -368,7 +378,7 @@ namespace JavaNet
                     : new byte[] {1, 0, (byte) (0xc0 | lenEnc[3]), lenEnc[2], lenEnc[1], lenEnc[0]};
             var named = new byte[] {0, 0};
 
-            attributes.Add(new CustomAttribute(_asm.MainModule.Import(JavaNameAttribute.Ctor), lenBytes.Concat(nameEnc).Concat(named).ToArray()));
+            attributes.Add(new CustomAttribute(Import(JavaNameAttribute.Ctor), lenBytes.Concat(nameEnc).Concat(named).ToArray()));
         }
 
 
@@ -526,13 +536,15 @@ namespace JavaNet
             var isStatic = mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static);
 
 
-            var attrs = MethodAttributes.HideBySig;
-            if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Public))
+            var attrs = (MethodAttributes) 0;
+            if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Public) || isInterface)
                 attrs |= MethodAttributes.Public;
             else if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Protected))
                 attrs |= MethodAttributes.FamORAssem;
             else if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Private))
                 attrs |= MethodAttributes.Private;
+            else
+                attrs |= MethodAttributes.Assembly;
 
             if (isStatic)
                 attrs |= MethodAttributes.Static;
@@ -540,27 +552,39 @@ namespace JavaNet
             {
                 // interface methods are not marked virtual in JVM
                 // but we need to in CLI
-                if (isInterface
-                    || !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final)
-                    && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static)
+
+                if (!mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static)
                     && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native)
                     && mi.Name != "<init>")
+                {
                     attrs |= MethodAttributes.Virtual;
+                }
 
+                if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final))
+                {
+                    attrs |= MethodAttributes.Final;
+                }
 
                 if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Abstract))
                     attrs |= MethodAttributes.Abstract;
             }
 
+            //if (isInterface)
+            //    attrs |= MethodAttributes.NewSlot;
+
             if (mi.Name == "<init>" || mi.Name == "<clinit>")
                 attrs |= MethodAttributes.RTSpecialName | MethodAttributes.SpecialName;
-
-            attrs |= MethodAttributes.HideBySig;
 
             var (retType, paramType) = ResolveMethodDescriptor(mi.Descriptor);
 
             var myName = TranslateMethodName(mi.Name);
-            
+
+            if (isInterface && (myName == "GetHashCode" && paramType.Length == 0 
+                                || myName == "Equals" && paramType.Length == 1 && paramType[0].FullName == "System.Object"
+                                || myName == "ToString" && paramType.Length == 0))
+                // this is an interface "override" of an object.Equals, object.GHC or object.ToString method, we don't want those
+                return;
+
             var md = new MethodDefinition(myName, attrs, retType)
             {
                 DeclaringType = definingClass
