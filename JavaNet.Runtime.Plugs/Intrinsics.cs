@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -35,6 +36,20 @@ namespace JavaNet.Runtime.Plugs
         {
             // TODO: Implement code here
             throw new NotImplementedException();
+        }
+    }
+    [AttributeUsage(AttributeTargets.Method, Inherited = false)]
+    public sealed class JavaNameAttribute : Attribute
+    {
+        public string Name { get; }
+
+        public static readonly ConstructorInfo Ctor = typeof(JavaNameAttribute).GetConstructors()[0];
+
+        // See the attribute guidelines at 
+        //  http://go.microsoft.com/fwlink/?LinkId=85236
+        public JavaNameAttribute(string name)
+        {
+            Name = name;
         }
     }
 }

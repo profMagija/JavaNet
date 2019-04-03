@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using JavaNet.Runtime.Plugs;
 using JavaNet.Runtime.Plugs.NativeImpl;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using Mono.Collections.Generic;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using MethodBody = Mono.Cecil.Cil.MethodBody;
@@ -327,6 +329,7 @@ namespace JavaNet
 
             var td = new TypeDefinition(string.Join('.', className.SkipLast(1)), className.Last(), attrs);
 
+            AddJavaNameAttribute(cf.ThisClass.Name, td.CustomAttributes);
 
             td.Scope = _asm.MainModule;
             _asm.MainModule.Types.Add(td);
@@ -347,6 +350,20 @@ namespace JavaNet
                 var interfaceType = GetOrDefineType(info.Name) ?? ResolveTypeReference(info.Name);
                 td.Interfaces.Add(new InterfaceImplementation(interfaceType));
             }
+        }
+
+        private void AddJavaNameAttribute(string name, Collection<CustomAttribute> attributes)
+        {
+            var nameEnc = Encoding.UTF8.GetBytes(name);
+            var lenEnc = BitConverter.GetBytes(name.Length);
+            var lenBytes = nameEnc.Length <= 127
+                ? new byte[] {1, 0, lenEnc[0]}
+                : nameEnc.Length <= 0x3fff
+                    ? new byte[] {1, 0, (byte) (0x80 | lenEnc[1]), lenEnc[0]}
+                    : new byte[] {1, 0, (byte) (0xc0 | lenEnc[3]), lenEnc[2], lenEnc[1], lenEnc[0]};
+            var named = new byte[] {0, 0};
+
+            attributes.Add(new CustomAttribute(_asm.MainModule.Import(JavaNameAttribute.Ctor), lenBytes.Concat(nameEnc).Concat(named).ToArray()));
         }
 
 
@@ -538,6 +555,9 @@ namespace JavaNet
             {
                 DeclaringType = definingClass
             };
+
+            if (myName != mi.Name) 
+                AddJavaNameAttribute(mi.Name, md.CustomAttributes);
 
             foreach (var param in paramType)
             {
