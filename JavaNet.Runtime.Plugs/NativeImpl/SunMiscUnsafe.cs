@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 
 namespace JavaNet.Runtime.Plugs.NativeImpl
 {
@@ -43,7 +45,30 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             return Marshal.OffsetOf(fi.DeclaringType, fi.Name).ToInt64();
         }
 
+        [NativeImpl(typeof(int), TypeName, "getIntVolatile", typeof(object), typeof(long))]
+        [NativeImpl(typeof(int), TypeName, "getInt", typeof(object), typeof(long))]
+        public static int getInt(object @this, object ptr, long offset)
+        {
+            return Marshal.ReadInt32(ptr, (int)offset);
+        }
 
+        [NativeImpl(typeof(void), TypeName, "putIntVolatile", typeof(object), typeof(long), typeof(int))]
+        [NativeImpl(typeof(void), TypeName, "putInt", typeof(object), typeof(long), typeof(int))]
+        public static void putInt(object @this, object ptr, long offset, int value)
+        {
+            Marshal.WriteInt32(ptr, (int) offset, value);
+        }
+
+        [NativeImpl(typeof(bool), TypeName, "compareAndSwapInt", typeof(object), typeof(long), typeof(int), typeof(int))]
+        public static bool compareAndSwapInt(object @this, object ptr, long offset, int value, int original)
+        {
+            lock (ptr)
+            {
+                var read = getInt(@this, ptr, offset);
+                putInt(@this, ptr, offset, value);
+                return read != original;
+            }
+        }
 
     }
 }

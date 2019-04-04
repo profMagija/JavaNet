@@ -352,11 +352,24 @@ namespace JavaNet
                         continue;
                     var handlerBlock = _blocks[entry.HandlerPc];
                     var catchType = entry.CatchType != null ? JavaAssemblyBuilder.Instance.ResolveTypeReference(entry.CatchType.Name) : null;
-                    handlerBlock.ExceptionValue = new CalculatedValue(catchType ?? JavaAssemblyBuilder.Instance.TypeSystem.Object);
-                    var (acts, state) = curState.Unconst();
+                    handlerBlock.ExceptionValue = new CalculatedValue(catchType ?? JavaAssemblyBuilder.Instance.Import(typeof(Exception)));
+                    IEnumerable<MethodAction> acts;
+                    (acts, curState) = curState.Unconst();
                     curBlock.Actions.AddRange(acts);
-                    curState = state;
-                    handlerBlock.StartingState = new JavaState(ImmutableStack.Create<JavaValue>(handlerBlock.ExceptionValue), curState.Locals);
+                    if (handlerBlock.StartingState == null)
+                    {
+                        handlerBlock.StartingState = new JavaState(ImmutableStack.Create<JavaValue>(handlerBlock.ExceptionValue), curState.Locals);
+                    }
+                    else
+                    {
+                        // we need to map our state to that of the jump block
+                        if (handlerBlock.Generated)
+                            handlerBlock.Generated = false; // regenerate 
+                        JavaState newState;
+                        (acts, newState, handlerBlock.StartingState) = new JavaState(ImmutableStack.Create<JavaValue>(handlerBlock.ExceptionValue), curState.Locals).MapTo(handlerBlock.StartingState);
+                        curState = new JavaState(curState.Stack, newState.Locals);
+                        curBlock.Actions.AddRange(acts);
+                    }
                 }
 
                 foreach (var op in curBlock.JavaOps)
@@ -425,6 +438,9 @@ namespace JavaNet
                 curBlock = _blocks.FirstOrDefault(x => !x.Value.Generated && x.Value.StartingState != null).Value;
             }
 
+            if (_md.Name == "defaultCharset")
+                ;
+
             if (_blocks.Any(x => !x.Value.Generated))
             {
                 //throw new Exception("Orphaned block: " + _blocks.FirstOrDefault(x => !x.Value.Generated));
@@ -458,15 +474,21 @@ namespace JavaNet
                 }
             }
 
+            foreach (var value in _blocks.Values.Select(x => x.ExceptionValue).Where(v => v != null))
+            {
+                if (value.VarDef == null)
+                {
+                    value.VarDef = new VariableDefinition(value.ActualType);
+                    _locals.Add(value.VarDef);
+                }
+            }
 
+            if (_md.Name == "defaultCharset")
+                ;
         }
 
         private void ActionGenerator()
         {
-            foreach (var (_,  block )in _blocks)
-            {
-                block.NetOps.Add(Instruction.Create(OpCodes.Nop));
-            }
 
             foreach (var (_, block) in _blocks)
             {
@@ -477,6 +499,9 @@ namespace JavaNet
             }
 
             var ilp = _body.GetILProcessor();
+
+            ilp.Append(Instruction.Create(OpCodes.Ldstr, _md.FullName));
+            ilp.Append(Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(typeof(Console).GetMethod("WriteLine", new[] {typeof(object)}))));
 
             foreach (var av in _argumentValues)
             {
@@ -523,13 +548,13 @@ namespace JavaNet
                     lastHandler = exceptionHandler;
                 }
 
-                if (block.ExceptionValue != null)
-                {
-                    foreach (var instruction in block.ExceptionValue.StoreValue())
-                    {
-                        ilp.Append(instruction);
-                    }
-                }
+                //if (block.ExceptionValue != null)
+                //{
+                //    foreach (var instruction in block.ExceptionValue.StoreValue())
+                //    {
+                //        ilp.Append(instruction);
+                //    }
+                //}
 
                 foreach (var instruction in block.NetOps)
                 {

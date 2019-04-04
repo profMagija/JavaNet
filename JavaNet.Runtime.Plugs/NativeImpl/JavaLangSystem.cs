@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace JavaNet.Runtime.Plugs.NativeImpl
 {
@@ -12,7 +11,8 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
 
         [NativeImpl("System.Void", TypeName, "registerNatives", IsStatic = true)]
         public static void RegisterNatives(
-            [MethodPtr(true, "System.Void", "initializeSystemClass")] Action initializeSystemClass, 
+            [MethodPtr(true, "System.Void", "initializeSystemClass")]
+            Action initializeSystemClass,
             [TypeHandle(TypeName)] Type systemType)
         {
             _systemType = systemType;
@@ -22,7 +22,9 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             initializeSystemClass();
         }
 
-        private static void sth() { }
+        private static void sth()
+        {
+        }
 
         private static Type _systemType;
         private static FieldInfo _in;
@@ -73,8 +75,9 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
 
         [NativeImpl("java.util.Properties", TypeName, "initProperties", "java.util.Properties", IsStatic = true)]
         [return: ActualType("java.util.Properties")]
-        public static object InitProperties(object props)
+        public static object InitProperties(dynamic props)
         {
+            props.setProperty("file.encoding", "UTF8");
             return props;
         }
     }

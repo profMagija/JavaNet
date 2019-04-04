@@ -83,17 +83,12 @@ namespace JavaNet
             _typePlugs["java/lang/reflect/Field"] = SystemImport(typeof(FieldInfo));
             _typePlugs["java/lang/reflect/Method"] = SystemImport(typeof(MethodInfo));
 
-            _typePlugs["java/lang/ArgumentException"] = SystemImport(typeof(ArgumentException));
             _typePlugs["java/lang/NoSuchFieldException"] = SystemImport(typeof(MissingFieldException));
             _typePlugs["java/lang/NoSuchMethodException"] = SystemImport(typeof(MissingMethodException));
             _typePlugs["java/lang/NullPointerException"] = SystemImport(typeof(NullReferenceException));
             _typePlugs["java/lang/ClassCastException"] = SystemImport(typeof(InvalidCastException));
             _typePlugs["java/lang/IllegalMonitorStateException"] = SystemImport(typeof(SynchronizationLockException));
             _typePlugs["java/lang/InterruptedException"] = SystemImport(typeof(ThreadInterruptedException));
-            _typePlugs["java/lang/InterruptedException"] = SystemImport(typeof(ThreadInterruptedException));
-
-            _typePlugs["java/io/IOException"] = SystemImport(typeof(IOException));
-            _typePlugs["java/io/FileNotFoundException"] = SystemImport(typeof(FileNotFoundException));
 
             PlugAssembly(asm, typeof(StringPlugs).Assembly);
         }
@@ -409,7 +404,7 @@ namespace JavaNet
             {
                 try
                 {
-                    var fd = BuildField(fi, cp);
+                    var fd = BuildField(td, fi, cp);
                     td.Fields.Add(fd);
                     _fieldReferences[cf.ThisClass.Name.Replace('/', '.') + "." + fi.Name + ":" + fi.Descriptor] = fd;
                 }
@@ -987,7 +982,7 @@ namespace JavaNet
             return (ResolveFieldDescriptor(desc, ref pos), parTypes.ToArray());
         }
 
-        private FieldDefinition BuildField(JavaFieldInfo fi, CpInfo[] cp)
+        private FieldDefinition BuildField(TypeDefinition declaringClass, JavaFieldInfo fi, CpInfo[] cp)
         {
             var attrs = (FieldAttributes) 0;
 
@@ -1012,6 +1007,7 @@ namespace JavaNet
             }
 
             var fd = new FieldDefinition(fi.Name, attrs, fieldType);
+            fd.DeclaringType = declaringClass;
 
             if ((fi.AccessFlags & JavaFieldInfo.Flags.Synthetic) != 0)
             {
@@ -1027,6 +1023,7 @@ namespace JavaNet
                     case ConstantValueAttribute cva:
                         fd.Attributes |= FieldAttributes.Literal;
                         fd.Attributes &= ~FieldAttributes.InitOnly;
+                        fd.HasConstant = true;
                         switch (fi.Descriptor)
                         {
                             case "J":
@@ -1056,7 +1053,11 @@ namespace JavaNet
                             case "Ljava/lang/String;":
                                 fd.Constant = ((StringInfo) cva.Value).String;
                                 break;
+                            default:
+                                throw new ArgumentOutOfRangeException(nameof(fi.Descriptor), fi.Descriptor, "Unknown constant");
                         }
+
+                        Debug.Assert(fd.Constant != null);
 
                         break;
                 }
