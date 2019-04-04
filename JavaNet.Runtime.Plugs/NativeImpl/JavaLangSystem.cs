@@ -16,29 +16,35 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             [TypeHandle(TypeName)] Type systemType)
         {
             _systemType = systemType;
+            _in = _systemType.GetField("in", BindingFlags.Public | BindingFlags.Static);
+            _out = _systemType.GetField("out", BindingFlags.Public | BindingFlags.Static);
+            _err = _systemType.GetField("err", BindingFlags.Public | BindingFlags.Static);
             initializeSystemClass();
         }
 
         private static void sth() { }
 
         private static Type _systemType;
+        private static FieldInfo _in;
+        private static FieldInfo _out;
+        private static FieldInfo _err;
 
         [NativeImpl("System.Void", TypeName, "setIn0", "java.io.InputStream", IsStatic = true)]
         public static void SetIn0([ActualType("java.io.InputStream")] object in0)
         {
-            _systemType.GetField("in", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, in0);
+            _in.SetValue(null, in0);
         }
 
         [NativeImpl("System.Void", TypeName, "setOut0", "java.io.PrintStream", IsStatic = true)]
         public static void SetOut0([ActualType("java.io.PrintStream")] object out0)
         {
-            _systemType.GetField("out", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, out0);
+            _out.SetValue(null, out0);
         }
 
         [NativeImpl("System.Void", TypeName, "setErr0", "java.io.PrintStream", IsStatic = true)]
         public static void SetErr0([ActualType("java.io.PrintStream")] object err0)
         {
-            _systemType.GetField("err", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, err0);
+            _err.SetValue(null, err0);
         }
 
         [NativeImpl(typeof(long), TypeName, "currentTimeMillis", IsStatic = true)]
