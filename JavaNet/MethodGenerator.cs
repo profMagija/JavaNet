@@ -140,8 +140,6 @@ namespace JavaNet
         /// </summary>
         private int _valueIndex = 0;
 
-        private int _lowestLocalStored = int.MaxValue;
-
         private MethodGenerator(JavaAssemblyBuilder ab, MethodDefinition md, JavaMethodInfo mi, CodeAttribute ca,
             CpInfo[] cp)
         {
@@ -171,40 +169,6 @@ namespace JavaNet
                     // instructions without arguments
                     case JavaInstrArguments.Niladic:
                     {
-                        switch (instr)
-                        {
-                            case JavaInstruction.astore_0:
-                            case JavaInstruction.istore_0:
-                            case JavaInstruction.lstore_0:
-                            case JavaInstruction.dstore_0:
-                            case JavaInstruction.fstore_0:
-                                _lowestLocalStored = Math.Min(_lowestLocalStored, 0);
-                                break;
-
-                            case JavaInstruction.astore_1:
-                            case JavaInstruction.istore_1:
-                            case JavaInstruction.lstore_1:
-                            case JavaInstruction.dstore_1:
-                            case JavaInstruction.fstore_1:
-                                _lowestLocalStored = Math.Min(_lowestLocalStored, 1);
-                                break;
-                            case JavaInstruction.astore_2:
-                            case JavaInstruction.istore_2:
-                            case JavaInstruction.lstore_2:
-                            case JavaInstruction.dstore_2:
-                            case JavaInstruction.fstore_2:
-                                _lowestLocalStored = Math.Min(_lowestLocalStored, 2);
-                                break;
-                            case JavaInstruction.astore_3:
-                            case JavaInstruction.istore_3:
-                            case JavaInstruction.lstore_3:
-                            case JavaInstruction.dstore_3:
-                            case JavaInstruction.fstore_3:
-                                _lowestLocalStored = Math.Min(_lowestLocalStored, 3);
-                                break;
-
-                        }
-
                         _ops[start] = new JavaOp.Niladic(start, instr);
                         break;
                     }
@@ -212,17 +176,6 @@ namespace JavaNet
                     case JavaInstrArguments.LocalVarIndex:
                     {
                         var localIndex = code[pc++];
-                        switch (instr)
-                        {
-                                case JavaInstruction.astore:
-                                case JavaInstruction.istore:
-                                case JavaInstruction.lstore:
-                                case JavaInstruction.fstore:
-                                case JavaInstruction.dstore:
-                                    _lowestLocalStored = Math.Min(_lowestLocalStored, localIndex);
-                                    break;
-                        }
-
                         _ops[start] = new JavaOp.LocalVarIndex(start, instr, localIndex);
                         break;
                     }
@@ -348,6 +301,8 @@ namespace JavaNet
             }
         }
 
+        private List<ArgumentValue> _argumentValues = new List<ArgumentValue>();
+
         private void ValueAnalyzer()
         {
             var startingBlock = _blocks[0];
@@ -363,25 +318,18 @@ namespace JavaNet
 
             var paramTypesArray = paramTypes.ToArray();
 
+            _argumentValues = paramTypesArray.Select(pt => pt == null ? null : new ArgumentValue(pt.ParameterType, pt)).ToList();
+
             startingBlock.StartingState = new JavaState(
                 ImmutableStack<JavaValue>.Empty,
-                paramTypesArray.Select((tr, i) => (tr, i)).ToImmutableDictionary(
+                _argumentValues.Select((tr, i) => (tr, i)).ToImmutableDictionary(
                     xi => xi.i,
-                    xi => xi.tr != null ? (JavaValue) new ArgumentValue(xi.tr.ParameterType, xi.tr) : null
+                    xi => (JavaValue) xi.tr
                 )
             );
 
-            for (var localIndex = _lowestLocalStored; localIndex < paramTypesArray.Count(); localIndex++)
-            {
-                // java gets it's arguments in local variables, but reuses those slots for variables
-                // since it also changes types sometimes, we can't use 'starg' in IL
-                // so we just copy (potentially) accessed arguments to locals
-                var arg = startingBlock.StartingState.Load(localIndex);
-                if (arg == null) continue;
-                var cv = new CalculatedValue(arg.ActualType);
-                startingBlock.Actions.Add(new ConstantSetAction(cv, arg));
-                startingBlock.StartingState = startingBlock.StartingState.Store(localIndex, cv);
-            }
+            if (_md.Name == "forOutputStreamWriter")
+                ;
 
             foreach (var entry in _ca.ExceptionTable)
             {
@@ -491,9 +439,19 @@ namespace JavaNet
         {
             _locals = new List<VariableDefinition>();
 
+            foreach (var argumentValue in _argumentValues)
+            {
+                if (argumentValue?.Backing == null) continue;
+                argumentValue.VarDef = new VariableDefinition(argumentValue.ActualType);
+                _locals.Add(argumentValue.VarDef);
+            }
+
             foreach (var value in _blocks.Where(x => x.Value.Generated).SelectMany(x => x.Value.Actions).SelectMany(x => x.RequiredValues))
             {
-                if (value is CalculatedValue cv && cv.VarDef == null)
+                if (value is ArgumentValue av)
+                {
+                }
+                else if (value is CalculatedValue cv && cv.VarDef == null)
                 {
                     cv.VarDef = new VariableDefinition(cv.ActualType);
                     _locals.Add(cv.VarDef);
@@ -519,6 +477,13 @@ namespace JavaNet
             }
 
             var ilp = _body.GetILProcessor();
+
+            foreach (var av in _argumentValues)
+            {
+                if (av?.Backing == null) continue;
+                ilp.Append(Instruction.Create(OpCodes.Ldarg, av.Param));
+                ilp.Append(Instruction.Create(OpCodes.Stloc, av.VarDef));
+            }
 
             foreach (var (_, block) in _blocks.OrderBy(x => x.Key))
             {

@@ -152,5 +152,11 @@ namespace JavaNet
         {
             return string.Join(", ", _stack.Select(x => x?.ToString() ?? "<none>"));
         }
+
+        public JavaValue TryLoad(int index)
+        {
+            _locals.TryGetValue(index, out var value);
+            return value;
+        }
     }
 }

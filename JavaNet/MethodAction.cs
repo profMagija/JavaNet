@@ -430,41 +430,41 @@ namespace JavaNet
             var target = useLeave ? Instruction.Create(OpCodes.Leave, Target.GetFirstNetOp()) : Target.GetFirstNetOp();
 
             l.AddRange(Value.GetValue());
-            if (ValueCmp == null)
+
+            if (ValueCmp == null && Condition == JumpCondition.Eq)
             {
+                l.Add(Instruction.Create(OpCodes.Brfalse, target));
+            }
+            else if (ValueCmp == null && Condition == JumpCondition.Ne)
+            {
+                l.Add(Instruction.Create(OpCodes.Brtrue, target));
+            }
+            else
+            {
+                l.AddRange(ValueCmp?.GetValue() ?? new[] {Instruction.Create(OpCodes.Ldc_I4_0)});
                 switch (Condition)
                 {
                     case JumpCondition.Eq:
-                        l.Add(Instruction.Create(OpCodes.Brfalse, target));
-                        return l;
+                        l.Add(Instruction.Create(OpCodes.Beq, target));
+                        break;
                     case JumpCondition.Ne:
-                        l.Add(Instruction.Create(OpCodes.Brtrue, target));
-                        return l;
+                        l.Add(Instruction.Create(OpCodes.Bne_Un, target));
+                        break;
+                    case JumpCondition.Lt:
+                        l.Add(Instruction.Create(OpCodes.Blt, target));
+                        break;
+                    case JumpCondition.Le:
+                        l.Add(Instruction.Create(OpCodes.Ble, target));
+                        break;
+                    case JumpCondition.Gt:
+                        l.Add(Instruction.Create(OpCodes.Bgt, target));
+                        break;
+                    case JumpCondition.Ge:
+                        l.Add(Instruction.Create(OpCodes.Bge, target));
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
-            }
-            l.AddRange(ValueCmp?.GetValue() ?? new[] {Instruction.Create(OpCodes.Ldc_I4_0)});
-            switch (Condition)
-            {
-                case JumpCondition.Eq:
-                    l.Add(Instruction.Create(OpCodes.Beq, target));
-                    break;
-                case JumpCondition.Ne:
-                    l.Add(Instruction.Create(OpCodes.Bne_Un, target));
-                    break;
-                case JumpCondition.Lt:
-                    l.Add(Instruction.Create(OpCodes.Blt, target));
-                    break;
-                case JumpCondition.Le:
-                    l.Add(Instruction.Create(OpCodes.Ble, target));
-                    break;
-                case JumpCondition.Gt:
-                    l.Add(Instruction.Create(OpCodes.Bgt, target));
-                    break;
-                case JumpCondition.Ge:
-                    l.Add(Instruction.Create(OpCodes.Bge, target));
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
             }
 
             if (useLeave)
@@ -730,7 +730,15 @@ namespace JavaNet
             l.Add(Instruction.Create(OpCodes.Newobj, Method));
 
             if (Target != null)
-                l.AddRange(Target.StoreValue());
+            {
+                if (Target is ArgumentValue av && av.Param.Index == -1)
+                {
+                    // this is a base ctor call, we don't actually store the result
+                }
+                else
+                    l.AddRange(Target.StoreValue());
+            }
+
             return l;
         }
     }
@@ -900,6 +908,10 @@ namespace JavaNet
         public MappingAction(List<(JavaValue to, JavaValue from)> mappings)
         {
             Debug.Assert(mappings.All(x => x.from != null && x.to != null));
+            foreach (var (to, _) in mappings)
+            {
+                if (to is ArgumentValue av) av.NeedsBacking();
+            }
             Mappings = mappings;
         }
 
@@ -916,7 +928,11 @@ namespace JavaNet
             foreach (var (lhs, rhs) in Mappings)
             {
                 if (lhs is CalculatedValue)
+                {
                     l.AddRange(rhs.GetValue());
+                }
+                else
+                    Debug.Fail("wat");
             }
 
             foreach (var (lhs, _) in Mappings.AsEnumerable().Reverse())

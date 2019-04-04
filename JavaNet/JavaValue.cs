@@ -120,7 +120,7 @@ namespace JavaNet
         }
 
         public override string ToString() => $"local_{VarDef?.Index ?? GetHashCode():X}";
-        public VariableDefinition VarDef { get; set; }
+        public virtual VariableDefinition VarDef { get; set; }
         public override Instruction[] GetValue()
         {
             if (VarDef == null)
@@ -129,7 +129,7 @@ namespace JavaNet
             return new[] {Instruction.Create(OpCodes.Ldloc, VarDef)};
         }
 
-        public Instruction[] StoreValue()
+        public virtual Instruction[] StoreValue()
         {
             if (VarDef == null)
                 return new[] {Instruction.Create(OpCodes.Pop)};
@@ -138,7 +138,7 @@ namespace JavaNet
         }
     }
 
-    class ArgumentValue : JavaValue
+    class ArgumentValue : CalculatedValue
     {
         public ArgumentValue(TypeReference actualType, ParameterDefinition param) : base(actualType)
         {
@@ -147,12 +147,31 @@ namespace JavaNet
 
         public ParameterDefinition Param { get; }
 
+        public CalculatedValue Backing { get; private set; }
+
+        public override VariableDefinition VarDef
+        {
+            get => Backing.VarDef;
+            set => Backing.VarDef = value;
+        }
+
         public override string ToString() => $"arg{Param.Index}";
 
         public override Instruction[] GetValue()
         {
             Debug.Assert(Param != null);
-            return new[] {Instruction.Create(OpCodes.Ldarg, Param)};
+            return Backing?.GetValue() ?? new[] {Instruction.Create(OpCodes.Ldarg, Param)};
+        }
+
+        public override Instruction[] StoreValue()
+        {
+            Debug.Assert(Backing != null);
+            return Backing.StoreValue();
+        }
+
+        public void NeedsBacking()
+        {
+            Backing = Backing ?? new CalculatedValue(ActualType);
         }
     }
 

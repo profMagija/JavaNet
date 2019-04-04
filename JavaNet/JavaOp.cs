@@ -489,6 +489,10 @@ namespace JavaNet
                 if (dblWidth)
                     newState = newState.Pop();
                 newState = newState.Pop(out var value);
+                if (newState.TryLoad(index) is ArgumentValue av)
+                {
+                    av.NeedsBacking();
+                }
                 newState = newState.Store(index, value);
                 return (newState, new MethodAction[0]);
             }
