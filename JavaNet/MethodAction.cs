@@ -410,7 +410,7 @@ namespace JavaNet
         public override string ToString() =>
             ValueCmp == null
                 ? $"if {Value} {Condition.ToString().ToLower()} 0 goto {Target.JavaOffset:X4}"
-                : $"if {Value} {Condition.ToString().ToLower()} {ValueCmp} goto {Target.JavaOffset:X4}";
+                : $"if {ValueCmp} {Condition.ToString().ToLower()} {Value} goto {Target.JavaOffset:X4}";
 
         public enum JumpCondition
         {
@@ -429,19 +429,29 @@ namespace JavaNet
             var useLeave = Target.HandlerNum != curBlock.HandlerNum;
             var target = useLeave ? Instruction.Create(OpCodes.Leave, Target.GetFirstNetOp()) : Target.GetFirstNetOp();
 
-            l.AddRange(Value.GetValue());
 
             if (ValueCmp == null && Condition == JumpCondition.Eq)
             {
+                l.AddRange(Value.GetValue());
                 l.Add(Instruction.Create(OpCodes.Brfalse, target));
             }
             else if (ValueCmp == null && Condition == JumpCondition.Ne)
             {
+                l.AddRange(Value.GetValue());
                 l.Add(Instruction.Create(OpCodes.Brtrue, target));
             }
             else
             {
-                l.AddRange(ValueCmp?.GetValue() ?? new[] {Instruction.Create(OpCodes.Ldc_I4_0)});
+                if (ValueCmp == null)
+                {
+                    l.AddRange(Value.GetValue());
+                    l.Add(Instruction.Create(OpCodes.Ldc_I4_0));
+                }
+                else
+                {
+                    l.AddRange(ValueCmp.GetValue());
+                    l.AddRange(Value.GetValue());
+                }
                 switch (Condition)
                 {
                     case JumpCondition.Eq:

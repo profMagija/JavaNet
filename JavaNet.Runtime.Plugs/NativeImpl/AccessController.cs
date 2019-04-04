@@ -26,15 +26,13 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
 
 namespace java.security
 {
-    [JavaName("java/security/PrivilegedExceptionAction")]
-    [TypePlug]
+    [JavaName("java/security/PrivilegedExceptionAction"), TypePlug]
     public interface PrivilegedExceptionAction
     {
         object run();
     }
 
-    [JavaName("java/security/PrivilegedAction")]
-    [TypePlug]
+    [JavaName("java/security/PrivilegedAction"), TypePlug]
     public interface PrivilegedAction
     {
         object run();

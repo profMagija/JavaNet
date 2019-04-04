@@ -470,7 +470,7 @@ namespace JavaNet
 
                         var impl = CheckMatchingMethodInInterface(td, ifMethod.ReturnType,
                             new TypeReference[] {null}.Concat(ifMethod.Parameters.Select(x => x.ParameterType)).ToArray(),
-                            ifMethod.Name + "$default");
+                            ifMethod.Name + "$default", false);
                         if (impl == null)
                         {
                             if (!td.IsAbstract)
@@ -559,7 +559,7 @@ namespace JavaNet
             else if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Private))
                 attrs |= MethodAttributes.Private;
             else
-                attrs |= MethodAttributes.Assembly;
+                attrs |= MethodAttributes.FamORAssem;
 
             if (isStatic)
                 attrs |= MethodAttributes.Static;
@@ -569,11 +569,11 @@ namespace JavaNet
                 // but we need to in CLI
 
                 if (!mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static)
-                    && !mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Native)
                     && mi.Name != "<init>")
                 {
                     attrs |= MethodAttributes.Virtual;
                 }
+
 
                 if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final))
                 {
@@ -594,9 +594,15 @@ namespace JavaNet
 
             var myName = TranslateMethodName(mi.Name);
 
+            //if (CheckMatchingMethodInInterface(definingClass, retType, paramType, myName, true) != null)
+            //{
+            //    // this is an override
+            //    attrs |= MethodAttributes.Virtual;
+            //}
+
             if (isInterface && (myName == "GetHashCode" && paramType.Length == 0 
-                                || myName == "Equals" && paramType.Length == 1 && paramType[0].FullName == "System.Object"
-                                || myName == "ToString" && paramType.Length == 0))
+                            || myName == "Equals" && paramType.Length == 1 && paramType[0].FullName == "System.Object"
+                            || myName == "ToString" && paramType.Length == 0))
                 // this is an interface "override" of an object.Equals, object.GHC or object.ToString method, we don't want those
                 return;
 
@@ -655,10 +661,10 @@ namespace JavaNet
         private MethodDefinition CheckMatchingMethodInInterface(TypeDefinition type, JavaMethodInfo mi)
         {
             var (retType, paramTypes) = ResolveMethodDescriptor(mi.Descriptor);
-            return CheckMatchingMethodInInterface(type, retType, paramTypes, TranslateMethodName(mi.Name));
+            return CheckMatchingMethodInInterface(type, retType, paramTypes, TranslateMethodName(mi.Name), false);
         }
 
-        private MethodDefinition CheckMatchingMethodInInterface(TypeDefinition type, TypeReference retType, TypeReference[] paramTypes, string name)
+        private MethodDefinition CheckMatchingMethodInInterface(TypeDefinition type, TypeReference retType, TypeReference[] paramTypes, string name, bool classHierarchy)
         {
             var resolved = type.Methods.FirstOrDefault(md =>
                 md.Name == name
@@ -666,7 +672,10 @@ namespace JavaNet
                 && md.Parameters.Count == paramTypes.Length
                 && md.Parameters.Zip(paramTypes, (p1, p2) => p1.ParameterType.FullName == (p2?.FullName ?? type.FullName)).All(b => b));
 
-            return resolved ?? type.Interfaces.Select(ii => CheckMatchingMethodInInterface(ii.InterfaceType.Resolve(), retType, paramTypes, name)).FirstOrDefault(m => m != null);
+            if (classHierarchy && type.BaseType?.Resolve() != null)
+                resolved = resolved ?? CheckMatchingMethodInInterface(type.BaseType.Resolve(), retType, paramTypes, name, true);
+
+            return resolved ?? type.Interfaces.Select(ii => CheckMatchingMethodInInterface(ii.InterfaceType.Resolve(), retType, paramTypes, name, classHierarchy)).FirstOrDefault(m => m != null);
         }
 
         private void CreateInterfaceDefaultImplementation(

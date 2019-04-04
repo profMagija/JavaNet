@@ -356,19 +356,20 @@ namespace JavaNet
                     IEnumerable<MethodAction> acts;
                     (acts, curState) = curState.Unconst();
                     curBlock.Actions.AddRange(acts);
+                    var handlerBlockStartingState = new JavaState(ImmutableStack.Create<JavaValue>(handlerBlock.ExceptionValue), curState.Locals);
                     if (handlerBlock.StartingState == null)
                     {
-                        handlerBlock.StartingState = new JavaState(ImmutableStack.Create<JavaValue>(handlerBlock.ExceptionValue), curState.Locals);
+                        handlerBlock.StartingState = handlerBlockStartingState;
                     }
                     else
                     {
-                        // we need to map our state to that of the jump block
-                        if (handlerBlock.Generated)
-                            handlerBlock.Generated = false; // regenerate 
-                        JavaState newState;
-                        (acts, newState, handlerBlock.StartingState) = new JavaState(ImmutableStack.Create<JavaValue>(handlerBlock.ExceptionValue), curState.Locals).MapTo(handlerBlock.StartingState);
-                        curState = new JavaState(curState.Stack, newState.Locals);
-                        curBlock.Actions.AddRange(acts);
+                        //// we need to map our state to that of the jump block
+                        //if (handlerBlock.Generated)
+                        //    handlerBlock.Generated = false; // regenerate 
+                        //JavaState newState;
+                        //(acts, newState, handlerBlock.StartingState) = handlerBlockStartingState.MapTo(handlerBlock.StartingState);
+                        //curState = new JavaState(curState.Stack, newState.Locals);
+                        //curBlock.Actions.AddRange(acts);
                     }
                 }
 
@@ -524,7 +525,7 @@ namespace JavaNet
 
                     Debug.Assert(_blocks[entry.EndPc] == block);
 
-                    var storeValue = handlerBlock.ExceptionValue.StoreValue();
+                    var storeValue = (handlerBlock.StartingState.Stack.Peek() as CalculatedValue).StoreValue();
                     var start = Instruction.Create(OpCodes.Leave, handlerBlock.GetFirstNetOp());
 
 

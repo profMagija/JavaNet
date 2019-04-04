@@ -17,7 +17,33 @@ namespace JavaNet.Runtime.Plugs
 
             if (name.StartsWith("L") && name.EndsWith(";"))
                 name = name.Substring(1, name.Length - 2);
-            return Type.GetType(name);
+            var type = Type.GetType(name, Assembly.Load, TypeResolver);
+
+            if (type == null)
+                throw PlugHelpers.ThrowForName("java.lang.ClassNotFoundException, JavaNet.Runtime");
+
+            return type;
+        }
+
+        private static Type TypeResolver(Assembly assembly, string name, bool ignoreCase)
+        {
+            var stringComparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+            assembly = assembly ?? Assembly.Load("JavaNet.Runtime") ?? throw new Exception();
+
+            foreach (var type in assembly.GetTypes())
+            {
+                if (type.FullName == null)
+                    continue;
+
+                if (type.FullName.Equals(name, stringComparison))
+                    return type;
+
+                if (type.GetCustomAttributes<JavaNameAttribute>().Any(jna => jna.Name.Equals(name, stringComparison)))
+                    return type;
+            }
+
+            return null;
         }
 
         [MethodPlug("System.Type", "System.Type", "forName", "System.String", "System.Boolean", "java.lang.ClassLoader", IsStatic = true)]
