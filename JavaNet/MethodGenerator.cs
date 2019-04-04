@@ -140,6 +140,8 @@ namespace JavaNet
         /// </summary>
         private int _valueIndex = 0;
 
+        private int _lowestLocalStored = int.MaxValue;
+
         private MethodGenerator(JavaAssemblyBuilder ab, MethodDefinition md, JavaMethodInfo mi, CodeAttribute ca,
             CpInfo[] cp)
         {
@@ -168,12 +170,62 @@ namespace JavaNet
                 {
                     // instructions without arguments
                     case JavaInstrArguments.Niladic:
+                    {
+                        switch (instr)
+                        {
+                            case JavaInstruction.astore_0:
+                            case JavaInstruction.istore_0:
+                            case JavaInstruction.lstore_0:
+                            case JavaInstruction.dstore_0:
+                            case JavaInstruction.fstore_0:
+                                _lowestLocalStored = Math.Min(_lowestLocalStored, 0);
+                                break;
+
+                            case JavaInstruction.astore_1:
+                            case JavaInstruction.istore_1:
+                            case JavaInstruction.lstore_1:
+                            case JavaInstruction.dstore_1:
+                            case JavaInstruction.fstore_1:
+                                _lowestLocalStored = Math.Min(_lowestLocalStored, 1);
+                                break;
+                            case JavaInstruction.astore_2:
+                            case JavaInstruction.istore_2:
+                            case JavaInstruction.lstore_2:
+                            case JavaInstruction.dstore_2:
+                            case JavaInstruction.fstore_2:
+                                _lowestLocalStored = Math.Min(_lowestLocalStored, 2);
+                                break;
+                            case JavaInstruction.astore_3:
+                            case JavaInstruction.istore_3:
+                            case JavaInstruction.lstore_3:
+                            case JavaInstruction.dstore_3:
+                            case JavaInstruction.fstore_3:
+                                _lowestLocalStored = Math.Min(_lowestLocalStored, 3);
+                                break;
+
+                        }
+
                         _ops[start] = new JavaOp.Niladic(start, instr);
                         break;
+                    }
 
                     case JavaInstrArguments.LocalVarIndex:
-                        _ops[start] = new JavaOp.LocalVarIndex(start, instr, code[pc++]);
+                    {
+                        var localIndex = code[pc++];
+                        switch (instr)
+                        {
+                                case JavaInstruction.astore:
+                                case JavaInstruction.istore:
+                                case JavaInstruction.lstore:
+                                case JavaInstruction.fstore:
+                                case JavaInstruction.dstore:
+                                    _lowestLocalStored = Math.Min(_lowestLocalStored, localIndex);
+                                    break;
+                        }
+
+                        _ops[start] = new JavaOp.LocalVarIndex(start, instr, localIndex);
                         break;
+                    }
                     case JavaInstrArguments.AType:
                         _ops[start] = new JavaOp.AType(start, instr, (ArrayType) code[pc++]);
                         break;
@@ -309,13 +361,27 @@ namespace JavaNet
             if (_body.ThisParameter != null)
                 paramTypes = new[] {_body.ThisParameter}.Concat(paramTypes);
 
+            var paramTypesArray = paramTypes.ToArray();
+
             startingBlock.StartingState = new JavaState(
                 ImmutableStack<JavaValue>.Empty,
-                paramTypes.Select((tr, i) => (tr, i)).ToImmutableDictionary(
+                paramTypesArray.Select((tr, i) => (tr, i)).ToImmutableDictionary(
                     xi => xi.i,
                     xi => xi.tr != null ? (JavaValue) new ArgumentValue(xi.tr.ParameterType, xi.tr) : null
                 )
             );
+
+            for (var localIndex = _lowestLocalStored; localIndex < paramTypesArray.Count(); localIndex++)
+            {
+                // java gets it's arguments in local variables, but reuses those slots for variables
+                // since it also changes types sometimes, we can't use 'starg' in IL
+                // so we just copy (potentially) accessed arguments to locals
+                var arg = startingBlock.StartingState.Load(localIndex);
+                if (arg == null) continue;
+                var cv = new CalculatedValue(arg.ActualType);
+                startingBlock.Actions.Add(new ConstantSetAction(cv, arg));
+                startingBlock.StartingState = startingBlock.StartingState.Store(localIndex, cv);
+            }
 
             foreach (var entry in _ca.ExceptionTable)
             {
@@ -326,6 +392,7 @@ namespace JavaNet
             var states = new List<(JavaOp, JavaState)>();
             while (curBlock != null)
             {
+
                 var curState = curBlock.StartingState;
 
                 Debug.Assert(curState.Locals.Values.All(x => x?.IsConst != true));
