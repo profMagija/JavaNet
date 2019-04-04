@@ -38,7 +38,7 @@ namespace JavaNet.Runtime.Plugs
             throw new NotImplementedException();
         }
     }
-    [AttributeUsage(AttributeTargets.Method, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Interface, Inherited = false)]
     public sealed class JavaNameAttribute : Attribute
     {
         public string Name { get; }

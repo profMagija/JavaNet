@@ -329,7 +329,11 @@ namespace JavaNet.Runtime.Plugs
         public static ConstructorInfo[] GetDeclaredConstructors(Type t) => t.GetConstructors();
 
         [MethodPlug(typeof(Type), "getDeclaredField", typeof(string))]
-        public static FieldInfo GetDeclaredField(Type t, string name) => t.GetField(name);
+        public static FieldInfo GetDeclaredField(Type t, string name)
+        {
+            Console.WriteLine("searching for {0}.{1}", t, name);
+            return t.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
+        }
 
         [MethodPlug(typeof(Type), "getDeclaredMethod", typeof(string), typeof(Type[]))]
         public static MethodInfo GetDeclaredField(Type t, string name, Type[] paramTypes) => t.GetMethod(name, paramTypes);

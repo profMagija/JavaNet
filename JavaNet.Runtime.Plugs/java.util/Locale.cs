@@ -60,6 +60,7 @@ namespace java.util
         }
 
         public static Locale getDefault() => new Locale(CultureInfo.CurrentCulture);
+        public static Locale getDefault([ActualType("java.util.Locale$Category")]object category) => new Locale(CultureInfo.CurrentCulture);
         public static void setDefault(Locale loc) => CultureInfo.CurrentCulture = loc.Culture;
         public static Locale[] getAvailableLocales() => CultureInfo.GetCultures(CultureTypes.AllCultures).Select(x => new Locale(x)).ToArray();
 

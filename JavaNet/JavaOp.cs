@@ -679,7 +679,10 @@ namespace JavaNet
                     {
                         var cp = (FieldOrMethodrefInfo) CpInfo;
                         var isStatic = Instr == JavaInstruction.invokestatic;
-                        var method = asm.ResolveMethodReference(isStatic, cp, Instr == JavaInstruction.invokeinterface);
+                        var method =
+                            asm.ResolveMethodReference(isStatic, cp, Instr == JavaInstruction.invokeinterface)
+                            ?? CreateLateBoundMethodReference(cp, asm, isStatic);
+
                         var args = new JavaValue[method.Parameters.Count];
                         var state = curState;
                         for (var i = args.Length - 1; i >= 0; i--)
@@ -688,12 +691,13 @@ namespace JavaNet
                             if (args[i] == null)
                             {
                                 state = state.Pop(out args[i]);
-                                Debug.Assert(args[i].ActualType.FullName == "System.Int64" || args[i].ActualType.FullName == "System.Double");
+                                Debug.Assert(args[i].ActualType.Name.StartsWith("Int64")
+                                             || args[i].ActualType.Name.StartsWith("Double"));
                             }
                         }
 
                         JavaValue objRef = null;
-                        if (!method.Resolve().IsStatic)
+                        if (!method.Resolve()?.IsStatic ?? !isStatic)
                         {
                             state = state.Pop(out objRef);
                         }
@@ -758,6 +762,20 @@ namespace JavaNet
                     default:
                         throw new NotImplementedException($"{Instr} as CP");
                 }
+            }
+
+            private MethodReference CreateLateBoundMethodReference(FieldOrMethodrefInfo cp, JavaAssemblyBuilder asm, bool isStatic)
+            {
+                var (retType, paramTypes) = asm.ResolveMethodDescriptor(cp.NameAndType.Descriptor);
+                var mr = new MethodReference(asm.TranslateMethodName(cp.NameAndType.Name), retType, asm.ResolveTypeReference(cp.Class.Name));
+                foreach (var paramType in paramTypes)
+                {
+                    mr.Parameters.Add(new ParameterDefinition(paramType));
+                }
+
+                mr.HasThis = !isStatic;
+
+                return mr;
             }
         }
 

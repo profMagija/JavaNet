@@ -455,8 +455,12 @@ namespace JavaNet
 
             foreach (var (_, block) in _blocks.OrderBy(x => x.Key))
             {
+                ExceptionHandler lastHandler = null;
                 foreach (var entry in block.HandlersBeforeMe)
                 {
+                    if (lastHandler == null)
+                        ilp.Append(Instruction.Create(OpCodes.Leave, block.GetFirstNetOp()));
+
                     var handlerBlock = _blocks[entry.HandlerPc];
                     if (!handlerBlock.Generated)
                         continue;
@@ -466,20 +470,25 @@ namespace JavaNet
                     var storeValue = handlerBlock.ExceptionValue.StoreValue();
                     var start = Instruction.Create(OpCodes.Leave, handlerBlock.GetFirstNetOp());
 
+
                     foreach (var instruction in storeValue)
                     {
                         ilp.Append(instruction);
                     }
                     ilp.Append(start);
 
-                    _body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+                    var exceptionHandler = new ExceptionHandler(ExceptionHandlerType.Catch)
                     {
                         TryStart = _blocks[entry.StartPc].GetFirstNetOp(),
-                        TryEnd = storeValue[0],
+                        TryEnd = lastHandler?.TryEnd ?? storeValue[0],
                         HandlerStart = storeValue[0],
                         HandlerEnd = block.GetFirstNetOp(),
                         CatchType = JavaAssemblyBuilder.Instance.ResolveTypeReference(entry.CatchType?.Name ?? "java/lang/Throwable")
-                    });
+                    };
+                    _body.ExceptionHandlers.Add(exceptionHandler);
+                    if (lastHandler != null)
+                        lastHandler.HandlerEnd = storeValue[0];
+                    lastHandler = exceptionHandler;
                 }
 
                 if (block.ExceptionValue != null)

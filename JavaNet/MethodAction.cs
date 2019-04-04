@@ -649,7 +649,7 @@ namespace JavaNet
             Virtual = virt;
 
             if (Instance == null)
-                Debug.Assert(!Virtual || !Method.Resolve().IsVirtual);
+                Debug.Assert(!Virtual || !Method.HasThis);
         }
 
         public override IEnumerable<JavaValue> RequiredValues => (Instance == null ? new JavaValue[0] : new[] {Instance}).Concat(Args);
@@ -671,7 +671,7 @@ namespace JavaNet
             
             args.AddRange(Args);
 
-            if (Method.Resolve().IsStatic)
+            if (!Method.HasThis)
                 Debug.Assert(args.Count == Method.Parameters.Count);
             else
                 Debug.Assert(args.Count == Method.Parameters.Count + 1);
@@ -681,7 +681,9 @@ namespace JavaNet
                 l.AddRange(value.GetValue());
             }
 
-            l.Add(Instruction.Create(Virtual && Method.Resolve().IsVirtual ? OpCodes.Callvirt : OpCodes.Call, Method));
+            var isVirt = Method.Resolve()?.IsVirtual ?? false;
+
+            l.Add(Instruction.Create(Virtual && isVirt ? OpCodes.Callvirt : OpCodes.Call, Method));
 
             if (Target != null)
             {

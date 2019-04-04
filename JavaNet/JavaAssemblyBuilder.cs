@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using JavaNet.Runtime.Plugs;
@@ -890,7 +891,11 @@ namespace JavaNet
                             && x.IsStatic == isStatic
                             && x.ReturnType.FullName == retType.FullName
                             && x.Parameters.Count == paramTypes.Length
-                            && x.Parameters.Zip(paramTypes, (param, typeDef) => param.ParameterType.FullName == typeDef.FullName).All(b => b))
+                            && x.Parameters.Zip(paramTypes,
+                                (param, typeDef) =>
+                                    ((string) param.CustomAttributes.FirstOrDefault(ca => ca.AttributeType.Name == "ActualTypeAttribute")?.ConstructorArguments[0].Value
+                                     ?? param.ParameterType.FullName)
+                                    == typeDef.FullName).All(b => b))
                         .ToList();
 
 
@@ -932,11 +937,10 @@ namespace JavaNet
 
             //Debug.Assert(resolvedMethod != null);
 
-            return resolvedMethod
-                   ?? throw new JavaNetException(JavaNetException.ReasonType.ClassLoad, "Could not resolve method " + fmi.Represent());
+            return resolvedMethod;
         }
 
-        private string TranslateMethodName(string name)
+        public  string TranslateMethodName(string name)
         {
             switch (name)
             {
@@ -989,7 +993,20 @@ namespace JavaNet
             if (fi.AccessFlags.HasFlag(JavaFieldInfo.Flags.Final))
                 attrs |= FieldAttributes.InitOnly;
 
+
+            if ((fi.AccessFlags & JavaFieldInfo.Flags.Volatile) != 0)
+            {
+                fieldType = fieldType.MakeRequiredModifierType(Import(typeof(IsVolatile)));
+            }
+
             var fd = new FieldDefinition(fi.Name, attrs, fieldType);
+
+            if ((fi.AccessFlags & JavaFieldInfo.Flags.Synthetic) != 0)
+            {
+                fd.CustomAttributes.Add(new CustomAttribute(Import(typeof(CompilerGeneratedAttribute).GetConstructor(new Type[0]))));
+            }
+
+
 
             foreach (var attributeInfo in fi.Attributes)
             {
