@@ -36,5 +36,14 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             return Marshal.SizeOf<IntPtr>();
         }
 
+        [NativeImpl(typeof(long), TypeName, "objectFieldOffset", typeof(FieldInfo))]
+        [NativeImpl(typeof(long), TypeName, "staticFieldOffset", typeof(FieldInfo))]
+        public static long objectFieldOffset(object @this, FieldInfo fi)
+        {
+            return Marshal.OffsetOf(fi.DeclaringType, fi.Name).ToInt64();
+        }
+
+
+
     }
 }

@@ -352,6 +352,7 @@ namespace JavaNet
 
             var td = new TypeDefinition(string.Join('.', className.SkipLast(1)), className.Last(), attrs);
 
+
             AddJavaNameAttribute(cf.ThisClass.Name, td.CustomAttributes);
 
             td.Scope = _asm.MainModule;
@@ -372,6 +373,17 @@ namespace JavaNet
 
                 var interfaceType = GetOrDefineType(info.Name) ?? ResolveTypeReference(info.Name);
                 td.Interfaces.Add(new InterfaceImplementation(interfaceType));
+            }
+
+            if (td.IsClass)
+            {
+                // all java fields are squential (we need this for some Unsafe operations)
+                var baseType = td.BaseType.Resolve();
+                if (baseType.FullName == "System.Object" || baseType.IsSequentialLayout || baseType.IsExplicitLayout)
+                {
+                    // we can't apply 'sequential' if base type is auto-layout (unless it's the Object class)
+                    td.IsSequentialLayout = true;
+                }
             }
         }
 
@@ -418,6 +430,7 @@ namespace JavaNet
             var isAnnot = td.BaseType?.FullName == typeof(Attribute).FullName;
 
 
+
             foreach (var mi in cf.Methods)
             {
 
@@ -444,7 +457,6 @@ namespace JavaNet
 
             if (td.IsClass)
             {
-                //BreakWhen(td.Name == "AbstractCollection");
                 var interfaces = AllInterfaces(td);
                 foreach (var tdInterface in interfaces)
                 {
