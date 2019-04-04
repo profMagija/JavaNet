@@ -721,7 +721,16 @@ namespace JavaNet
                         {
                             //var cv = (CalculatedValue) objRef;
                             // this is a constructor call
-                            if (method.Name == ".ctor")
+
+                            if (objRef is ArgumentValue av)
+                            {
+                                // this is a BASE constructor call
+                                // just handle as if it's a normal call
+
+                                Debug.Assert(av.Param.Index == -1);
+
+                            }
+                            else if (method.Name == ".ctor")
                                 return (state, new[] {new ConstructorAction(cv, method, args)});
                             else
                             {
