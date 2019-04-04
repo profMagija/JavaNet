@@ -319,10 +319,7 @@ namespace JavaNet
 
             foreach (var entry in _ca.ExceptionTable)
             {
-                _blocks[entry.StartPc].HandlerBlock.Add((
-                    _blocks[entry.HandlerPc],
-                    entry.CatchType == null ? null : JavaAssemblyBuilder.Instance.ResolveTypeReference(entry.CatchType.Name)
-                ));
+                _blocks[entry.EndPc].HandlersBeforeMe.Add(entry);
             }
 
             var curBlock = _blocks.FirstOrDefault(x => !x.Value.Generated && x.Value.StartingState != null).Value;
@@ -334,13 +331,12 @@ namespace JavaNet
                 Debug.Assert(curState.Locals.Values.All(x => x?.IsConst != true));
                 Debug.Assert(curState.Stack.All(x => x?.IsConst != true));
 
-                if (curBlock.ExceptionValue != null)
+                foreach (var entry in _ca.ExceptionTable)
                 {
-                    curBlock.NetOps.AddRange(curBlock.ExceptionValue.StoreValue());
-                }
-
-                foreach (var (handlerBlock, catchType) in curBlock.HandlerBlock)
-                {
+                    if (entry.StartPc != curBlock.JavaOffset)
+                        continue;
+                    var handlerBlock = _blocks[entry.HandlerPc];
+                    var catchType = entry.CatchType != null ? JavaAssemblyBuilder.Instance.ResolveTypeReference(entry.CatchType.Name) : null;
                     handlerBlock.ExceptionValue = new CalculatedValue(catchType ?? JavaAssemblyBuilder.Instance.TypeSystem.Object);
                     var (acts, state) = curState.Unconst();
                     curBlock.Actions.AddRange(acts);
@@ -459,6 +455,33 @@ namespace JavaNet
 
             foreach (var (_, block) in _blocks.OrderBy(x => x.Key))
             {
+                foreach (var entry in block.HandlersBeforeMe)
+                {
+                    var handlerBlock = _blocks[entry.HandlerPc];
+                    if (!handlerBlock.Generated)
+                        continue;
+
+                    Debug.Assert(_blocks[entry.EndPc] == block);
+
+                    var storeValue = handlerBlock.ExceptionValue.StoreValue();
+                    var start = Instruction.Create(OpCodes.Leave, handlerBlock.GetFirstNetOp());
+
+                    foreach (var instruction in storeValue)
+                    {
+                        ilp.Append(instruction);
+                    }
+                    ilp.Append(start);
+
+                    _body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
+                    {
+                        TryStart = _blocks[entry.StartPc].GetFirstNetOp(),
+                        TryEnd = storeValue[0],
+                        HandlerStart = storeValue[0],
+                        HandlerEnd = block.GetFirstNetOp(),
+                        CatchType = JavaAssemblyBuilder.Instance.ResolveTypeReference(entry.CatchType?.Name ?? "java/lang/Throwable")
+                    });
+                }
+
                 if (block.ExceptionValue != null)
                 {
                     foreach (var instruction in block.ExceptionValue.StoreValue())
@@ -471,24 +494,6 @@ namespace JavaNet
                 {
                     ilp.Append(instruction);
                 }
-            }
-
-            foreach (var entry in _ca.ExceptionTable)
-            {
-                var start = Instruction.Create(OpCodes.Leave, _blocks[entry.HandlerPc].GetFirstNetOp());
-                var end = Instruction.Create(OpCodes.Nop);
-
-                ilp.Append(start);
-                ilp.Append(end);
-
-                _body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Catch)
-                {
-                    TryStart = _blocks[entry.StartPc].GetFirstNetOp(),
-                    TryEnd = _blocks[entry.EndPc].GetFirstNetOp(),
-                    HandlerStart = start,
-                    HandlerEnd = end,
-                    CatchType = JavaAssemblyBuilder.Instance.ResolveTypeReference(entry.CatchType?.Name ?? "java/lang/Throwable")
-                });
             }
         }
 
@@ -512,8 +517,7 @@ namespace JavaNet
 
         public List<Instruction> NetOps { get; } = new List<Instruction>();
 
-        public List<(ActionBlock, TypeReference)> HandlerBlock { get; set; } = new List<(ActionBlock, TypeReference)>();
-
+        public List<ExceptionTableEntry> HandlersBeforeMe { get; } = new List<ExceptionTableEntry>();
         public bool Generated { get; set; } = false;
         public JavaState StartingState { get; set; }
 
