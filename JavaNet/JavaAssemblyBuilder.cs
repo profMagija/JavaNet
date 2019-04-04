@@ -377,7 +377,7 @@ namespace JavaNet
 
             if (td.IsClass)
             {
-                // all java fields are squential (we need this for some Unsafe operations)
+                // all java fields are sequential (we need this for some Unsafe operations)
                 var baseType = td.BaseType.Resolve();
                 if (baseType.FullName == "System.Object" || baseType.IsSequentialLayout || baseType.IsExplicitLayout)
                 {
