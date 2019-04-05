@@ -155,7 +155,13 @@ namespace JavaNet
                                          ?? method.ReturnType.FullName;
                         var declType = mpa.DeclaringType ?? (string)type.GetField("TypeName", BindingFlags.Static | BindingFlags.Public).GetValue(null);
                         var methodName = mpa.MethodName ?? method.Name;
-                        var argTypes = mpa.ArgTypes ?? method.GetParameters().Select(ActualTypeName).Skip(isStatic ? 0 : 1).ToArray();
+                        var argTypes = mpa.ArgTypes ?? method.GetParameters()
+                                           .Where(pi => !pi.GetCustomAttributes<NativeDataParamAttribute>().Any())
+                                           .Where(pi => !pi.GetCustomAttributes<FieldPtrAttribute>().Any())
+                                           .Where(pi => !pi.GetCustomAttributes<MethodPtrAttribute>().Any())
+                                           .Select(ActualTypeName)
+                                           .Skip(isStatic ? 0 : 1)
+                                           .ToArray();
                         var signature = CreateMethodSignature(isStatic, returnType, declType, methodName, argTypes);
                         _beforeHookImpl[signature] = Import(method);
                     }
@@ -299,6 +305,7 @@ namespace JavaNet
             }
 
             Debug.Assert(_nativeMethodImpl.Count == 0);
+            Debug.Assert(_beforeHookImpl.Count == 0);
 
             return _asm;
         }
@@ -740,24 +747,25 @@ namespace JavaNet
 
         private void BuildMethodBody(MethodDefinition md, TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
         {
+            md.Body = new MethodBody(md);
             var signature = CreateMethodSignature(md.IsStatic, md.ReturnType.FullName, md.DeclaringType.FullName, md.Name, md.Parameters.Select(x => x.ParameterType.FullName));
             if (_nativeMethodImpl.TryGetValue(signature, out var impl))
             {
                 _nativeMethodImpl.Remove(signature);
-                BuildImplementationMethodCall(md, definingClass, impl);
+                BuildImplementationMethodCall(md, definingClass, impl, true);
                 return;
             }
+
 
             if (_beforeHookImpl.TryGetValue(signature, out impl))
             {
                 _beforeHookImpl.Remove(signature);
-                BuildImplementationMethodCall(md, definingClass, impl);
+                BuildImplementationMethodCall(md, definingClass, impl, false);
             }
 
 
             if ((mi.AccessFlags & JavaMethodInfo.Flags.Native) != 0)
             {
-                md.Body = new MethodBody(md);
                 var processor = md.Body.GetILProcessor();
                 processor.Append(Instruction.Create(OpCodes.Ldstr, "Native method stub: " + md.FullName));
                 processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(typeof(TypeLoadException).GetConstructor(new[] { typeof(string) }))));
@@ -772,7 +780,7 @@ namespace JavaNet
                     case CodeAttribute code:
                         try
                         {
-                            md.Body = MethodGenerator.GenerateMethod(md, mi, code, cp);
+                            MethodGenerator.GenerateMethod(md, mi, code, cp);
                             Debug.Assert(md.Body != null);
                         }
                         catch (JavaNetException ex)
@@ -790,10 +798,9 @@ namespace JavaNet
             }
         }
 
-        private void BuildImplementationMethodCall(MethodDefinition md, TypeDefinition definingClass, MethodReference impl)
+        private void BuildImplementationMethodCall(MethodDefinition md, TypeDefinition definingClass, MethodReference impl, bool ret)
         {
             var resolvedImpl = impl.Resolve();
-            md.Body = new MethodBody(md);
             var processor = md.Body.GetILProcessor();
 
             var i = 0;
@@ -909,7 +916,8 @@ namespace JavaNet
             }
 
             processor.Append(Instruction.Create(OpCodes.Call, impl));
-            processor.Append(Instruction.Create(OpCodes.Ret));
+            if (ret)
+                processor.Append(Instruction.Create(OpCodes.Ret));
         }
 
         public static IEnumerable<FieldReference> GetAllFields(TypeDefinition td)

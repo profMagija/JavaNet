@@ -14,10 +14,10 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
     {
         public const string TypeName = "java.lang.Thread";
 
-        private static Dictionary<int, object> _javaThreads = new Dictionary<int, object>();
+        private static volatile Dictionary<int, object> _javaThreads = new Dictionary<int, object>();
 
         [NativeData(TypeName)]
-        public class Data
+        public struct Data
         {
             internal Thread ClrThread;
             internal Action Run;
@@ -25,7 +25,8 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
 
             public void Start()
             {
-                var id = ClrThread.ManagedThreadId;
+                var id = Thread.CurrentThread.ManagedThreadId;
+
                 lock (_javaThreads)
                 {
                     _javaThreads.Add(id, JavaThread);
@@ -47,13 +48,17 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         public static void registerNatives()
         {
             var clrThread = Thread.CurrentThread;
-            var sysThreadGroup = Activator.CreateInstance(_javaLangThreadGroup, true);
+            _sysThreadGroup = Activator.CreateInstance(_javaLangThreadGroup, true);
             var mainThread = FormatterServices.GetUninitializedObject(_javaLangThread);
+
+            //_isIniting = true;
+            //var mainThread = Activator.CreateInstance(_javaLangThread, _sysThreadGroup, null, "MainThread", 0L);
 
             lock (_javaThreads)
             {
                 _javaThreads.Add(clrThread.ManagedThreadId, mainThread);
             }
+            //_isIniting = false;
 
             void SetField(string name, object value)
             {
@@ -61,16 +66,22 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             }
 
             SetField("name", "Main Thread".ToCharArray());
-            SetField("group", sysThreadGroup);
+            SetField("group", _sysThreadGroup);
             SetField("daemon", false);
             SetField("priority", 5);
             SetField("threadStatus", 0);
-            SetField("__nativeData", new Data {ClrThread = Thread.CurrentThread, JavaThread = mainThread});
+            SetField("__nativeData", new Data { ClrThread = Thread.CurrentThread, JavaThread = mainThread });
 
             //_javaLangThread.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
             //    .Single(x => x.Name == "init" && x.GetParameters().Length == 4)
-            //    .Invoke(mainThread, new object[] {sysThreadGroup, null, "Main Thread", 0});
+            //    .Invoke(mainThread, new object[] { _sysThreadGroup, null, "Main Thread", 0L });
+
+
         }
+
+        private static object _initing = null;
+        private static bool _isIniting = false;
+        private static object _sysThreadGroup;
 
         [Hook]
         public static void init(
@@ -84,7 +95,9 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             [MethodPtr(false, "System.Void", "run")] Action run
         )
         {
-            data = new Data {JavaThread = @this, Run = run};
+            _initing = @this;
+            data.JavaThread = @this;
+            data.Run = run;
             data.ClrThread = new Thread(data.Start, (int) stackSize);
         }
 
@@ -92,9 +105,16 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         [return: ActualType(TypeName)]
         public static object currentThread()
         {
+            if (_isIniting)
+                return _initing;
             lock (_javaThreads)
             {
-                _javaThreads.TryGetValue(Thread.CurrentThread.ManagedThreadId, out var value);
+                if (!_javaThreads.TryGetValue(Thread.CurrentThread.ManagedThreadId, out var value))
+                {
+                    value = Activator.CreateInstance(_javaLangThread, _sysThreadGroup, null, "MainThread", 0L);
+                    _javaLangThreadGroup.GetMethod("add", BindingFlags.Public | BindingFlags.Instance, null, CallingConventions.Any, new[] {_javaLangThread}, new ParameterModifier[0])
+                        .Invoke(_sysThreadGroup, new[] {value});
+                }
                 return value;
             }
         }
@@ -155,6 +175,12 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             var pr = (priority - 1) / 2;
             var priorities = new[] {ThreadPriority.Lowest, ThreadPriority.BelowNormal, ThreadPriority.Normal, ThreadPriority.AboveNormal, ThreadPriority.Highest};
             data.ClrThread.Priority = priorities[pr];
+        }
+
+        [NativeImpl]
+        public static void start0(object @this, [NativeDataParam] ref Data data)
+        {
+            data.ClrThread.Start();
         }
 
         [NativeImpl]

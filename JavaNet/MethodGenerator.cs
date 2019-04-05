@@ -50,7 +50,7 @@ namespace JavaNet
             //    }
             //}
 
-            mg._body = new MethodBody(mg._md);
+            mg._body = mg._md.Body;
 
             mg.ValueAnalyzer();
 
