@@ -7,7 +7,7 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
 {
     public static class JavaLangSystem
     {
-        private const string TypeName = "java.lang.System";
+        public const string TypeName = "java.lang.System";
 
         [NativeImpl("System.Void", TypeName, "registerNatives", IsStatic = true)]
         public static void RegisterNatives(
@@ -86,5 +86,8 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             props.setProperty("sun.stderr.encoding", "cp437");
             return props;
         }
+
+        [NativeImpl(IsStatic = true)]
+        public static string mapLibraryName(string name) => name;
     }
 }

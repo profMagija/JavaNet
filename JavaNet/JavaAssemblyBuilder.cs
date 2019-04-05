@@ -124,7 +124,9 @@ namespace JavaNet
                     foreach (var mpa in method.GetCustomAttributes<NativeImplAttribute>())
                     {
                         var isStatic = mpa.IsStatic;
-                        var returnType = mpa.ReturnType ?? method.ReturnType.FullName;
+                        var returnType = mpa.ReturnType
+                                         ?? method.ReturnTypeCustomAttributes.GetCustomAttributes(false).OfType<ActualTypeAttribute>().FirstOrDefault()?.TypeName
+                                         ?? method.ReturnType.FullName;
                         var declType = mpa.DeclaringType ?? (string) type.GetField("TypeName", BindingFlags.Static | BindingFlags.Public).GetValue(null);
                         var methodName = mpa.MethodName ?? method.Name;
                         var argTypes = mpa.ArgTypes ?? method.GetParameters().Select(ActualTypeName).Skip(isStatic ? 0 : 1).ToArray();
@@ -651,7 +653,12 @@ namespace JavaNet
 
             // add the method to all indices, we are doing this
 
-            Debug.Assert(!_methodReferences.ContainsKey(methodSignature));
+            if (_methodReferences.ContainsKey(methodSignature))
+            {
+                // plugged method, we just drop it
+                return;
+            }
+
             Debug.Assert(!definingClass.Methods.Any(x => x.FullName == md.FullName));
             _methodReferences[methodSignature] = md;
             definingClass.Methods.Add(md);
