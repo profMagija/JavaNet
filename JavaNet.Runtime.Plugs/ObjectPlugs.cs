@@ -34,6 +34,13 @@ namespace JavaNet.Runtime.Plugs
         [MethodPlug(typeof(object), "wait")]
         public static void Wait(object t) => Monitor.Wait(t);
 
+        [MethodPlug(typeof(object), "hashCode")]
+        public static int hashCode(object t)
+        {
+            if (t is string s) return StringPlugs.hashCode(s);
+            return t.GetHashCode();
+        }
+
 
     }
 }

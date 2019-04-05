@@ -137,9 +137,9 @@ namespace JavaNet
                         CastPlugs[cpa.TargetType.FullName] = Import(method);
                     }
 
-                    if (method.GetCustomAttribute<InstanceOfPlugAttribute>() is InstanceOfPlugAttribute iopa)
+                    foreach (var iopa in method.GetCustomAttributes<InstanceOfPlugAttribute>())
                     {
-                        CastPlugs[iopa.TargetType.FullName] = Import(method);
+                        InstanceOfPlugs[iopa.TargetType.FullName] = Import(method);
                     }
                 }
             }
@@ -464,8 +464,10 @@ namespace JavaNet
                             ifMethod.Parameters.Select(x => x.ParameterType).ToArray(),
                             false);
 
-
                         if (hasMatch != null && !hasMatch.Resolve().IsAbstract)
+                            continue;
+
+                        if (hasMatch != null && hasMatch.DeclaringType == td)
                             continue;
 
                         var impl = CheckMatchingMethodInInterface(td, ifMethod.ReturnType,
@@ -568,17 +570,16 @@ namespace JavaNet
                 // interface methods are not marked virtual in JVM
                 // but we need to in CLI
 
-                if (!mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static)
-                    && mi.Name != "<init>")
+                if (mi.Name != "<init>")
                 {
                     attrs |= MethodAttributes.Virtual;
                 }
 
 
-                if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final))
-                {
-                    attrs |= MethodAttributes.Final;
-                }
+                //if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Final))
+                //{
+                //    attrs |= MethodAttributes.Final;
+                //}
 
                 if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Abstract))
                     attrs |= MethodAttributes.Abstract;
@@ -592,7 +593,7 @@ namespace JavaNet
 
             var (retType, paramType) = ResolveMethodDescriptor(mi.Descriptor);
 
-            var myName = TranslateMethodName(mi.Name);
+            var myName = TranslateMethodName(mi.Name, false);
 
             //if (CheckMatchingMethodInInterface(definingClass, retType, paramType, myName, true) != null)
             //{
@@ -661,7 +662,7 @@ namespace JavaNet
         private MethodDefinition CheckMatchingMethodInInterface(TypeDefinition type, JavaMethodInfo mi)
         {
             var (retType, paramTypes) = ResolveMethodDescriptor(mi.Descriptor);
-            return CheckMatchingMethodInInterface(type, retType, paramTypes, TranslateMethodName(mi.Name), false);
+            return CheckMatchingMethodInInterface(type, retType, paramTypes, TranslateMethodName(mi.Name, false), false);
         }
 
         private MethodDefinition CheckMatchingMethodInInterface(TypeDefinition type, TypeReference retType, TypeReference[] paramTypes, string name, bool classHierarchy)
@@ -946,7 +947,7 @@ namespace JavaNet
         {
             var declType = ResolveTypeReference(fmi.Class.Name).Resolve();
             var (retType, paramTypes) = ResolveMethodDescriptor(fmi.NameAndType.Descriptor);
-            var translatedMethodName = TranslateMethodName(fmi.NameAndType.Name);
+            var translatedMethodName = TranslateMethodName(fmi.NameAndType.Name, true);
             var resolvedMethod = ResolveMethodReference(isStatic, retType, declType, translatedMethodName, paramTypes, goIntoInterfaces);
             var signature = CreateMethodSignature(isStatic, retType.FullName, declType.FullName, translatedMethodName, paramTypes.Select(x => x.FullName));
             _methodReferences[signature] = resolvedMethod;
@@ -956,7 +957,7 @@ namespace JavaNet
             return resolvedMethod;
         }
 
-        public  string TranslateMethodName(string name)
+        public  string TranslateMethodName(string name, bool calling)
         {
             switch (name)
             {
@@ -968,7 +969,7 @@ namespace JavaNet
                     return "ToString";
                 case "equals":
                     return "Equals";
-                case "hashCode":
+                case "hashCode" when !calling: // overriders etc need to override GetHashCode, but callers stil call hashCode()
                     return "GetHashCode";
                 case "finalize":
                     return "Finalize";

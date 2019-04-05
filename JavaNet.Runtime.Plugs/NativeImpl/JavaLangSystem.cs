@@ -77,7 +77,7 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         [return: ActualType("java.util.Properties")]
         public static object InitProperties(dynamic props)
         {
-            props.setProperty("file.encoding", "UTF-8");
+            props.setProperty("file.encoding", "US_ASCII");
             props.setProperty("line.separator", Environment.NewLine);
             props.setProperty("sun.stdout.encoding", "cp437");
             props.setProperty("sun.stderr.encoding", "cp437");

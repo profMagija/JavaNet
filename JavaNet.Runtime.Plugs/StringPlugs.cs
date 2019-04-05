@@ -296,5 +296,17 @@ namespace JavaNet.Runtime.Plugs
         [MethodPlug(typeof(string), "valueOf", typeof(object), IsStatic = true)]
         public static string ValueOf(object l) => l.ToString();
 
+
+        [MethodPlug(typeof(int), "hashCode")]
+        public static int hashCode(string @this)
+        {
+            int c = 0;
+            for (int i = 0; i < @this.Length; i++)
+            {
+                c = unchecked(c * 31 + @this[i]);
+            }
+
+            return c;
+        }
     }
 }

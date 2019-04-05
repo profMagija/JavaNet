@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using java.lang;
 
@@ -6,7 +7,7 @@ namespace JavaNet.Runtime.Plugs
 {
     internal class StringAsCharSequence : CharSequence
     {
-        internal string Str;
+        internal readonly string Str;
 
         public StringAsCharSequence(string str)
         {
@@ -29,13 +30,24 @@ namespace JavaNet.Runtime.Plugs
         }
 
         public override string ToString() => Str;
+
+        public override bool Equals(object obj)
+        {
+            if (obj is StringAsCharSequence scs)
+                return Str == scs.Str;
+            return Str.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return StringPlugs.hashCode(Str);
+        }
     }
 
     public static class CharSequenceMagic
     {
-        
-
         [InstanceOfPlug(typeof(CharSequence))]
+        [InstanceOfPlug(typeof(string))]
         public static int IsInstance(object o)
         {
             return o is string || o is CharSequence ? 1 : 0;
@@ -52,6 +64,7 @@ namespace JavaNet.Runtime.Plugs
         [CastPlug(typeof(string))]
         public static string CastToString(object o)
         {
+            Console.WriteLine(" <><><> Casting '{0}' to string", o);
             if (o is StringAsCharSequence s)
                 return s.Str;
             return (string) o;

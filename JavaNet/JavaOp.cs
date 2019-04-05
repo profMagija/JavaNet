@@ -780,7 +780,7 @@ namespace JavaNet
             private MethodReference CreateLateBoundMethodReference(FieldOrMethodrefInfo cp, JavaAssemblyBuilder asm, bool isStatic)
             {
                 var (retType, paramTypes) = asm.ResolveMethodDescriptor(cp.NameAndType.Descriptor);
-                var mr = new MethodReference(asm.TranslateMethodName(cp.NameAndType.Name), retType, asm.ResolveTypeReference(cp.Class.Name));
+                var mr = new MethodReference(asm.TranslateMethodName(cp.NameAndType.Name, true), retType, asm.ResolveTypeReference(cp.Class.Name));
                 foreach (var paramType in paramTypes)
                 {
                     mr.Parameters.Add(new ParameterDefinition(paramType));

@@ -12,6 +12,7 @@ namespace JavaNet.Runtime.Plugs
         [MethodPlug(typeof(Type), "forName", typeof(string), IsStatic = true)]
         public static Type ForName(string name)
         {
+            Console.WriteLine(" *** searching for type: '{0}'", name);
             if (name.StartsWith("["))
                 return ForName(name.Substring(1)).MakeArrayType();
 
@@ -20,7 +21,10 @@ namespace JavaNet.Runtime.Plugs
             var type = Type.GetType(name, Assembly.Load, TypeResolver);
 
             if (type == null)
+            {
+                Console.WriteLine(" *** Failed to find class {0} ***", name);
                 throw PlugHelpers.ThrowForName("java.lang.ClassNotFoundException, JavaNet.Runtime");
+            }
 
             return type;
         }
@@ -52,7 +56,10 @@ namespace JavaNet.Runtime.Plugs
             if (loader != null)
                 throw new ArgumentException("Can't use a non-bootstrap loader", nameof(loader));
 
-            return ForName(name);
+            var t = ForName(name);
+            if (initialize)
+                RuntimeHelpers.RunClassConstructor(t.TypeHandle);
+            return t;
         }
 
         [MethodPlug(typeof(Type), "getPrimitiveClass", typeof(string), IsStatic = true)]
