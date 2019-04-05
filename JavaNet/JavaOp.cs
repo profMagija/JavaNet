@@ -833,7 +833,7 @@ namespace JavaNet
              }
 
             public override string ArgsString { get; }
-            public override IEnumerable<int> JumpTargets => Table.Select(x => x.Value);
+            public override IEnumerable<int> JumpTargets => Table.Select(x => x.Value).Concat(new [] {DefOffset});
             internal override (JavaState newState, IEnumerable<MethodAction> actions) ActUpon(JavaState curState,
                 Dictionary<int, ActionBlock> blocks)
             {
@@ -858,7 +858,7 @@ namespace JavaNet
             }
 
             public override string ArgsString { get; }
-            public override IEnumerable<int> JumpTargets => Targets;
+            public override IEnumerable<int> JumpTargets => Targets.Concat(new [] {DefOffset});
             internal override (JavaState newState, IEnumerable<MethodAction> actions) ActUpon(JavaState curState,
                 Dictionary<int, ActionBlock> blocks)
             {
