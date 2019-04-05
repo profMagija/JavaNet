@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace JavaNet.Runtime.Plugs.NativeImpl
 {
+    [VolatileFields(TypeName)]
     public static class JavaLangSystem
     {
         public const string TypeName = "java.lang.System";

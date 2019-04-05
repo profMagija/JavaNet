@@ -853,16 +853,14 @@ namespace JavaNet
         public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
             var l = new List<Instruction>();
-            l.AddRange(Value.GetValue());
 
             foreach (var (cmpValue, target) in Table)
             {
-                l.Add(Instruction.Create(OpCodes.Dup));
+                l.AddRange(Value.GetValue());
                 l.Add(Instruction.Create(OpCodes.Ldc_I4, cmpValue));
                 l.Add(Instruction.Create(OpCodes.Beq, target.GetFirstNetOp()));
             }
 
-            l.Add(Instruction.Create(OpCodes.Pop));
             l.Add(Instruction.Create(OpCodes.Br, DefaultOffset.GetFirstNetOp()));
 
             return l;

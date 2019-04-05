@@ -10,16 +10,23 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
     {
         public const string TypeName = "java.security.AccessController";
 
-        [NativeImpl(typeof(object), TypeName, "doPrivileged", typeof(PrivilegedExceptionAction), IsStatic = true)]
+        [NativeImpl(IsStatic = true)]
         public static object doPrivileged(PrivilegedExceptionAction action)
         {
             return action.run();
         }
 
-        [NativeImpl(typeof(object), TypeName, "doPrivileged", typeof(PrivilegedAction), IsStatic = true)]
+        [NativeImpl(IsStatic = true)]
         public static object doPrivileged(PrivilegedAction action)
         {
             return action.run();
+        }
+
+        [NativeImpl(IsStatic = true)]
+        [return: ActualType("java.security.AccessControlContext")]
+        public static object getStackAccessControlContext()
+        {
+            return null;
         }
     }
 }

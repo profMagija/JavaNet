@@ -38,6 +38,7 @@ namespace JavaNet
         private readonly Dictionary<string, FieldReference> _fieldReferences = new Dictionary<string, FieldReference>();
         private readonly Dictionary<string, TypeReference> _nativeDataTypes = new Dictionary<string, TypeReference>();
         private readonly HashSet<string> _annotations = new HashSet<string>();
+        private readonly HashSet<string> _volatileFields = new HashSet<string>();
 
         private AssemblyDefinition _asm;
 
@@ -108,6 +109,11 @@ namespace JavaNet
                     _nativeDataTypes[nda.TargetClass.Replace('.', '/')] = Import(type);
                 }
 
+                foreach (var atr in type.GetCustomAttributes<VolatileFieldsAttribute>())
+                {
+                    _volatileFields.Add(atr.Name);
+                }
+
                 foreach (var method in type.GetMethods())
                 {
                     foreach (var mpa in method.GetCustomAttributes<MethodPlugAttribute>())
@@ -130,7 +136,13 @@ namespace JavaNet
                                          ?? method.ReturnType.FullName;
                         var declType = mpa.DeclaringType ?? (string) type.GetField("TypeName", BindingFlags.Static | BindingFlags.Public).GetValue(null);
                         var methodName = mpa.MethodName ?? method.Name;
-                        var argTypes = mpa.ArgTypes ?? method.GetParameters().Select(ActualTypeName).Skip(isStatic ? 0 : 1).ToArray();
+                        var argTypes = mpa.ArgTypes ?? method.GetParameters()
+                                           .Where(pi => !pi.GetCustomAttributes<NativeDataParamAttribute>().Any())
+                                           .Where(pi => !pi.GetCustomAttributes<FieldPtrAttribute>().Any())
+                                           .Where(pi => !pi.GetCustomAttributes<MethodPtrAttribute>().Any())
+                                           .Select(ActualTypeName)
+                                           .Skip(isStatic ? 0 : 1)
+                                           .ToArray();
                         var signature = CreateMethodSignature(isStatic, returnType, declType, methodName, argTypes);
                         _nativeMethodImpl[signature] = Import(method);
                     }
@@ -1049,7 +1061,7 @@ namespace JavaNet
                 attrs |= FieldAttributes.InitOnly;
 
 
-            if ((fi.AccessFlags & JavaFieldInfo.Flags.Volatile) != 0)
+            if ((fi.AccessFlags & JavaFieldInfo.Flags.Volatile) != 0 || _volatileFields.Contains(declaringClass.FullName))
             {
                 fieldType = fieldType.MakeRequiredModifierType(Import(typeof(IsVolatile)));
             }

@@ -128,4 +128,17 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             ArgTypes = argTypes;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
+    public sealed class VolatileFieldsAttribute : Attribute
+    {
+        public string Name { get; }
+
+        // See the attribute guidelines at 
+        //  http://go.microsoft.com/fwlink/?LinkId=85236
+        public VolatileFieldsAttribute(string name)
+        {
+            Name = name;
+        }
+    }
 }
