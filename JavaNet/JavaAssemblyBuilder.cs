@@ -123,12 +123,12 @@ namespace JavaNet
 
                     foreach (var mpa in method.GetCustomAttributes<NativeImplAttribute>())
                     {
-                        var signature = CreateMethodSignature(
-                            mpa.IsStatic,
-                            mpa.ReturnType ?? method.ReturnType.FullName,
-                            mpa.DeclaringType,
-                            mpa.MethodName,
-                            mpa.ArgTypes);
+                        var isStatic = mpa.IsStatic;
+                        var returnType = mpa.ReturnType ?? method.ReturnType.FullName;
+                        var declType = mpa.DeclaringType ?? (string) type.GetField("TypeName", BindingFlags.Static).GetValue(null);
+                        var methodName = mpa.MethodName ?? method.Name;
+                        var argTypes = mpa.ArgTypes ?? method.GetParameters().Select(x => x.ParameterType.FullName).Skip(isStatic ? 0 : 1).ToArray();
+                        var signature = CreateMethodSignature(isStatic, returnType, declType, methodName, argTypes);
                         _nativeMethodImpl[signature] = Import(method);
                     }
 

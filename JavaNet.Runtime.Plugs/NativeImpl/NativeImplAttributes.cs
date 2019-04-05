@@ -8,11 +8,17 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
     [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
     public sealed class NativeImplAttribute : System.Attribute
     {
-        public string ReturnType { get; }
-        public string DeclaringType { get; }
-        public string MethodName { get; }
-        public string[] ArgTypes { get; }
+        public string ReturnType { get; set; }
+        public string DeclaringType { get; set; }
+        public string MethodName { get; set; }
+        public string[] ArgTypes { get; set; }
         public bool IsStatic { get; set; }
+
+        public NativeImplAttribute()
+        {
+
+        }
+
         public NativeImplAttribute(string returnType, string declaringType, string methodName, params string[] argTypes)
         {
             ReturnType = returnType;

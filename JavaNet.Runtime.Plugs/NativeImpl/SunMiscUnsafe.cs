@@ -151,8 +151,5 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         {
             return Marshal.ReAllocHGlobal(new IntPtr(ptr), new IntPtr(newSize)).ToInt64();
         }
-
-
-
     }
 }
