@@ -36,6 +36,37 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         }
     }
 
+    [System.AttributeUsage(System.AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
+    public sealed class HookAttribute : System.Attribute
+    {
+        public string ReturnType { get; set; }
+        public string DeclaringType { get; set; }
+        public string MethodName { get; set; }
+        public string[] ArgTypes { get; set; }
+        public bool IsStatic { get; set; }
+
+        public HookAttribute()
+        {
+
+        }
+
+        public HookAttribute(string returnType, string declaringType, string methodName, params string[] argTypes)
+        {
+            ReturnType = returnType;
+            DeclaringType = declaringType;
+            MethodName = methodName;
+            ArgTypes = argTypes;
+        }
+
+        public HookAttribute(Type returnType, string declaringType, string methodName, params Type[] artTypes)
+        {
+            ReturnType = returnType.FullName;
+            DeclaringType = declaringType;
+            MethodName = methodName;
+            ArgTypes = artTypes.Select(x => x.FullName).ToArray();
+        }
+    }
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false, AllowMultiple = true)]
     public sealed class NativeDataAttribute : Attribute
     {
