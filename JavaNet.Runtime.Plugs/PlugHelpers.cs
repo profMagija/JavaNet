@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace JavaNet.Runtime.Plugs
 {
@@ -8,7 +6,16 @@ namespace JavaNet.Runtime.Plugs
     {
         public static Exception ThrowForName(string excName)
         {
-            throw (Exception) Activator.CreateInstance(Type.GetType(excName) ?? throw new TypeLoadException("Could not find exception type " + excName));
+            var type = Type.GetType(excName) ?? throw new TypeLoadException("Could not find exception type " + excName);
+            throw (Exception) Activator.CreateInstance(type);
         }
+
+        public static Exception ThrowForName(string excName, Exception inner)
+        {
+            var type = Type.GetType(excName) ?? throw new TypeLoadException("Could not find exception type " + excName);
+            throw (Exception) Activator.CreateInstance(type, inner);
+        }
+
+
     }
 }

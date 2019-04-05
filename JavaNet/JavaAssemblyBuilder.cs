@@ -125,9 +125,9 @@ namespace JavaNet
                     {
                         var isStatic = mpa.IsStatic;
                         var returnType = mpa.ReturnType ?? method.ReturnType.FullName;
-                        var declType = mpa.DeclaringType ?? (string) type.GetField("TypeName", BindingFlags.Static).GetValue(null);
+                        var declType = mpa.DeclaringType ?? (string) type.GetField("TypeName", BindingFlags.Static | BindingFlags.Public).GetValue(null);
                         var methodName = mpa.MethodName ?? method.Name;
-                        var argTypes = mpa.ArgTypes ?? method.GetParameters().Select(x => x.ParameterType.FullName).Skip(isStatic ? 0 : 1).ToArray();
+                        var argTypes = mpa.ArgTypes ?? method.GetParameters().Select(ActualTypeName).Skip(isStatic ? 0 : 1).ToArray();
                         var signature = CreateMethodSignature(isStatic, returnType, declType, methodName, argTypes);
                         _nativeMethodImpl[signature] = Import(method);
                     }
@@ -143,6 +143,11 @@ namespace JavaNet
                     }
                 }
             }
+        }
+
+        private string ActualTypeName(ParameterInfo arg)
+        {
+            return arg.GetCustomAttribute<ActualTypeAttribute>()?.TypeName ?? arg.ParameterType.FullName;
         }
 
         public TypeReference ResolveTypeReference(string name)

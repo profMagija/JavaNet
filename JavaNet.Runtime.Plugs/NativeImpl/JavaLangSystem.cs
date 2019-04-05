@@ -79,6 +79,9 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         {
             props.setProperty("file.encoding", "US_ASCII");
             props.setProperty("line.separator", Environment.NewLine);
+            props.setProperty("file.separator", Path.DirectorySeparatorChar.ToString());
+            props.setProperty("path.separator", Path.PathSeparator.ToString());
+            props.setProperty("java.home", "");
             props.setProperty("sun.stdout.encoding", "cp437");
             props.setProperty("sun.stderr.encoding", "cp437");
             return props;
