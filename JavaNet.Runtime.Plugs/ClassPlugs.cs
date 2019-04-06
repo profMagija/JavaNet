@@ -12,7 +12,6 @@ namespace JavaNet.Runtime.Plugs
         [MethodPlug(typeof(Type), "forName", typeof(string), IsStatic = true)]
         public static Type ForName(string name)
         {
-            Console.WriteLine(" *** searching for type: '{0}'", name);
             if (name.StartsWith("["))
                 return ForName(name.Substring(1)).MakeArrayType();
 
@@ -22,7 +21,6 @@ namespace JavaNet.Runtime.Plugs
 
             if (type == null)
             {
-                Console.WriteLine(" *** Failed to find class {0} ***", name);
                 throw PlugHelpers.ThrowForName("java.lang.ClassNotFoundException, JavaNet.Runtime");
             }
 
@@ -364,7 +362,6 @@ namespace JavaNet.Runtime.Plugs
         [MethodPlug(typeof(Type), "getDeclaredField", typeof(string))]
         public static FieldInfo GetDeclaredField(Type t, string name)
         {
-            Console.WriteLine("searching for {0}.{1}", t, name);
             return t.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
         }
 

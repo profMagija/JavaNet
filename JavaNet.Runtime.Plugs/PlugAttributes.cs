@@ -7,10 +7,15 @@ namespace JavaNet.Runtime.Plugs
     public sealed class MethodPlugAttribute : Attribute
     {
         public bool IsStatic { get; set; } = false;
-        public string DeclaringType { get; }
-        public string MethodName { get; }
-        public string[] ParamTypes { get; }
+        public string DeclaringType { get; set; }
+        public string MethodName { get; set; }
+        public string[] ParamTypes { get; set; }
         public string ReturnType { get; set; }
+
+        public MethodPlugAttribute()
+        {
+            
+        }
 
         public MethodPlugAttribute(Type declaringType, string methodName, params Type[] paramTypes)
         {

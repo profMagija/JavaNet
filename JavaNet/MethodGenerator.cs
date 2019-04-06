@@ -501,8 +501,9 @@ namespace JavaNet
 
             var ilp = _body.GetILProcessor();
 
-            ilp.Append(Instruction.Create(OpCodes.Ldstr, _md.FullName));
-            ilp.Append(Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(typeof(Console).GetMethod("WriteLine", new[] {typeof(object)}))));
+            // WRITING TRACE CALLS
+            //ilp.Append(Instruction.Create(OpCodes.Ldstr, _md.FullName));
+            //ilp.Append(Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(typeof(Console).GetMethod("WriteLine", new[] {typeof(object)}))));
 
             foreach (var av in _argumentValues)
             {

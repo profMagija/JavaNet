@@ -10,7 +10,7 @@ namespace JavaNetTest
     {
         static void Main(string[] args)
         {
-            java.lang.System.console().printf("Hello world!\n", new object[0]);
+            java.lang.System.@out.println("Hello world!");
         }
     }
 }

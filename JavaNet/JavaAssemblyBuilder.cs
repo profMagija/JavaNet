@@ -33,6 +33,7 @@ namespace JavaNet
 
         private readonly Dictionary<string, MethodReference> _methodReferences = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, MethodReference> _methodPlugs = new Dictionary<string, MethodReference>();
+        private readonly List<MethodReference> _moduleLoadHooks = new List<MethodReference>();
         private readonly Dictionary<string, MethodReference> _nativeMethodImpl = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, MethodReference> _beforeHookImpl = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, FieldReference> _fieldReferences = new Dictionary<string, FieldReference>();
@@ -118,12 +119,20 @@ namespace JavaNet
                 {
                     foreach (var mpa in method.GetCustomAttributes<MethodPlugAttribute>())
                     {
-                        var signature = CreateMethodSignature(
-                            mpa.IsStatic,
-                            mpa.ReturnType ?? method.ReturnType.FullName,
-                            mpa.DeclaringType,
-                            mpa.MethodName,
-                            mpa.ParamTypes);
+                        var isStatic = mpa.IsStatic;
+                        var returnType = mpa.ReturnType
+                                         ?? method.ReturnTypeCustomAttributes.GetCustomAttributes(false).OfType<ActualTypeAttribute>().FirstOrDefault()?.TypeName
+                                         ?? method.ReturnType.FullName;
+                        var declType = mpa.DeclaringType ?? (string)type.GetField("TypeName", BindingFlags.Static | BindingFlags.Public).GetValue(null);
+                        var methodName = mpa.MethodName ?? method.Name;
+                        var argTypes = mpa.ParamTypes ?? method.GetParameters()
+                                           .Where(pi => !pi.GetCustomAttributes<NativeDataParamAttribute>().Any())
+                                           .Where(pi => !pi.GetCustomAttributes<FieldPtrAttribute>().Any())
+                                           .Where(pi => !pi.GetCustomAttributes<MethodPtrAttribute>().Any())
+                                           .Select(ActualTypeName)
+                                           .Skip(isStatic ? 0 : 1)
+                                           .ToArray();
+                        var signature = CreateMethodSignature(isStatic, returnType, declType, methodName, argTypes);
                         _methodPlugs[signature] = Import(method);
                         _methodReferences[signature] = Import(method);
                     }
@@ -164,6 +173,11 @@ namespace JavaNet
                                            .ToArray();
                         var signature = CreateMethodSignature(isStatic, returnType, declType, methodName, argTypes);
                         _beforeHookImpl[signature] = Import(method);
+                    }
+
+                    foreach (var mlh in method.GetCustomAttributes<ModuleLoadHookAttribute>())
+                    {
+                        _moduleLoadHooks.Add(Import(method));
                     }
 
                     if (method.GetCustomAttribute<CastPlugAttribute>() is CastPlugAttribute cpa)
@@ -294,6 +308,21 @@ namespace JavaNet
                 BuildClassMethodBodies(a, b, c);
             }
 
+            if (_moduleLoadHooks.Any())
+            {
+                var td = _asm.MainModule.GetType("<Module>");
+                var md = new MethodDefinition(".cctor", MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, TypeSystem.Void);
+                md.Body = new MethodBody(md);
+                var ilp = md.Body.GetILProcessor();
+                foreach (var loadHook in _moduleLoadHooks)
+                {
+                    ilp.Append(Instruction.Create(OpCodes.Call, loadHook));
+                }
+                ilp.Append(Instruction.Create(OpCodes.Ret));
+                md.DeclaringType = td;
+                td.Methods.Add(md);
+            }
+
             foreach (var reference in _asm.MainModule.AssemblyReferences)
             {
                 if (reference.Name != "System.Private.CoreLib") continue;
@@ -303,6 +332,8 @@ namespace JavaNet
                 reference.HasPublicKey = false;
                 reference.Culture = null;
             }
+
+
 
             Debug.Assert(_nativeMethodImpl.Count == 0);
             Debug.Assert(_beforeHookImpl.Count == 0);
@@ -592,7 +623,6 @@ namespace JavaNet
             var isInterface = definingClass.IsInterface;
             var isStatic = mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Static);
 
-
             var attrs = (MethodAttributes) 0;
             if (mi.AccessFlags.HasFlag(JavaMethodInfo.Flags.Public) || isInterface)
                 attrs |= MethodAttributes.Public;
@@ -770,6 +800,26 @@ namespace JavaNet
                 processor.Append(Instruction.Create(OpCodes.Ldstr, "Native method stub: " + md.FullName));
                 processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(typeof(TypeLoadException).GetConstructor(new[] { typeof(string) }))));
                 processor.Append(Instruction.Create(OpCodes.Throw));
+                return;
+            }
+
+            if (md.Name == "values" && md.IsStatic && md.DeclaringType.BaseType.FullName == "java.lang.Enum")
+            {
+                // this is a values() method from an enum, it has a weird Java definition
+                var processor = md.Body.GetILProcessor();
+                var loc = new VariableDefinition(md.DeclaringType.MakeArrayType());
+                md.Body.Variables.Add(loc);
+                processor.Append(Instruction.Create(OpCodes.Ldsfld, md.DeclaringType.Fields.First(f => f.Name == "$VALUES")));
+                processor.Append(Instruction.Create(OpCodes.Dup));
+                processor.Append(Instruction.Create(OpCodes.Ldlen));
+                processor.Append(Instruction.Create(OpCodes.Newarr, md.DeclaringType));
+                processor.Append(Instruction.Create(OpCodes.Dup));
+                processor.Append(Instruction.Create(OpCodes.Stloc, loc));
+                processor.Append(Instruction.Create(OpCodes.Dup));
+                processor.Append(Instruction.Create(OpCodes.Ldlen));
+                processor.Append(Instruction.Create(OpCodes.Call, md.Module.ImportReference(typeof(Array).GetMethod("Copy", new[] {typeof(Array), typeof(Array), typeof(int)}))));
+                processor.Append(Instruction.Create(OpCodes.Ldloc, loc));
+                processor.Append(Instruction.Create(OpCodes.Ret));
                 return;
             }
 
@@ -1072,6 +1122,11 @@ namespace JavaNet
             if ((fi.AccessFlags & JavaFieldInfo.Flags.Volatile) != 0 || _volatileFields.Contains(declaringClass.FullName))
             {
                 fieldType = fieldType.MakeRequiredModifierType(Import(typeof(IsVolatile)));
+            }
+
+            if (_volatileFields.Contains(declaringClass.FullName))
+            {
+                attrs &= ~FieldAttributes.InitOnly;
             }
 
             var fd = new FieldDefinition(fi.Name, attrs, fieldType);

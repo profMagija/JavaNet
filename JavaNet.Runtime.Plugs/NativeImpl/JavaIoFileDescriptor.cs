@@ -10,10 +10,20 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
     {
         private const string TypeName = "java.io.FileDescriptor";
 
-        [NativeImpl(typeof(void), TypeName, "initIDs", IsStatic = true)]
-        public static void InitIDs()
-        {
+        internal static object _in;
+        internal static object _out;
+        internal static object _err;
 
+        [NativeImpl(typeof(void), TypeName, "initIDs", IsStatic = true)]
+        public static void InitIDs(
+            [FieldPtr("in", true)] ref object inFd,
+            [FieldPtr("out", true)] ref object outFd,
+            [FieldPtr("err", true)] ref object errFd
+            )
+        {
+            _in = inFd;
+            _out = outFd;
+            _err = errFd;
         }
 
         [NativeImpl(typeof(void), TypeName, "sync")]

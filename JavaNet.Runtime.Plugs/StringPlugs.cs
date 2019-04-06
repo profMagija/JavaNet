@@ -13,6 +13,8 @@ namespace JavaNet.Runtime.Plugs
 {
     public class StringPlugs
     {
+        public const string TypeName = "System.String";
+
         [MethodPlug(typeof(string), ".ctor")]
         public static string Ctor() => new string(new char[0]);
 
@@ -257,14 +259,14 @@ namespace JavaNet.Runtime.Plugs
         [MethodPlug(typeof(string), "toLowerCase")]
         public static string ToLowerCase(string s) => s.ToLower();
 
-        //[MethodPlug(typeof(string), "toLowerCase", typeof(Locale))]
-        //public static string ToLowerCase(string s, Locale locale) => s.ToLower(locale.Culture);
+        [MethodPlug]
+        public static string toLowerCase(string s, [ActualType("java.util.Locale")] object locale) => s.ToLower(); // TODO add culture
 
         [MethodPlug(typeof(string), "toUpperCase")]
         public static string ToUpperCase(string s) => s.ToUpper();
 
-        //[MethodPlug(typeof(string), "toUpperCase", typeof(Locale))]
-        //public static string ToUpperCase(string s, Locale locale) => s.ToUpper(locale.Culture);
+        [MethodPlug]
+        public static string toUpperCase(string s, [ActualType("java.util.Locale")] object locale) => s.ToUpper(); // TODO add culture
 
         [MethodPlug(typeof(string), "trim")]
         public static string Trim(string s) => s.Trim();

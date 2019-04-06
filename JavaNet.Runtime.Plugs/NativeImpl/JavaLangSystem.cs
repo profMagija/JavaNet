@@ -10,44 +10,36 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
     {
         public const string TypeName = "java.lang.System";
 
-        [NativeImpl("System.Void", TypeName, "registerNatives", IsStatic = true)]
-        public static void RegisterNatives(
-            [MethodPtr(true, "System.Void", "initializeSystemClass")]
-            Action initializeSystemClass,
-            [TypeHandle(TypeName)] Type systemType)
+        [NativeImpl(IsStatic = true)]
+        public static void registerNatives(
+            [MethodPtr(true, "System.Void", "initializeSystemClass")] Action initSystem
+        )
         {
-            _systemType = systemType;
-            _in = _systemType.GetField("in", BindingFlags.Public | BindingFlags.Static);
-            _out = _systemType.GetField("out", BindingFlags.Public | BindingFlags.Static);
-            _err = _systemType.GetField("err", BindingFlags.Public | BindingFlags.Static);
-            initializeSystemClass();
+            _initSystem = initSystem;
         }
 
-        private static void sth()
-        {
-        }
-
-        private static Type _systemType;
-        private static FieldInfo _in;
-        private static FieldInfo _out;
-        private static FieldInfo _err;
+        private static Action _initSystem;
 
         [NativeImpl("System.Void", TypeName, "setIn0", "java.io.InputStream", IsStatic = true)]
-        public static void SetIn0([ActualType("java.io.InputStream")] object in0)
+        public static void SetIn0([ActualType("java.io.InputStream")] object in0, [FieldPtr("in", true)] out object @in)
         {
-            _in.SetValue(null, in0);
+            @in = in0;
         }
 
         [NativeImpl("System.Void", TypeName, "setOut0", "java.io.PrintStream", IsStatic = true)]
-        public static void SetOut0([ActualType("java.io.PrintStream")] object out0)
+        public static void SetOut0(
+            [ActualType("java.io.PrintStream")] object out0,
+            [FieldPtr("out", true)] out object @out)
         {
-            _out.SetValue(null, out0);
+            @out = out0;
         }
 
         [NativeImpl("System.Void", TypeName, "setErr0", "java.io.PrintStream", IsStatic = true)]
-        public static void SetErr0([ActualType("java.io.PrintStream")] object err0)
+        public static void SetErr0(
+            [ActualType("java.io.PrintStream")] object err0,
+            [FieldPtr("out", true)] out object err)
         {
-            _err.SetValue(null, err0);
+            err = err0;
         }
 
         [NativeImpl(typeof(long), TypeName, "currentTimeMillis", IsStatic = true)]
@@ -83,12 +75,20 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             props.setProperty("file.separator", Path.DirectorySeparatorChar.ToString());
             props.setProperty("path.separator", Path.PathSeparator.ToString());
             props.setProperty("java.home", "");
-            props.setProperty("sun.stdout.encoding", "cp437");
-            props.setProperty("sun.stderr.encoding", "cp437");
+            props.setProperty("sun.stdout.encoding", "UTF-8");
+            props.setProperty("sun.stderr.encoding", "UTF-8");
             return props;
         }
 
         [NativeImpl(IsStatic = true)]
         public static string mapLibraryName(string name) => name;
+
+        [ModuleLoadHook]
+        public static void LoadSystem()
+        {
+            RuntimeHelpers.RunClassConstructor(Type.GetType("java.lang.System, JavaNet.Runtime", true).TypeHandle);
+            _initSystem();
+
+        }
     }
 }

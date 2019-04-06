@@ -141,4 +141,12 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             Name = name;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    public sealed class ModuleLoadHookAttribute : Attribute
+    {
+        public ModuleLoadHookAttribute()
+        {
+        }
+    }
 }

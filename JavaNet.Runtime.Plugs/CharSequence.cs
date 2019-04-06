@@ -64,7 +64,6 @@ namespace JavaNet.Runtime.Plugs
         [CastPlug(typeof(string))]
         public static string CastToString(object o)
         {
-            Console.WriteLine(" <><><> Casting '{0}' to string", o);
             if (o is StringAsCharSequence s)
                 return s.Str;
             return (string) o;
