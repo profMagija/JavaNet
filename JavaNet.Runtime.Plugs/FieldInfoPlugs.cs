@@ -9,6 +9,8 @@ namespace JavaNet.Runtime.Plugs
 {
     public static class FieldInfoPlugs
     {
+        public const string TypeName = "System.Reflection.FieldInfo";
+
         [MethodPlug(typeof(FieldInfo), "get", typeof(object))]
         public static object get(
             FieldInfo @this, object from
@@ -110,6 +112,8 @@ namespace JavaNet.Runtime.Plugs
             return (int) jm;
         }
 
+        
+
         [MethodPlug(typeof(FieldInfo), "getDeclaringClass")]
         public static Type getDeclaringClass(FieldInfo @this)
         {
@@ -145,6 +149,12 @@ namespace JavaNet.Runtime.Plugs
         public static string toGenericString(FieldInfo @this)
         {
             return @this.ToString();
+        }
+
+        [MethodPlug]
+        public static void setAccessible(FieldInfo @this, bool access)
+        {
+
         }
     }
 }

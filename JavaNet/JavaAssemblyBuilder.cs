@@ -333,8 +333,6 @@ namespace JavaNet
                 reference.Culture = null;
             }
 
-
-
             Debug.Assert(_nativeMethodImpl.Count == 0);
             Debug.Assert(_beforeHookImpl.Count == 0);
 

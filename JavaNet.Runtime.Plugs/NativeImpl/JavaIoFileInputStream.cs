@@ -21,6 +21,7 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             object @this, string path,
             [FieldPtr("__nativeData", false)] ref Data data)
         {
+            Console.WriteLine("Opening {0}", path);
             data.FileStream = File.OpenRead(path);
         }
 

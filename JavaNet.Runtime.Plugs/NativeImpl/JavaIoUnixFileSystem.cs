@@ -23,41 +23,46 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         }
 
         [NativeImpl]
-        public static int getBooleanAttributes0(object @this, [ActualType("java.io.File")] dynamic file)
+        public static int getBooleanAttributes0(object @this, [ActualType("java.io.File")] object file)
         {
             int rv = 0;
+            var path = GetPath(file);
 
-            try
+            if (File.Exists(path) || Directory.Exists(path))
+                rv |= 1;
+
+            if (File.Exists(path))
             {
+                rv |= 2;
+            }
 
-                var path = (string) file.getPath();
-                if (File.Exists(path) || Directory.Exists(path))
-                    rv |= 1;
+            if (Directory.Exists(path))
+                rv |= 4;
 
-                if (File.Exists(path))
-                {
-                    rv |= 2;
-                }
-
-                if (Directory.Exists(path))
-                    rv |= 4;
-
+            if (rv != 0)
+            {
                 var attrs = File.GetAttributes(path);
                 if ((attrs & FileAttributes.Hidden) != 0)
                     rv |= 8;
-            }
-            catch (IOException)
-            {
-                return 0;
             }
 
             return rv;
         }
 
-        [NativeImpl]
-        public static bool checkAccess(object @this, [ActualType("java.io.File")] dynamic file, int access)
+        private static string GetPath(object file)
         {
-            var path = (string) file.getPath();
+            string path = ((dynamic)file).getPath();
+
+            if (path.StartsWith("file:/") || path.StartsWith("file:\\"))
+                path = path.Substring("file:/".Length);
+
+            return path;
+        }
+
+        [NativeImpl]
+        public static bool checkAccess(object @this, [ActualType("java.io.File")] object file, int access)
+        {
+            var path = GetPath(file);
 
             if ((access & 4) != 0)
             {
@@ -87,9 +92,9 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         }
 
         [NativeImpl]
-        public static long getLastModifiedTime(object @this, [ActualType("java.io.File")] dynamic file)
+        public static long getLastModifiedTime(object @this, [ActualType("java.io.File")] object file)
         {
-            var path = (string)file.getPath();
+            var path = GetPath(file);
 
             try
             {
@@ -102,9 +107,9 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         }
 
         [NativeImpl]
-        public static long getLength(object @this, [ActualType("java.io.File")] dynamic file)
+        public static long getLength(object @this, [ActualType("java.io.File")] object file)
         {
-            var path = (string)file.getPath();
+            var path = GetPath(file);
 
             try
             {

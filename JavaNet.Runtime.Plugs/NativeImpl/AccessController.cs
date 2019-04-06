@@ -10,10 +10,35 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
     {
         public const string TypeName = "java.security.AccessController";
 
+        private static bool IsChecked(Exception ex)
+        {
+            var t = ex.GetType();
+            while (t != null)
+            {
+                if (t.FullName == "java.lang.Exception")
+                    return true;
+
+                t = t.BaseType;
+            }
+
+            return false;
+        }
+
         [NativeImpl(IsStatic = true)]
         public static object doPrivileged(PrivilegedExceptionAction action)
         {
-            return action.run();
+            try
+            {
+                return action.run();
+            }
+            catch (Exception ex)
+            {
+                if (IsChecked(ex))
+                    PlugHelpers.ThrowForName("java.security.PrivilegedActionException", ex);
+
+
+                throw;
+            }
         }
 
         [NativeImpl(IsStatic = true)]
@@ -21,7 +46,7 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             PrivilegedExceptionAction action, 
             [ActualType("java.security.AccessControlContext")] object context)
         {
-            return action.run();
+            return doPrivileged(action);
         }
 
         [NativeImpl(IsStatic = true)]

@@ -71,7 +71,7 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         [return: ActualType("java.util.Properties")]
         public static object InitProperties(dynamic props)
         {
-            var javaHome = Assembly.GetCallingAssembly().CodeBase;
+            var javaHome = Path.GetDirectoryName(Assembly.GetCallingAssembly().CodeBase);
 
             props.setProperty("file.encoding", "UTF-8");
             props.setProperty("file.separator", Path.DirectorySeparatorChar.ToString());
@@ -122,7 +122,7 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             props.setProperty("user.timezone", "");
             props.setProperty("user.variant", "");
 
-            props.setProperty("java.locale.providers", "JRE,CLDR,SPI,HOST,FALLBACK");
+            props.setProperty("java.locale.providers", "FALLBACK");
             return props;
         }
 
