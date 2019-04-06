@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using java.io;
+using java.util;
 
 namespace JavaNetTest
 {
@@ -10,7 +7,9 @@ namespace JavaNetTest
     {
         static void Main(string[] args)
         {
-            java.lang.System.@out.println("Hello world!");
+            var input = new Scanner(java.lang.System.@in);
+            var name = input.nextLine().Trim();
+            java.lang.System.@out.printf("Hello %s!", name);
         }
     }
 }

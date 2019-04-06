@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -70,13 +71,58 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         [return: ActualType("java.util.Properties")]
         public static object InitProperties(dynamic props)
         {
-            props.setProperty("file.encoding", "US_ASCII");
-            props.setProperty("line.separator", Environment.NewLine);
+            var javaHome = Assembly.GetCallingAssembly().CodeBase;
+
+            props.setProperty("file.encoding", "UTF-8");
             props.setProperty("file.separator", Path.DirectorySeparatorChar.ToString());
+
+            props.setProperty("java.class.path", "");
+            props.setProperty("java.class.version", "55.0");
+            props.setProperty("java.home", javaHome);
+            props.setProperty("java.io.tmpdir", Path.GetTempPath());
+            props.setProperty("java.library.path", javaHome);
+            props.setProperty("java.runtime.name", "JavaNet Runtime");
+            props.setProperty("java.runtime.version", "8.0");
+            props.setProperty("java.specification.name", "Java Platform API Specification");
+            props.setProperty("java.specification.vendor", "Oracle Corporation");
+            props.setProperty("java.specification.version", "8");
+            props.setProperty("java.vendor", "profMagija");
+            props.setProperty("java.vendor.url", "https://github.com/profMagija/JavaNet");
+            props.setProperty("java.vendor.version", Assembly.GetCallingAssembly().GetName().Version.ToString());
+            props.setProperty("java.version", "8.0");
+            props.setProperty("java.vm.info", "clr");
+            props.setProperty("java.vm.name", "CLR");
+
+            props.setProperty("line.separator", Environment.NewLine);
+
+            props.setProperty("os.arch", "amd64"); // probably
+            props.setProperty("os.name", Environment.OSVersion.ToString()); 
+            props.setProperty("os.version", Environment.OSVersion.Version.Major + "." + Environment.OSVersion.Version.Minor);
+
             props.setProperty("path.separator", Path.PathSeparator.ToString());
-            props.setProperty("java.home", "");
-            props.setProperty("sun.stdout.encoding", "UTF-8");
+
+            props.setProperty("sun.arch.data.model", (IntPtr.Size * 8).ToString());
+            props.setProperty("sun.boot.library.path", javaHome);
+            props.setProperty("sun.cpu.endian", BitConverter.IsLittleEndian ? "little" : "big");
+            props.setProperty("sun.cpu.isalist", "amd64"); // probably
+            props.setProperty("sun.desktop", "windows"); // whatever
+            props.setProperty("sun.io.unicode.encoding", "UnicodeLittle"); // whatever
+            props.setProperty("sun.java.launcher", "CLR");
+            props.setProperty("sun.jnu.encoding", "UTF-8");
+            props.setProperty("sun.management.compiler", "RyuJIT");
+            props.setProperty("sun.os.patch.level", Environment.OSVersion.Version.Build.ToString());
             props.setProperty("sun.stderr.encoding", "UTF-8");
+            props.setProperty("sun.stdout.encoding", "UTF-8");
+            props.setProperty("user.country", "US");
+            props.setProperty("user.dir", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            props.setProperty("user.home", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            props.setProperty("user.language", CultureInfo.CurrentCulture.TwoLetterISOLanguageName);
+            props.setProperty("user.name", Environment.UserName);
+            props.setProperty("user.script", "");
+            props.setProperty("user.timezone", "");
+            props.setProperty("user.variant", "");
+
+            props.setProperty("java.locale.providers", "JRE,CLDR,SPI,HOST,FALLBACK");
             return props;
         }
 

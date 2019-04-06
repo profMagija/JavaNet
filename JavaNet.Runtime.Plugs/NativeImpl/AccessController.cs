@@ -17,10 +17,28 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         }
 
         [NativeImpl(IsStatic = true)]
+        public static object doPrivileged(
+            PrivilegedExceptionAction action, 
+            [ActualType("java.security.AccessControlContext")] object context)
+        {
+            return action.run();
+        }
+
+        [NativeImpl(IsStatic = true)]
         public static object doPrivileged(PrivilegedAction action)
         {
             return action.run();
         }
+
+        [NativeImpl(IsStatic = true)]
+        public static object doPrivileged(
+            PrivilegedAction action,
+            [ActualType("java.security.AccessControlContext")] object context)
+        {
+            return action.run();
+        }
+
+
 
         [NativeImpl(IsStatic = true)]
         [return: ActualType("java.security.AccessControlContext")]

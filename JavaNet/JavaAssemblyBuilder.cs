@@ -691,6 +691,11 @@ namespace JavaNet
                 md.Parameters.Add(new ParameterDefinition(param));
             }
 
+            if ((mi.AccessFlags & JavaMethodInfo.Flags.Varargs) != 0)
+            {
+                md.Parameters.Last().CustomAttributes.Add(new CustomAttribute(Import(typeof(ParamArrayAttribute).GetConstructor(new Type[0]))));
+            }
+
             var methodSignature = CreateMethodSignature(isStatic, retType.FullName, definingClass.FullName, mi.Name, paramType.Select(x => x.FullName));
 
             if (!isStatic && isInterface && mi.Attributes.OfType<CodeAttribute>().Any())

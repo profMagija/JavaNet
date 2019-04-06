@@ -9,6 +9,8 @@ namespace JavaNet.Runtime.Plugs
 {
     public static class ClassPlugs
     {
+        public const string TypeName = "System.Type";
+
         [MethodPlug(typeof(Type), "forName", typeof(string), IsStatic = true)]
         public static Type ForName(string name)
         {
@@ -409,6 +411,25 @@ namespace JavaNet.Runtime.Plugs
         {
             if (t.IsSubclassOf(other)) return t;
             throw new InvalidCastException($"Type {t.FullName} is not a subclass of {other.FullName}");
+        }
+
+        private static readonly Dictionary<Type, object> _enumDirectory = new Dictionary<Type, object>();
+
+        [MethodPlug]
+        [return: ActualType("java.util.Map")]
+        public static object enumConstantDirectory(Type @this)
+        {
+            if (_enumDirectory.TryGetValue(@this, out var dir)) return dir;
+            dynamic map = PlugHelpers.NewForName("java.util.HashMap");
+            var values = (dynamic[]) PlugHelpers.GetStaticField(@this, "$VALUES");
+
+            foreach (var value in values)
+            {
+                map.put(value.name(), value);
+            }
+
+            _enumDirectory[@this] = map;
+            return map;
         }
     }
 
