@@ -35,16 +35,38 @@ namespace JavaNet.Runtime.Plugs
 
             assembly = assembly ?? Assembly.Load("JavaNet.Runtime") ?? throw new Exception();
 
+            bool SearchForType(Type currentType, out Type foundType)
+            {
+                foundType = null;
+
+                foreach (var type in currentType.GetNestedTypes())
+                {
+                    if (SearchForType(type, out foundType))
+                        return true;
+                }
+
+                if (currentType.FullName == null)
+                    return false;
+
+                if (currentType.FullName.Equals(name, stringComparison))
+                {
+                    foundType = currentType;
+                    return true;
+                }
+
+                if (currentType.GetCustomAttributes<JavaNameAttribute>().Any(jna => jna.Name.Replace('/', '.').Equals(name, stringComparison)))
+                {
+                    foundType = currentType;
+                    return true;
+                }
+
+                return false;
+            }
+
             foreach (var type in assembly.GetTypes())
             {
-                if (type.FullName == null)
-                    continue;
-
-                if (type.FullName.Equals(name, stringComparison))
-                    return type;
-
-                if (type.GetCustomAttributes<JavaNameAttribute>().Any(jna => jna.Name.Equals(name, stringComparison)))
-                    return type;
+                if (SearchForType(type, out var foundType))
+                    return foundType;
             }
 
             return null;
