@@ -47,10 +47,15 @@ namespace JavaNet.Runtime.Plugs
     public static class CharSequenceMagic
     {
         [InstanceOfPlug(typeof(CharSequence))]
-        [InstanceOfPlug(typeof(string))]
         public static int IsInstance(object o)
         {
             return o is string || o is CharSequence ? 1 : 0;
+        }
+
+        [InstanceOfPlug(typeof(string))]
+        public static int IsInstanceString(object o)
+        {
+            return o is string  || o is StringAsCharSequence ? 1 : 0;
         }
 
         [CastPlug(typeof(CharSequence))]

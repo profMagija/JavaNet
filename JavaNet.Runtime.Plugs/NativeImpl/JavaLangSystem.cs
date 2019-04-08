@@ -116,13 +116,13 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             props.setProperty("user.country", "US");
             props.setProperty("user.dir", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
             props.setProperty("user.home", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-            props.setProperty("user.language", CultureInfo.CurrentCulture.TwoLetterISOLanguageName);
+            props.setProperty("user.language", "en");
             props.setProperty("user.name", Environment.UserName);
             props.setProperty("user.script", "");
             props.setProperty("user.timezone", "");
             props.setProperty("user.variant", "");
 
-            props.setProperty("java.locale.providers", "FALLBACK");
+            props.setProperty("java.locale.providers", "SPI");
             return props;
         }
 

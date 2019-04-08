@@ -21,8 +21,11 @@ namespace JavaNet.Runtime.Plugs
                 name = name.Substring(1, name.Length - 2);
             var type = Type.GetType(name, Assembly.Load, TypeResolver);
 
+            Console.WriteLine("finding {0}", name);
+
             if (type == null)
             {
+                Console.WriteLine(" >> could not find it");
                 throw PlugHelpers.ThrowForName("java.lang.ClassNotFoundException, JavaNet.Runtime");
             }
 
@@ -75,8 +78,8 @@ namespace JavaNet.Runtime.Plugs
         [MethodPlug("System.Type", "System.Type", "forName", "System.String", "System.Boolean", "java.lang.ClassLoader", IsStatic = true)]
         public static Type ForName(string name, bool initialize, [ActualType("java.lang.ClassLoader")] object loader)
         {
-            if (loader != null)
-                throw new ArgumentException("Can't use a non-bootstrap loader", nameof(loader));
+            //if (loader != null)
+            //    throw new ArgumentException("Can't use a non-bootstrap loader", nameof(loader));
 
             var t = ForName(name);
             if (initialize)
@@ -347,7 +350,7 @@ namespace JavaNet.Runtime.Plugs
             if (name == "<init>" || name == "<clinit>")
                 return null;
 
-            var m = t.GetMethod(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static, null, parameterTypes, null);
+            var m = t.GetMethod(name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static, null, parameterTypes ?? new Type[0], null);
 
             if (m != null) return m;
 
@@ -362,13 +365,13 @@ namespace JavaNet.Runtime.Plugs
                 if (m != null) return m;
             }
 
-            return null;
+            throw PlugHelpers.ThrowForName("java.lang.NoSuchMethodException");
         }
 
         [MethodPlug(typeof(Type), "getConstructor", typeof(Type[]))]
         public static ConstructorInfo GetConstructor(Type t, Type[] parameterTypes)
         {
-            return t.GetConstructor(BindingFlags.Public, null, parameterTypes, null);
+            return t.GetConstructor(BindingFlags.Public, null, parameterTypes, null) ?? throw PlugHelpers.ThrowForName("java.lang.NoSuchMethodException");
         }
 
         [MethodPlug(typeof(Type), "getDeclaredClasses")]
@@ -386,7 +389,11 @@ namespace JavaNet.Runtime.Plugs
         [MethodPlug(typeof(Type), "getDeclaredField", typeof(string))]
         public static FieldInfo GetDeclaredField(Type t, string name)
         {
-            return t.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
+            var f = t.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
+            if (f == null)
+                throw PlugHelpers.ThrowForName("java.lang.NoSuchFieldException");
+
+            return f;
         }
 
         [MethodPlug(typeof(Type), "getDeclaredMethod", typeof(string), typeof(Type[]))]

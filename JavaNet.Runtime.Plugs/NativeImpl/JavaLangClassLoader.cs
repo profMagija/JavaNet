@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace JavaNet.Runtime.Plugs.NativeImpl
@@ -13,6 +14,26 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
         {
             // TODO implement
             return true;
+        }
+
+        [NativeImpl]
+        public static void resolveClass0(object @this, Type type)
+        {
+
+        }
+
+        [NativeImpl]
+        public static Type findBootstrapClass(object @this, string name)
+        {
+            return Type.GetType(name + ", JavaNet.Runtime");
+        }
+
+        [NativeImpl]
+        public static Type findLoadedClass(object @this, string name)
+        {
+            var t = ClassPlugs.ForName(name, false, @this);
+            // TODO what if it's not loaded ??
+            return t;
         }
 
         [NativeImpl(IsStatic = true)]

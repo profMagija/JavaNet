@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using java.lang;
 
 namespace JavaNet.Runtime.Plugs
 {
@@ -38,6 +39,7 @@ namespace JavaNet.Runtime.Plugs
         public static int hashCode(object t)
         {
             if (t is string s) return StringPlugs.hashCode(s);
+            if (t is CharSequence) return StringPlugs.hashCode(t.ToString());
             return t.GetHashCode();
         }
 

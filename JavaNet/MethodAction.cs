@@ -898,7 +898,7 @@ namespace JavaNet
             if (Low != 0)
             {
                 l.Add(Instruction.Create(OpCodes.Ldc_I4, Low));
-                l.Add(Instruction.Create(OpCodes.Add));
+                l.Add(Instruction.Create(OpCodes.Sub));
             }
 
             l.Add(Instruction.Create(OpCodes.Switch, Table.Select(x => x.GetFirstNetOp()).ToArray()));

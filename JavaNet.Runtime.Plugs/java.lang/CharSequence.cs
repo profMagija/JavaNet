@@ -8,6 +8,5 @@ namespace java.lang
         char charAt(int index);
         int length();
         CharSequence subSequence(int start, int end);
-        string ToString();
     }
 }
