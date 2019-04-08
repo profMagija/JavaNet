@@ -295,6 +295,10 @@ namespace JavaNet
                         curBlock.JavaLength = i - curBlock.JavaOffset;
                     curBlock = new ActionBlock(i);
                     _blocks.Add(i, curBlock);
+
+                    if (_md.Name == "ToString" && _md.Parameters.Count == 0)
+                        curBlock.ReturnConvert = JavaAssemblyBuilder.Instance.ToSystemString;
+
                 }
                 curBlock.JavaOps.Add(_ops[i]);
                 
@@ -593,6 +597,8 @@ namespace JavaNet
         public bool ProceedsToNext { get; set; }
 
         public int HandlerNum { get; set; }
+
+        public MethodReference ReturnConvert { get; set; }
 
         public Instruction GetFirstNetOp()
         {

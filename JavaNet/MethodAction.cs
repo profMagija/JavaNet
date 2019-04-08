@@ -4,9 +4,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using java.lang;
+//using java.lang;
 using JavaNet.Runtime.Plugs;
-using JavaNet.Runtime.Plugs.NativeImpl;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -305,6 +304,18 @@ namespace JavaNet
 
         public override IEnumerable<Instruction> Generate(ActionBlock curBlock)
         {
+            var li = new List<Instruction>();
+
+            if (Value != null)
+            {
+                li.AddRange(Value.GetValue());
+
+                if (curBlock.ReturnConvert != null)
+                {
+                    li.Add(Instruction.Create(OpCodes.Call, curBlock.ReturnConvert));
+                }
+            }
+
             if (Value != null)
                 return Value.GetValue().Concat(new[] {Instruction.Create(OpCodes.Ret)});
             return new[] {Instruction.Create(OpCodes.Ret)};
@@ -330,7 +341,7 @@ namespace JavaNet
             return Value.GetValue().Concat(new[] {Instruction.Create(OpCodes.Throw)});
         }
     }
-
+     
     class MonitorAction : MethodAction
     {
         public JavaValue Value { get; }
@@ -702,6 +713,12 @@ namespace JavaNet
                     var s = (string) atr.ConstructorArguments[0].Value;
                     l.Add(Instruction.Create(OpCodes.Castclass, JavaAssemblyBuilder.Instance.ResolveTypeReference(s)));
                 }
+
+                if (Method.Name == "ToString" && Args.Length == 0)
+                {
+                    l.Add(Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.ToJavaString));
+                }
+
                 l.AddRange(Target.StoreValue());
             }
 

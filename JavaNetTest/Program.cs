@@ -8,7 +8,7 @@ namespace JavaNetTest
         static void Main(string[] args)
         {
             var input = new Scanner(java.lang.System.@in);
-            var name = input.nextLine().Trim();
+            var name = input.nextLine().trim();
             java.lang.System.@out.printf("Hello %s!", name);
         }
     }

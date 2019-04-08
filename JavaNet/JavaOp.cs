@@ -630,7 +630,7 @@ namespace JavaNet
                     case JavaInstruction.ldc_w:
                         switch (CpInfo)
                         {
-                            case StringInfo info: return (curState.Push(new ConstantValue(asm.TypeSystem.String, info.String)), noAction);
+                            case StringInfo info: return (curState.Push(new ConstantValue(asm.StringType, info.String)), noAction);
                             case IntegerInfo info: return (curState.Push(new ConstantValue(asm.TypeSystem.Int32, info.Value)), noAction);
                             case FloatInfo info: return (curState.Push(new ConstantValue(asm.TypeSystem.Single, info.Value)), noAction);
                             case ClassInfo info: return (curState.Push(new ConstantValue(asm.Import(typeof(Type)), asm.ResolveTypeReference(info.Name))), noAction);

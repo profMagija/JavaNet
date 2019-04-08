@@ -72,6 +72,7 @@ namespace JavaNet
 
         private static readonly MethodInfo _getType = typeof(Type).GetMethod("GetTypeFromHandle");
         private static readonly MethodInfo _getMethod = typeof(Type).GetMethod("GetMethodFromHandle");
+        private static readonly MethodInfo _strToCharArray = typeof(string).GetMethod("ToCharArray", new Type[0]);
 
         public override bool IsConst => true;
         public override Instruction[] GetValue()
@@ -79,19 +80,12 @@ namespace JavaNet
             switch (Value)
             {
                 case null: return new[] {Instruction.Create(OpCodes.Ldnull)};
-                case string s: return new[] {Instruction.Create(OpCodes.Ldstr, s)};
-                case -1: return new[] {Instruction.Create(OpCodes.Ldc_I4_M1)};
-                case 0: return new[] {Instruction.Create(OpCodes.Ldc_I4_0)};
-                case 1: return new[] {Instruction.Create(OpCodes.Ldc_I4_1)};
-                case 2: return new[] {Instruction.Create(OpCodes.Ldc_I4_2)};
-                case 3: return new[] {Instruction.Create(OpCodes.Ldc_I4_3)};
-                case 4: return new[] {Instruction.Create(OpCodes.Ldc_I4_4)};
-                case 5: return new[] {Instruction.Create(OpCodes.Ldc_I4_5)};
-                case 6: return new[] {Instruction.Create(OpCodes.Ldc_I4_6)};
-                case 7: return new[] {Instruction.Create(OpCodes.Ldc_I4_7)};
-                case 8: return new[] {Instruction.Create(OpCodes.Ldc_I4_8)};
-                case int i when i >= -128 && i < 128:
-                    return new[] {Instruction.Create(OpCodes.Ldc_I4_S, (sbyte) i)};
+                case string s:
+                    return new[]
+                    {
+                        Instruction.Create(OpCodes.Ldstr, s),
+                        Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.ToJavaString),
+                    };
                 case int i: return new[] {Instruction.Create(OpCodes.Ldc_I4, i)};
                 case long l: return new[] {Instruction.Create(OpCodes.Ldc_I8, l)};
                 case float f: return new[] {Instruction.Create(OpCodes.Ldc_R4, f)};
@@ -106,6 +100,7 @@ namespace JavaNet
                     return new[]
                     {
                         Instruction.Create(OpCodes.Ldtoken, mr),
+                        Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(_getMethod))
                     };
                 default:
                     throw new Exception("Invalid constant " + Value);
