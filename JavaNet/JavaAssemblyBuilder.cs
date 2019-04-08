@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -12,12 +13,19 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Mono.Collections.Generic;
+using AssemblyDefinition = Mono.Cecil.AssemblyDefinition;
+using CustomAttribute = Mono.Cecil.CustomAttribute;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
+using FieldDefinition = Mono.Cecil.FieldDefinition;
+using InterfaceImplementation = Mono.Cecil.InterfaceImplementation;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using MethodBody = Mono.Cecil.Cil.MethodBody;
+using MethodDefinition = Mono.Cecil.MethodDefinition;
 using MethodImplAttributes = Mono.Cecil.MethodImplAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 using TypeAttributes = Mono.Cecil.TypeAttributes;
+using TypeDefinition = Mono.Cecil.TypeDefinition;
+using TypeReference = Mono.Cecil.TypeReference;
 
 namespace JavaNet
 {
@@ -33,8 +41,6 @@ namespace JavaNet
         private readonly Dictionary<string, MethodReference> _methodReferences = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, MethodReference> _methodPlugs = new Dictionary<string, MethodReference>();
         private readonly List<MethodReference> _moduleLoadHooks = new List<MethodReference>();
-        private readonly Dictionary<string, MethodReference> _nativeMethodImpl = new Dictionary<string, MethodReference>();
-        private readonly Dictionary<string, MethodReference> _beforeHookImpl = new Dictionary<string, MethodReference>();
         private readonly Dictionary<string, FieldReference> _fieldReferences = new Dictionary<string, FieldReference>();
         private readonly Dictionary<string, TypeReference> _nativeDataTypes = new Dictionary<string, TypeReference>();
         private readonly HashSet<string> _annotations = new HashSet<string>();
@@ -339,9 +345,6 @@ namespace JavaNet
                 reference.Culture = null;
             }
 
-            Debug.Assert(_nativeMethodImpl.Count == 0);
-            Debug.Assert(_beforeHookImpl.Count == 0);
-
             return _asm;
         }
 
@@ -489,17 +492,15 @@ namespace JavaNet
                 }
             }
 
-            if (_nativeDataTypes.TryGetValue(cf.ThisClass.Name, out var nativeData))
+            if (cf.Methods.Any(m => (m.AccessFlags & JavaMethodInfo.Flags.Native) != 0))
             {
-                td.Fields.Add(new FieldDefinition("__nativeData", FieldAttributes.CompilerControlled, nativeData));
+                td.Fields.Add(new FieldDefinition("__nativeData", FieldAttributes.CompilerControlled, TypeSystem.Object));
             }
 
             // this thing will contain all the javaMethod-dotnetMethod pairs, for later definition
             var methodPairs  = new List<(JavaMethodInfo, MethodDefinition)>();
 
             var isAnnot = td.BaseType?.FullName == typeof(Attribute).FullName;
-
-
 
             foreach (var mi in cf.Methods)
             {
@@ -831,27 +832,10 @@ namespace JavaNet
         {
             md.Body = new MethodBody(md);
             var signature = CreateMethodSignature(md.IsStatic, md.ReturnType.FullName, md.DeclaringType.FullName, md.Name, md.Parameters.Select(x => x.ParameterType.FullName));
-            if (_nativeMethodImpl.TryGetValue(signature, out var impl))
-            {
-                _nativeMethodImpl.Remove(signature);
-                BuildImplementationMethodCall(md, definingClass, impl, true);
-                return;
-            }
-
-
-            if (_beforeHookImpl.TryGetValue(signature, out impl))
-            {
-                _beforeHookImpl.Remove(signature);
-                BuildImplementationMethodCall(md, definingClass, impl, false);
-            }
-
 
             if ((mi.AccessFlags & JavaMethodInfo.Flags.Native) != 0)
             {
-                var processor = md.Body.GetILProcessor();
-                processor.Append(Instruction.Create(OpCodes.Ldstr, "Native method stub: " + md.FullName));
-                processor.Append(Instruction.Create(OpCodes.Newobj, _asm.MainModule.ImportReference(typeof(TypeLoadException).GetConstructor(new[] { typeof(string) }))));
-                processor.Append(Instruction.Create(OpCodes.Throw));
+                BuildNativeMethodCall(md, definingClass, mi, cp);
                 return;
             }
 
@@ -897,6 +881,150 @@ namespace JavaNet
 
                         break;
                 }
+            }
+        }
+
+        private void BuildNativeMethodCall(MethodDefinition md, TypeDefinition definingClass, JavaMethodInfo mi, CpInfo[] cp)
+        {
+            /*
+             *      ldarg_0
+             *      ldfld <corresponding_field>
+             *      dup
+             *      brfalse call_lib
+             *      <push all the arguments>
+             *      call instance ...::Invoke(...)
+             *      ret
+             * call_lib:
+             *      pop
+             *      <arguments to array>
+             *      ldtoken <definingClass>
+             *      call Type::GetTypeFromHandle(...)
+             *      ldstr <method name>
+             *      call Native::NativeMethodEntryPoint(...)
+             *      ret
+             */
+            var il = md.Body.GetILProcessor();
+            var (actionType, genericParams) = CreateNativeActionType(md);
+            var nativeField = new FieldDefinition("nativeMethod<" + md.Name + ">", (md.IsStatic ? FieldAttributes.Static | FieldAttributes.Private : FieldAttributes.Private), actionType);
+            nativeField.DeclaringType = definingClass;
+            definingClass.Fields.Add(nativeField);
+            var arrLocal = new VariableDefinition(TypeSystem.Object.MakeArrayType());
+            md.Body.Variables.Add(arrLocal);
+            if (md.IsStatic)
+            {
+                il.Append(Instruction.Create(OpCodes.Ldsfld, nativeField));
+            }
+            else
+            {
+                il.Append(Instruction.Create(OpCodes.Ldarg_0));
+                il.Append(Instruction.Create(OpCodes.Ldfld, nativeField));
+            }
+
+            var callLib = Instruction.Create(OpCodes.Pop);
+
+            il.Append(Instruction.Create(OpCodes.Dup));
+            il.Append(Instruction.Create(OpCodes.Brfalse, callLib));
+
+            if (md.IsStatic)
+            {
+                il.Append(Instruction.Create(OpCodes.Ldtoken, md.DeclaringType));
+                il.Append(Instruction.Create(OpCodes.Call, Import(typeof(Type).GetMethod("GetTypeFromHandle"))));
+            }
+            else
+            {
+                il.Append(Instruction.Create(OpCodes.Ldarg_0));
+            }
+
+            foreach (var parameter in md.Parameters)
+            {
+                il.Append(Instruction.Create(OpCodes.Ldarg, parameter));
+            }
+
+            var isFunc = actionType.Name.StartsWith("Func");
+            var resolve = actionType.Resolve();
+            var meth = resolve.Methods.Single(m => m.Name == "Invoke");
+            var methRef = _asm.MainModule.ImportReference(meth);
+            methRef.DeclaringType = actionType;
+
+            il.Append(Instruction.Create(OpCodes.Callvirt, methRef));
+            il.Append(Instruction.Create(OpCodes.Ret));
+
+            il.Append(callLib);
+
+            var argCount = md.Parameters.Count + 1;
+            var i = 0;
+
+            il.Append(Instruction.Create(OpCodes.Ldc_I4, argCount));
+            il.Append(Instruction.Create(OpCodes.Newarr, TypeSystem.Object));
+            il.Append(Instruction.Create(OpCodes.Stloc, arrLocal));
+
+            if (md.IsStatic)
+            {
+                il.Append(Instruction.Create(OpCodes.Ldloc, arrLocal));
+                il.Append(Instruction.Create(OpCodes.Ldc_I4, i++));
+                il.Append(Instruction.Create(OpCodes.Ldtoken, md.DeclaringType));
+                il.Append(Instruction.Create(OpCodes.Call, Import(typeof(Type).GetMethod("GetTypeFromHandle"))));
+                il.Append(Instruction.Create(OpCodes.Stelem_Ref));
+            }
+            else
+            {
+                il.Append(Instruction.Create(OpCodes.Ldloc, arrLocal));
+                il.Append(Instruction.Create(OpCodes.Ldc_I4, i++));
+                il.Append(Instruction.Create(OpCodes.Ldarg_0));
+                il.Append(Instruction.Create(OpCodes.Stelem_Ref));
+            }
+
+            foreach (var parameter in md.Parameters)
+            {
+                il.Append(Instruction.Create(OpCodes.Ldloc, arrLocal));
+                il.Append(Instruction.Create(OpCodes.Ldc_I4, i++));
+                il.Append(Instruction.Create(OpCodes.Ldarg, parameter));
+                if (parameter.ParameterType.IsValueType)
+                    il.Append(Instruction.Create(OpCodes.Box, parameter.ParameterType));
+                il.Append(Instruction.Create(OpCodes.Stelem_Ref));
+            }
+
+
+            il.Append(Instruction.Create(OpCodes.Ldtoken, md.DeclaringType));
+            il.Append(Instruction.Create(OpCodes.Call, Import(typeof(Type).GetMethod("GetTypeFromHandle"))));
+            il.Append(Instruction.Create(OpCodes.Ldstr, md.Name));
+            il.Append(Instruction.Create(OpCodes.Ldloc, arrLocal));
+            il.Append(Instruction.Create(OpCodes.Call, Import(typeof(Native).GetMethod("NativeMethodEntryPoint"))));
+            if (md.ReturnType.FullName == "System.Void")
+            {
+                il.Append(Instruction.Create(OpCodes.Pop));
+            }
+            else if (md.ReturnType.IsValueType)
+            {
+                il.Append(Instruction.Create(OpCodes.Unbox_Any, md.ReturnType));
+            }
+            else
+            {
+                il.Append(Instruction.Create(OpCodes.Castclass, md.ReturnType));
+            }
+            il.Append(Instruction.Create(OpCodes.Ret));
+        }
+
+        private (GenericInstanceType, TypeReference[]) CreateNativeActionType(MethodDefinition targetMethod)
+        {
+            var paramTypes = new List<TypeReference>
+            {
+                targetMethod.IsStatic ? Import(typeof(Type)) : targetMethod.DeclaringType
+            };
+            paramTypes.AddRange(targetMethod.Parameters.Select(p => p.ParameterType));
+
+            if (targetMethod.ReturnType.FullName == "System.Void")
+            {
+
+                return (SystemImport(Type.GetType($"System.Action`{paramTypes.Count}") ?? Type.GetType($"System.Action`{paramTypes.Count}, System.Core"))
+                    .MakeGenericInstanceType(paramTypes.ToArray()), paramTypes.ToArray());
+            }
+            else
+            {
+                paramTypes.Add(targetMethod.ReturnType);
+
+                return (SystemImport(Type.GetType($"System.Func`{paramTypes.Count}") ?? Type.GetType($"System.Func`{paramTypes.Count}, System.Core"))
+                    .MakeGenericInstanceType(paramTypes.ToArray()), paramTypes.ToArray());
             }
         }
 
