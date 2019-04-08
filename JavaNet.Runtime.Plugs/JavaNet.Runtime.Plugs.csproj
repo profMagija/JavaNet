@@ -11,4 +11,9 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="java.lang\" />
+    <Folder Include="java.util\" />
+  </ItemGroup>
+
 </Project>
