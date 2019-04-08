@@ -633,7 +633,7 @@ namespace JavaNet
                             case StringInfo info: return (curState.Push(new ConstantValue(asm.StringType, info.String)), noAction);
                             case IntegerInfo info: return (curState.Push(new ConstantValue(asm.TypeSystem.Int32, info.Value)), noAction);
                             case FloatInfo info: return (curState.Push(new ConstantValue(asm.TypeSystem.Single, info.Value)), noAction);
-                            case ClassInfo info: return (curState.Push(new ConstantValue(asm.Import(typeof(Type)), asm.ResolveTypeReference(info.Name))), noAction);
+                            case ClassInfo info: return (curState.Push(new ConstantValue(asm.ResolveTypeReference("java/lang/Class"), asm.ResolveTypeReference(info.Name))), noAction);
                             default:
                                 throw new NotImplementedException($"Can't process {CpInfo.Tag}Info for ldc");
                         }

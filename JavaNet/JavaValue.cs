@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using JavaNet.Runtime.Plugs;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -70,9 +71,9 @@ namespace JavaNet
 
         public override string ToString() => Value?.ToString() ?? "null";
 
-        private static readonly MethodInfo _getType = typeof(Type).GetMethod("GetTypeFromHandle");
-        private static readonly MethodInfo _getMethod = typeof(Type).GetMethod("GetMethodFromHandle");
-        private static readonly MethodInfo _strToCharArray = typeof(string).GetMethod("ToCharArray", new Type[0]);
+        private static readonly MethodInfo _getClass = typeof(Intrinsics).GetMethod("GetClassFromHandle");
+        //private static readonly MethodInfo _getMethod = typeof(Intrinsics).GetMethod("GetMethodFromHandle");
+        //private static readonly MethodInfo _strToCharArray = typeof(string).GetMethod("ToCharArray", new Type[0]);
 
         public override bool IsConst => true;
         public override Instruction[] GetValue()
@@ -94,13 +95,7 @@ namespace JavaNet
                     return new[]
                     {
                         Instruction.Create(OpCodes.Ldtoken, tr),
-                        Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(_getType))
-                    };
-                case MethodReference mr:
-                    return new[]
-                    {
-                        Instruction.Create(OpCodes.Ldtoken, mr),
-                        Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(_getMethod))
+                        Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.Import(_getClass)),
                     };
                 default:
                     throw new Exception("Invalid constant " + Value);

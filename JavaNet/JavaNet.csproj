@@ -6,6 +6,7 @@
     <PackageReference Include="Mono.Cecil" Version="0.10.1" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\JavaNet.Runtime.Native\JavaNet.Runtime.Native.csproj" />
     <ProjectReference Include="..\JavaNet.Runtime.Plugs\JavaNet.Runtime.Plugs.csproj" />
   </ItemGroup>
 </Project>

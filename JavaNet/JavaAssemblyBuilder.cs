@@ -8,7 +8,9 @@ using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using JavaNet.Runtime.Native.j.lang;
 using JavaNet.Runtime.Plugs;
+using JavaNet.Runtime.Plugs.NativeImpl;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -103,105 +105,22 @@ namespace JavaNet
             //_typePlugs["java/lang/IllegalMonitorStateException"] = SystemImport(typeof(SynchronizationLockException));
             //_typePlugs["java/lang/InterruptedException"] = SystemImport(typeof(ThreadInterruptedException));
 
-            //PlugAssembly(asm, typeof(ClassPlugs).Assembly);
+            PlugAssembly(asm, typeof(SystemNative).Assembly);
         }
 
-        //private void PlugAssembly(AssemblyDefinition asm, Assembly assembly)
-        //{
-        //    foreach (var type in assembly.ExportedTypes)
-        //    {
-        //        if (type.GetCustomAttribute<TypePlugAttribute>() is TypePlugAttribute tpa)
-        //        {
-        //            _typePlugs[(tpa.Name ?? type.FullName).Replace('.', '/')] = Import(type);
-        //        }
-
-        //        foreach (var nda in type.GetCustomAttributes<NativeDataAttribute>())
-        //        {
-        //            _nativeDataTypes[nda.TargetClass.Replace('.', '/')] = Import(type);
-        //        }
-
-        //        foreach (var atr in type.GetCustomAttributes<VolatileFieldsAttribute>())
-        //        {
-        //            _volatileFields.Add(atr.Name);
-        //        }
-
-        //        foreach (var method in type.GetMethods())
-        //        {
-        //            foreach (var mpa in method.GetCustomAttributes<MethodPlugAttribute>())
-        //            {
-        //                var isStatic = mpa.IsStatic;
-        //                var returnType = mpa.ReturnType
-        //                                 ?? method.ReturnTypeCustomAttributes.GetCustomAttributes(false).OfType<ActualTypeAttribute>().FirstOrDefault()?.TypeName
-        //                                 ?? method.ReturnType.FullName;
-        //                var declType = mpa.DeclaringType ?? (string)type.GetField("TypeName", BindingFlags.Static | BindingFlags.Public).GetValue(null);
-        //                var methodName = mpa.MethodName ?? method.Name;
-        //                var argTypes = mpa.ParamTypes ?? method.GetParameters()
-        //                                   .Where(pi => !pi.GetCustomAttributes<NativeDataParamAttribute>().Any())
-        //                                   .Where(pi => !pi.GetCustomAttributes<FieldPtrAttribute>().Any())
-        //                                   .Where(pi => !pi.GetCustomAttributes<MethodPtrAttribute>().Any())
-        //                                   .Select(ActualTypeName)
-        //                                   .Skip(isStatic ? 0 : 1)
-        //                                   .ToArray();
-        //                var signature = CreateMethodSignature(isStatic, returnType, declType, methodName, argTypes);
-        //                _methodPlugs[signature] = Import(method);
-        //                _methodReferences[signature] = Import(method);
-        //            }
-
-        //            foreach (var mpa in method.GetCustomAttributes<NativeImplAttribute>())
-        //            {
-        //                var isStatic = mpa.IsStatic;
-        //                var returnType = mpa.ReturnType
-        //                                 ?? method.ReturnTypeCustomAttributes.GetCustomAttributes(false).OfType<ActualTypeAttribute>().FirstOrDefault()?.TypeName
-        //                                 ?? method.ReturnType.FullName;
-        //                var declType = mpa.DeclaringType ?? (string) type.GetField("TypeName", BindingFlags.Static | BindingFlags.Public).GetValue(null);
-        //                var methodName = mpa.MethodName ?? method.Name;
-        //                var argTypes = mpa.ArgTypes ?? method.GetParameters()
-        //                                   .Where(pi => !pi.GetCustomAttributes<NativeDataParamAttribute>().Any())
-        //                                   .Where(pi => !pi.GetCustomAttributes<FieldPtrAttribute>().Any())
-        //                                   .Where(pi => !pi.GetCustomAttributes<MethodPtrAttribute>().Any())
-        //                                   .Select(ActualTypeName)
-        //                                   .Skip(isStatic ? 0 : 1)
-        //                                   .ToArray();
-        //                var signature = CreateMethodSignature(isStatic, returnType, declType, methodName, argTypes);
-        //                _nativeMethodImpl[signature] = Import(method);
-        //            }
-
-        //            foreach (var mpa in method.GetCustomAttributes<HookAttribute>())
-        //            {
-        //                var isStatic = mpa.IsStatic;
-        //                var returnType = Destringify(mpa.ReturnType
-        //                                 ?? method.ReturnTypeCustomAttributes.GetCustomAttributes(false).OfType<ActualTypeAttribute>().FirstOrDefault()?.TypeName
-        //                                 ?? method.ReturnType.FullName);
-        //                var declType = mpa.DeclaringType ?? (string)type.GetField("TypeName", BindingFlags.Static | BindingFlags.Public).GetValue(null);
-        //                var methodName = mpa.MethodName ?? method.Name;
-        //                var argTypes = mpa.ArgTypes ?? method.GetParameters()
-        //                                   .Where(pi => !pi.GetCustomAttributes<NativeDataParamAttribute>().Any())
-        //                                   .Where(pi => !pi.GetCustomAttributes<FieldPtrAttribute>().Any())
-        //                                   .Where(pi => !pi.GetCustomAttributes<MethodPtrAttribute>().Any())
-        //                                   .Select(ActualTypeName)
-        //                                   .Skip(isStatic ? 0 : 1)
-        //                                   .ToArray();
-        //                var signature = CreateMethodSignature(isStatic, returnType, declType, methodName, argTypes);
-        //                _beforeHookImpl[signature] = Import(method);
-        //            }
-
-        //            foreach (var mlh in method.GetCustomAttributes<ModuleLoadHookAttribute>())
-        //            {
-        //                _moduleLoadHooks.Add(Import(method));
-        //            }
-
-        //            if (method.GetCustomAttribute<CastPlugAttribute>() is CastPlugAttribute cpa)
-        //            {
-        //                CastPlugs[cpa.TargetType.FullName] = Import(method);
-        //            }
-
-        //            foreach (var iopa in method.GetCustomAttributes<InstanceOfPlugAttribute>())
-        //            {
-        //                InstanceOfPlugs[iopa.TargetType.FullName] = Import(method);
-        //            }
-        //        }
-        //    }
-        //}
+        private void PlugAssembly(AssemblyDefinition asm, Assembly assembly)
+        {
+            foreach (var type in assembly.ExportedTypes)
+            {
+                foreach (var method in type.GetMethods())
+                {
+                    foreach (var mlh in method.GetCustomAttributes<ModuleLoadHookAttribute>())
+                    {
+                        _moduleLoadHooks.Add(Import(method));
+                    }
+                }
+            }
+        }
 
         private string ActualTypeName(ParameterInfo arg)
         {
@@ -439,6 +358,11 @@ namespace JavaNet
                 td.BaseType = null;
             else
                 td.BaseType = GetOrDefineType(cf.SuperClass.Name) ?? ResolveTypeReference(cf.SuperClass.Name);
+
+            if (td.FullName == "java.lang.Throwable")
+            {
+                td.BaseType = SystemImport(typeof(Exception));
+            }
 
             foreach (var info in cf.Interfaces)
             {
@@ -900,7 +824,7 @@ namespace JavaNet
              *      ldtoken <definingClass>
              *      call Type::GetTypeFromHandle(...)
              *      ldstr <method name>
-             *      call Native::NativeMethodEntryPoint(...)
+             *      call JNI::NativeMethodEntryPoint(...)
              *      ret
              */
             var il = md.Body.GetILProcessor();
@@ -989,7 +913,7 @@ namespace JavaNet
             il.Append(Instruction.Create(OpCodes.Call, Import(typeof(Type).GetMethod("GetTypeFromHandle"))));
             il.Append(Instruction.Create(OpCodes.Ldstr, md.Name));
             il.Append(Instruction.Create(OpCodes.Ldloc, arrLocal));
-            il.Append(Instruction.Create(OpCodes.Call, Import(typeof(Native).GetMethod("NativeMethodEntryPoint"))));
+            il.Append(Instruction.Create(OpCodes.Call, Import(typeof(JNI).GetMethod("NativeMethodEntryPoint"))));
             if (md.ReturnType.FullName == "System.Void")
             {
                 il.Append(Instruction.Create(OpCodes.Pop));

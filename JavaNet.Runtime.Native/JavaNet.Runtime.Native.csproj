@@ -1,11 +1,17 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\JavaNet.Runtime\JavaNet.Runtime.csproj" />
+    <ProjectReference Include="..\JavaNet.Runtime.Plugs\JavaNet.Runtime.Plugs.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="JavaNet.Runtime">
+      <HintPath>..\JavaNet.RuntimeConverter\bin\Debug\netcoreapp2.1\JavaNet.Runtime.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

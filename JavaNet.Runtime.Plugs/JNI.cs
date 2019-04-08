@@ -5,7 +5,7 @@ using System.Text;
 
 namespace JavaNet.Runtime.Plugs
 {
-    public static class Native
+    public static class JNI
     {
 
         public static void RegisterNativeLibrary(Assembly asm)
@@ -16,11 +16,18 @@ namespace JavaNet.Runtime.Plugs
                 {
                     if (methodInfo.GetCustomAttribute<NativeMethodImplAttribute>() is NativeMethodImplAttribute atr)
                     {
-                        var key = atr.DeclType.FullName + ":" + atr.Name;
+                        var typeName = atr.DeclType ?? type.GetStatic<string>("TypeName");
+                        var methodName = atr.Name ?? methodInfo.Name;
+                        var key = typeName + ":" + methodName;
                         _nativeMethods.Add(key, methodInfo);
                     }
                 }
             }
+        }
+
+        public static void RegisterNativeMethod(Type clazz, string name, Delegate func)
+        {
+            clazz.SetStatic("nativeMethods<" + name + ">", func);
         }
 
         private static readonly Dictionary<string, MethodInfo> _nativeMethods = new Dictionary<string, MethodInfo>();
@@ -36,21 +43,6 @@ namespace JavaNet.Runtime.Plugs
             // TODO do some dynamic loader things
 
             throw new MissingMethodException($"No implementation for {type.FullName}::{methodName}");
-        }
-    }
-
-    [AttributeUsage(AttributeTargets.Method, Inherited = false)]
-    sealed class NativeMethodImplAttribute : Attribute
-    {
-        public Type DeclType { get; }
-        public string Name { get; }
-
-        // See the attribute guidelines at 
-        //  http://go.microsoft.com/fwlink/?LinkId=85236
-        public NativeMethodImplAttribute(Type declType, string name)
-        {
-            DeclType = declType;
-            Name = name;
         }
     }
 }

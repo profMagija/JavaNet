@@ -25,6 +25,13 @@ namespace JavaNet.Runtime.Plugs
         {
             return a > b ? 1 : a == b ? 0 : -1;
         }
+
+        
+
+        public static object GetClassFromHandle(RuntimeTypeHandle type)
+        {
+            return ReflectionBridge.GetClass(Type.GetTypeFromHandle(type));
+        }
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = false)]
@@ -38,6 +45,7 @@ namespace JavaNet.Runtime.Plugs
             throw new NotImplementedException();
         }
     }
+
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Interface, Inherited = false)]
     public sealed class JavaNameAttribute : Attribute
     {

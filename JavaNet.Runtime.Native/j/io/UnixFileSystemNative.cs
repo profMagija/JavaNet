@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
+using JavaNet.Runtime.Plugs;
 
-namespace JavaNet.Runtime.Plugs.NativeImpl
+namespace JavaNet.Runtime.Native.j.io
 {
-    public static class JavaIoUnixFileSystem
+    public static class UnixFileSystemNative
     {
         public const string TypeName = "java.io.UnixFileSystem";
 
-        [NativeImpl]
-        public static string canonicalize0(object @this, string name)
+        [NativeMethodImpl]
+        public static string canonicalize0(object @this, java.lang.String name)
         {
             try
             {
@@ -18,12 +16,12 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             }
             catch (IOException ex)
             {
-                throw PlugHelpers.ThrowForName("java.io.IOException", ex);
+                throw new java.io.IOException(ex.ToString());
             }
         }
 
-        [NativeImpl]
-        public static int getBooleanAttributes0(object @this, [ActualType("java.io.File")] object file)
+        [NativeMethodImpl]
+        public static int getBooleanAttributes0(object @this, java.io.File file)
         {
             int rv = 0;
             var path = GetPath(file);
@@ -49,9 +47,9 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             return rv;
         }
 
-        private static string GetPath(object file)
+        private static string GetPath(java.io.File file)
         {
-            string path = ((dynamic)file).getPath();
+            string path = file.getPath();
 
             if (path.StartsWith("file:/") || path.StartsWith("file:\\"))
                 path = path.Substring("file:/".Length);
@@ -59,8 +57,8 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             return path;
         }
 
-        [NativeImpl]
-        public static bool checkAccess(object @this, [ActualType("java.io.File")] object file, int access)
+        [NativeMethodImpl]
+        public static bool checkAccess(object @this, java.io.File file, int access)
         {
             var path = GetPath(file);
 
@@ -91,8 +89,8 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             return true;
         }
 
-        [NativeImpl]
-        public static long getLastModifiedTime(object @this, [ActualType("java.io.File")] object file)
+        [NativeMethodImpl]
+        public static long getLastModifiedTime(object @this, java.io.File file)
         {
             var path = GetPath(file);
 
@@ -106,8 +104,8 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             }
         }
 
-        [NativeImpl]
-        public static long getLength(object @this, [ActualType("java.io.File")] object file)
+        [NativeMethodImpl]
+        public static long getLength(object @this, java.io.File file)
         {
             var path = GetPath(file);
 
@@ -122,7 +120,7 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             }
         }
 
-        [NativeImpl(IsStatic = true)]
+        [NativeMethodImpl]
         public static void initIDs() { }
     }
 }

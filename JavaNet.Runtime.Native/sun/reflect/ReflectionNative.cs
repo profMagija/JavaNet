@@ -1,17 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Text;
+using java.lang;
+using JavaNet.Runtime.Plugs;
 
-namespace JavaNet.Runtime.Plugs.NativeImpl
+namespace JavaNet.Runtime.Native.sun.reflect
 {
-    public static class SunReflectReflection
+    public static class ReflectionNative
     {
         public const string TypeName = "sun.reflect.Reflection";
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        [NativeImpl(typeof(Type), TypeName, "getCallerClass", IsStatic = true)]
+        [MethodImpl(MethodImplOptions.NoInlining), NativeMethodImpl]
         public static Type getCallerClass()
         {
             var st = new StackTrace();
@@ -19,7 +18,7 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             return f.GetMethod().DeclaringType;
         }
 
-        [NativeImpl(typeof(Type), TypeName, "getCallerClass", typeof(int), IsStatic = true)]
+        [MethodImpl(MethodImplOptions.NoInlining), NativeMethodImpl]
         public static Type getCallerClass(int offset)
         {
             var st = new StackTrace();
@@ -27,10 +26,10 @@ namespace JavaNet.Runtime.Plugs.NativeImpl
             return f.GetMethod().DeclaringType;
         }
 
-        [NativeImpl(typeof(int), TypeName, "getClassAccessFlags", typeof(Type), IsStatic = true)]
-        public static int getClassAccessFlags(Type type)
+        [NativeMethodImpl]
+        public static int getClassAccessFlags(Type reflection, Class type)
         {
-            return ClassPlugs.GetModifiers(type);
+            return type.getModifiers();
         }
     }
 }
