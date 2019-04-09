@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -90,6 +91,8 @@ namespace JavaNet
             _typePlugs["java/lang/Object"] = SystemImport(typeof(object));
             _typePlugs["java/lang/String"] = SystemImport(typeof(string));
             _typePlugs["java/lang/Throwable"] = SystemImport(typeof(Exception));
+            _typePlugs["java/lang/CharSequence"] = SystemImport(typeof(IEnumerable<char>));
+            //_typePlugs["java/lang/Comparable"] = SystemImport(typeof(IComparable));
 
             //_typePlugs["java/lang/Class"] = SystemImport(typeof(Type));
             //_typePlugs["java/lang/annotation/Annotation"] = SystemImport(typeof(Attribute));
@@ -105,6 +108,7 @@ namespace JavaNet
             //_typePlugs["java/lang/IllegalMonitorStateException"] = SystemImport(typeof(SynchronizationLockException));
             //_typePlugs["java/lang/InterruptedException"] = SystemImport(typeof(ThreadInterruptedException));
 
+            PlugAssembly(asm, typeof(ObjectPlugs).Assembly);
             PlugAssembly(asm, typeof(SystemNative).Assembly);
         }
 
@@ -121,10 +125,10 @@ namespace JavaNet
 
                     foreach (var mp in method.GetCustomAttributes<MethodPlugAttribute>())
                     {
-                        var returnType = mp.ReturnType ?? (method.Name == "Ctor" ? "System.Void" : method.ReturnType.FullName);
+                        var returnType = mp.ReturnType ?? (method.Name == "Ctor" ? "System.Void" : ActualTypeName(method.ReturnParameter));
                         var declType = mp.DeclaringType ?? type.GetStatic<string>("TypeName");
                         var name = mp.MethodName ?? (method.Name == "Ctor" ? ".ctor" : method.Name);
-                        var paramTypes = mp.ParamTypes ?? method.GetParameters().Skip(mp.IsStatic ? 0 : 1)
+                        var paramTypes = mp.ParamTypes ?? method.GetParameters().Skip(mp.IsStatic ? 1 : 0)
                                              .Select(ActualTypeName)
                                              .Skip(mp.IsStatic || name == ".ctor" ? 0 : 1);
                         var signature = CreateMethodSignature(mp.IsStatic, returnType, declType, name, paramTypes);
@@ -136,10 +140,8 @@ namespace JavaNet
 
         private string ActualTypeName(ParameterInfo arg)
         {
-            return Destringify(arg.GetCustomAttribute<ActualTypeAttribute>()?.TypeName ?? arg.ParameterType.FullName);
+            return arg.GetCustomAttribute<ActualTypeAttribute>()?.TypeName ?? arg.ParameterType.FullName;
         }
-
-        private string Destringify(string fullName) => fullName == "System.String" ? "java.lang.String" : fullName;
 
         public TypeReference ResolveTypeReference(string name)
         {
@@ -276,6 +278,11 @@ namespace JavaNet
                 reference.Culture = null;
             }
 
+            _asm.CustomAttributes.Add(new CustomAttribute(Import(typeof(InternalsVisibleToAttribute).GetConstructors()[0]), new byte[]
+            {
+                1, 0, 22, 74, 97, 118, 97, 78, 101, 116, 46, 82, 117, 110, 116, 105, 109, 101, 46, 78, 97, 116, 105, 118, 101, 0, 0
+            }));
+
             return _asm;
         }
 
@@ -384,16 +391,48 @@ namespace JavaNet
                 td.Interfaces.Add(new InterfaceImplementation(interfaceType));
             }
 
-            if (td.IsClass)
+            if (!isInterface && NeedsCharSequence(td))
             {
-                // all java fields are sequential (we need this for some Unsafe operations)
-                var baseType = td.BaseType.Resolve();
-                if (baseType.FullName == "System.Object" || baseType.IsSequentialLayout || baseType.IsExplicitLayout)
-                {
-                    // we can't apply 'sequential' if base type is auto-layout (unless it's the Object class)
-                    td.IsSequentialLayout = true;
-                }
+                BuildCharSequenceImplementations(td);
             }
+        }
+
+        private bool NeedsCharSequence(TypeDefinition td)
+        {
+            return td.Interfaces.Any(ii => ii.InterfaceType.FullName == "System.Collections.IEnumerable" || NeedsCharSequence(ii.InterfaceType.Resolve()));
+        }
+
+        private void BuildCharSequenceImplementations(TypeDefinition td)
+        {
+            var enumerator = new MethodDefinition("System.Collections.IEnumerable.GetEnumerator", 
+                MethodAttributes.Private | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Virtual, 
+                Import(typeof(IEnumerator)));
+
+            enumerator.Overrides.Add(Import(typeof(IEnumerable).GetMethod("GetEnumerator")));
+            td.Methods.Add(enumerator);
+            enumerator.DeclaringType = td;
+            var ilp = (enumerator.Body = new MethodBody(enumerator)).GetILProcessor();
+            ilp.Append(Instruction.Create(OpCodes.Ldarg_0));
+            ilp.Append(Instruction.Create(OpCodes.Callvirt, Import(typeof(object).GetMethod("ToString"))));
+            ilp.Append(Instruction.Create(OpCodes.Callvirt, Import(typeof(string).GetMethod("GetEnumerator"))));
+            ilp.Append(Instruction.Create(OpCodes.Ret));
+
+            var charEnum = new MethodDefinition("System.Collections.IEnumerable`1.GetEnumerator",
+                MethodAttributes.Private | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Virtual,
+                Import(typeof(IEnumerator<char>)));
+
+            var iec = Import(typeof(IEnumerable<char>));
+            var meth = _asm.MainModule.ImportReference(iec.Resolve().Methods.Single(m => m.Name == "GetEnumerator"));
+            meth.DeclaringType = iec;
+
+            charEnum.Overrides.Add(meth);
+            td.Methods.Add(charEnum);
+            charEnum.DeclaringType = td;
+            var ilp2 = (charEnum.Body = new MethodBody(charEnum)).GetILProcessor();
+            ilp2.Append(Instruction.Create(OpCodes.Ldarg_0));
+            ilp2.Append(Instruction.Create(OpCodes.Callvirt, Import(typeof(object).GetMethod("ToString"))));
+            ilp2.Append(Instruction.Create(OpCodes.Callvirt, Import(typeof(string).GetMethod("GetEnumerator"))));
+            ilp2.Append(Instruction.Create(OpCodes.Ret));
         }
 
         private void AddJavaNameAttribute(string name, Collection<CustomAttribute> attributes)
@@ -430,7 +469,7 @@ namespace JavaNet
 
             if (cf.Methods.Any(m => (m.AccessFlags & JavaMethodInfo.Flags.Native) != 0))
             {
-                td.Fields.Add(new FieldDefinition("__nativeData", FieldAttributes.CompilerControlled, TypeSystem.Object));
+                td.Fields.Add(new FieldDefinition("__nativeData", FieldAttributes.Assembly, TypeSystem.Object));
             }
 
             // this thing will contain all the javaMethod-dotnetMethod pairs, for later definition
@@ -472,6 +511,9 @@ namespace JavaNet
                 var interfaces = AllInterfaces(td);
                 foreach (var tdInterface in interfaces)
                 {
+                    if (tdInterface.InterfaceType.Name.StartsWith("IEnumerable"))
+                        continue;
+
                     foreach (var ifMethod in tdInterface.InterfaceType.Resolve().Methods.Where(x => !x.IsStatic))
                     {
                         var hasMatch = ResolveMethodReference(false,
@@ -1189,7 +1231,7 @@ namespace JavaNet
                     return "ToString";
                 case "equals":
                     return "Equals";
-                case "hashCode": // when !calling: // overriders etc need to override GetHashCode, but callers stil call hashCode()
+                case "hashCode" when !calling: // overriders etc need to override GetHashCode, but callers still call hashCode()
                     return "GetHashCode";
                 case "finalize":
                     return "Finalize";

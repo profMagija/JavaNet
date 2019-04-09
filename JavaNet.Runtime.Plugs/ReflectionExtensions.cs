@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
@@ -74,6 +75,11 @@ namespace JavaNet.Runtime.Plugs
             if (mi == null)
                 throw new MissingMethodException(t.FullName, name);
             return (T) mi.Invoke(o, args);
+        }
+
+        public static T New<T>(params object[] args)
+        {
+            return (T) Activator.CreateInstance(typeof(T), BindingFlags.Public | BindingFlags.NonPublic, null, args, CultureInfo.InvariantCulture);
         }
     }
 

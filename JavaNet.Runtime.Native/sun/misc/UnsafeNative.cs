@@ -3,9 +3,15 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
+using System.Threading;
 using java.lang;
+using java.lang.reflect;
+using JavaNet.Runtime.Native.j.lang;
 using JavaNet.Runtime.Plugs;
 using sun.misc;
+using Array = System.Array;
+using Type = System.Type;
 
 namespace JavaNet.Runtime.Native.sun.misc
 {
@@ -35,44 +41,100 @@ namespace JavaNet.Runtime.Native.sun.misc
             var elementType = t.GetElementType();
             if (elementType == null)
                 throw new ArgumentException("Not an array type", nameof(t));
-            return elementType.IsValueType ? Marshal.SizeOf(elementType) : Marshal.SizeOf<IntPtr>();
+            return elementType.IsValueType ? Marshal.SizeOf(elementType) : IntPtr.Size;
         }
 
         [JniExport]
         public static int addressSize(Unsafe @this)
         {
-            return Marshal.SizeOf<IntPtr>();
+            return IntPtr.Size;
         }
 
         [JniExport]
-        public static long objectFieldOffset(Unsafe @this, FieldInfo fi)
+        public static unsafe long objectFieldOffset(Unsafe @this, Field fi)
         {
-            return Marshal.OffsetOf(fi.DeclaringType, fi.Name).ToInt64();
+            var o = FormatterServices.GetUninitializedObject(ClassNative.GetClass(fi.getDeclaringClass()));
+            var p0 = index(o, 0);
+            var p1 = (byte*) TypedReference.MakeTypedReference(o, new[] {ClassNative.GetField(fi)}).ToPointer();
+            return (int)(p1 - p0);
         }
 
         [JniExport]
-        public static long staticFieldOffset(Unsafe @this, FieldInfo fi)
+        public static unsafe long staticFieldOffset(Unsafe @this, Field fi)
         {
-            return Marshal.OffsetOf(fi.DeclaringType, fi.Name).ToInt64();
+            throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Structure with layout equal to <see cref="TypedReference"/>.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct TypedRef : IEquatable<TypedRef>
+        {
+            public readonly IntPtr Value;
+            public readonly IntPtr Type;
+
+            public TypedRef(IntPtr value, IntPtr type)
+            {
+                Value = value;
+                Type = type;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return (obj is TypedRef tr) && Equals(tr);
+            }
+
+            public bool Equals(TypedRef other)
+            {
+                return this.Value == other.Value && this.Type == other.Type;
+            }
+
+            public override int GetHashCode()
+            {
+                int hashCode = 0;
+                unchecked
+                {
+                    hashCode += 1000000007 * Value.GetHashCode();
+                    hashCode += 1000000009 * Type.GetHashCode();
+                }
+                return hashCode;
+            }
+
+            public static bool operator ==(TypedRef tr1, TypedRef tr2)
+            {
+                return tr1.Equals(tr2);
+            }
+
+            public static bool operator !=(TypedRef tr1, TypedRef tr2)
+            {
+                return !(tr1 == tr2);
+            }
+        }
+
+        public static unsafe IntPtr ToPointer(this TypedReference target)
+        {
+            return ((TypedRef*)(&target))->Value;
+        }
+
+        public static unsafe byte* index(object ptr, long offset) => (byte*)*(IntPtr*)__makeref(ptr).ToPointer().ToPointer() + offset;
 
         [JniExport(TypeName, "getIntLjava/lang/Object;J")]
-        public static int getInt(Unsafe @this, object ptr, long offset)
+        public static unsafe int getInt(Unsafe @this, object ptr, long offset)
         {
-            return Marshal.ReadInt32(ptr, (int)offset);
+            return *(int*) index(ptr, offset);
         }
 
         [JniExport]
         public static int getIntVolatile(Unsafe @this, object ptr, long offset)
         {
-            return Marshal.ReadInt32(ptr, (int)offset);
+            return getInt(@this, ptr, offset);
         }
 
         [JniExport(TypeName, "putIntLjava/lang/Object;JI")]
-        public static void putInt(Unsafe @this, object ptr, long offset, int value)
+        public static unsafe void putInt(Unsafe @this, object ptr, long offset, int value)
         {
-            Marshal.WriteInt32(ptr, (int)offset, value);
+            *(int*) index(ptr, offset) = value;
         }
 
         [JniExport]
@@ -94,16 +156,16 @@ namespace JavaNet.Runtime.Native.sun.misc
         }
 
         [JniExport]
-        public static object getObject(Unsafe @this, object ptr, long offset)
+        public static unsafe object getObject(Unsafe @this, object ptr, long offset)
         {
             if (ptr is Array arr)
             {
                 return arr.GetValue(offset / ArrayScale(ptr.GetType()));
             }
 
-            return ptr.GetType().GetRuntimeFields()
-                .First(f => Marshal.OffsetOf(ptr.GetType(), f.Name).ToInt64() == offset)
-                .GetValue(ptr);
+            var tr = new TypedRef(new IntPtr(index(ptr, offset)), typeof(object).TypeHandle.Value);
+            var tr2 = *((TypedReference*) &tr);
+            return __refvalue(tr2, object);
         }
 
         [JniExport]
@@ -113,7 +175,7 @@ namespace JavaNet.Runtime.Native.sun.misc
         }
 
         [JniExport]
-        public static void putObject(Unsafe @this, object ptr, long offset, object value)
+        public static unsafe void putObject(Unsafe @this, object ptr, long offset, object value)
         {
             if (ptr is Array arr)
             {
@@ -121,9 +183,9 @@ namespace JavaNet.Runtime.Native.sun.misc
             }
             else
             {
-                ptr.GetType().GetRuntimeFields()
-                    .First(f => Marshal.OffsetOf(ptr.GetType(), f.Name).ToInt64() == offset)
-                    .SetValue(ptr, value);
+                var tr = new TypedRef(new IntPtr(index(ptr, offset)), value?.GetType().TypeHandle.Value ?? typeof(object).TypeHandle.Value);
+                var tr2 = *((TypedReference*)&tr);
+                __refvalue(tr2, object) = value;
             }
         }
 
@@ -158,15 +220,15 @@ namespace JavaNet.Runtime.Native.sun.misc
         }
 
         [JniExport(TypeName, "getLongLjava/lang/Object;J")]
-        public static long getLong(Unsafe @this, object ptr, long offset)
+        public static unsafe long getLong(Unsafe @this, object ptr, long offset)
         {
-            return Marshal.ReadInt64(ptr, (int)offset);
+            return *(long*) index(ptr, offset);
         }
 
         [JniExport(TypeName, "putLongLjava/lang/Object;JJ")]
-        public static void putLong(Unsafe @this, object ptr, long offset, long value)
+        public static unsafe void putLong(Unsafe @this, object ptr, long offset, long value)
         {
-            Marshal.WriteInt64(ptr, (int)offset, value);
+            *(long*) index(ptr, offset) = value;
         }
 
         [JniExport(TypeName, "getLongJ")]
@@ -182,15 +244,15 @@ namespace JavaNet.Runtime.Native.sun.misc
         }
 
         [JniExport(TypeName, "getByteLjava/lang/Object;J")]
-        public static sbyte getByte(Unsafe @this, object ptr, long offset)
+        public static unsafe sbyte getByte(Unsafe @this, object ptr, long offset)
         {
-            return (sbyte)Marshal.ReadByte(ptr, (int)offset);
+            return (sbyte) *index(ptr, offset);
         }
 
         [JniExport(TypeName, "putByteLjava/lang/Object;JB")]
-        public static void putByte(Unsafe @this, object ptr, long offset, sbyte value)
+        public static unsafe void putByte(Unsafe @this, object ptr, long offset, sbyte value)
         {
-            Marshal.WriteByte(ptr, (int) offset, (byte) value);
+            *index(ptr, offset) = (byte) value;
         }
 
         [JniExport(TypeName, "getByteJ")]

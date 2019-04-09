@@ -9,7 +9,8 @@ namespace JavaNet.Runtime.Plugs
     public static class ObjectPlugs
     {
         [MethodPlug(typeof(object), "getClass")]
-        public static Type GetClass(object o) => o.GetType();
+        [return: ActualType("java.lang.Class")]
+        public static object getClass(object o) => o.GetType();
 
         [MethodPlug(typeof(object), "clone")]
         public static object Clone(object o)
@@ -33,6 +34,15 @@ namespace JavaNet.Runtime.Plugs
 
         [MethodPlug(typeof(object), "wait")]
         public static void Wait(object t) => Monitor.Wait(t);
+
+        [MethodPlug(typeof(object), "hashCode")]
+        public static int hashCode(object @this)
+        {
+            if (@this is string s)
+                return StringPlugs.hashCode(s);
+
+            return @this.GetHashCode();
+        }
 
 
     }
