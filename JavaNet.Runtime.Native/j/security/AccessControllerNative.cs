@@ -8,7 +8,7 @@ namespace JavaNet.Runtime.Native.j.security
     {
         public const string TypeName = "java.security.AccessController";
 
-        [NativeMethodImpl]
+        [JniExport(TypeName, "doPrivilegedLjava/security/PrivilegedExceptionAction;")]
         public static object doPrivileged(Type accessController, PrivilegedExceptionAction action)
         {
             try
@@ -21,25 +21,25 @@ namespace JavaNet.Runtime.Native.j.security
             }
         }
 
-        [NativeMethodImpl]
+        [JniExport(TypeName, "doPrivilegedLjava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;")]
         public static object doPrivileged(Type accessController, PrivilegedExceptionAction action, AccessControlContext context)
         {
             return doPrivileged(accessController, action);
         }
 
-        [NativeMethodImpl]
+        [JniExport(TypeName, "doPrivilegedLjava/security/PrivilegedAction;")]
         public static object doPrivileged(Type accessController, PrivilegedAction action)
         {
             return action.run();
         }
 
-        [NativeMethodImpl]
+        [JniExport(TypeName, "doPrivilegedLjava/security/PrivilegedAction;Ljava/security/AccessControlContext;")]
         public static object doPrivileged(Type accessController, PrivilegedAction action, AccessControlContext context)
         {
             return doPrivileged(accessController, action);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static object getStackAccessControlContext(Type accessController)
         {
             return null;

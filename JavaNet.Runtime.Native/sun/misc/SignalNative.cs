@@ -6,7 +6,7 @@ namespace JavaNet.Runtime.Native.sun.misc
     {
         public const string TypeName = "sun.misc.Signal";
 
-        [NativeMethodImpl]
-        public static int findSignal(java.lang.String name) => -1;
+        [JniExport]
+        public static int findSignal(string name) => -1;
     }
 }

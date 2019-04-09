@@ -18,11 +18,13 @@ namespace JavaNet.Runtime.Native.j.io
 
         private static FieldRef<Data> _nativeData;
 
-        public static void open0(FileOutputStream @this, java.lang.String path, bool append)
+        [JniExport]
+        public static void open0(FileOutputStream @this, string path, bool append)
         {
             _nativeData[@this].FileStream = File.Open(path, append ? FileMode.Append : FileMode.OpenOrCreate, FileAccess.Write);
         }
 
+        [JniExport]
         public static void write(FileOutputStream @this, int value, bool append)
         {
             if (_nativeData[@this].FileStream != null)
@@ -38,6 +40,7 @@ namespace JavaNet.Runtime.Native.j.io
                 System.Console.Error.Write(cb);
         }
 
+        [JniExport]
         public static void writeBytes(FileOutputStream @this, sbyte[] buffer, int offset, int count, bool append)
         {
             if (_nativeData[@this].FileStream != null)
@@ -58,11 +61,13 @@ namespace JavaNet.Runtime.Native.j.io
                 System.Console.Error.Write(cb);
         }
 
+        [JniExport]
         public static void close0(object @this)
         {
             _nativeData[@this].FileStream?.Close();
         }
 
+        [JniExport]
         public static void initIDs(Type fileOutputStream)
         {
             _nativeData = new FieldRef<Data>(fileOutputStream, "__nativeData");

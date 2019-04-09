@@ -12,45 +12,45 @@ namespace JavaNet.Runtime.Native.j.io
 
         private static FieldRef<FileStream> _nativeData;
 
-        [NativeMethodImpl]
-        public static void open0(FileInputStream @this, java.lang.String path)
+        [JniExport]
+        public static void open0(FileInputStream @this, string path)
         {
             System.Console.WriteLine("Opening {0}", path);
             @this.SetField("__nativeData", File.OpenRead(path));
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static int read0(FileInputStream @this)
         {
             return _nativeData[@this].ReadByte();
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static int readBytes(FileInputStream @this, sbyte[] buffer, int offset, int count)
         {
             return _nativeData[@this].Read((byte[]) (Array) buffer, offset, count);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static long skip(FileInputStream @this, long count)
         {
             return _nativeData[@this].Seek(count, SeekOrigin.Current);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static int available(FileInputStream @this)
         {
             var str = _nativeData[@this];
             return (int) (str.Length - str.Position);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void initIDs(Type fileInputStream)
         {
             _nativeData = new FieldRef<FileStream>(fileInputStream, "__nativeData");
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void close0(FileInputStream @this)
         {
             _nativeData[@this].Close();

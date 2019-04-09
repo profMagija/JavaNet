@@ -8,13 +8,13 @@ namespace JavaNet.Runtime.Native.j.io
     {
         private const string TypeName = "java.io.FileDescriptor";
 
-        [NativeMethodImpl]
-        public static void InitIDs(Type fileDescriptor)
+        [JniExport]
+        public static void initIDs(Type fileDescriptor)
         {
         }
 
-        [NativeMethodImpl]
-        public static void Sync(FileDescriptor @this)
+        [JniExport]
+        public static void sync(FileDescriptor @this)
         {
             // TODO implement actual syncing
             // this will probably require some "catching onto"

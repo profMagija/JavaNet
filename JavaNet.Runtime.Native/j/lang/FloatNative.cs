@@ -6,13 +6,13 @@ namespace JavaNet.Runtime.Native.j.lang
     public static class FloatNative
     {
         public const string TypeName = "java.lang.Float";
-        [NativeMethodImpl]
-        public static int FloatToRawIntBits(Type flt, float f)
+        [JniExport]
+        public static int floatToRawIntBits(Type flt, float f)
         {
             return BitConverter.ToInt32(BitConverter.GetBytes(f), 0);
         }
-        [NativeMethodImpl]
-        public static float IntBitsToFloat(Type flt, int f)
+        [JniExport]
+        public static float intBitsToFloat(Type flt, int f)
         {
             return BitConverter.ToSingle(BitConverter.GetBytes(f), 0);
         }

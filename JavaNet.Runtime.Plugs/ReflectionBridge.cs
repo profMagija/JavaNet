@@ -17,8 +17,7 @@ namespace JavaNet.Runtime.Plugs
                 return value;
 
             var cls = Type.GetType("java.lang.Class, JavaNet.Runtime", true)
-                .GetConstructors(BindingFlags.Instance)
-                .Single()
+                .GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic).Single()
                 .Invoke(new object[] {null});
 
             cls.SetField("__nativeData", type);

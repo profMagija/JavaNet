@@ -7,20 +7,20 @@ namespace JavaNet.Runtime.Native.j.io
     {
         public const string TypeName = "java.io.Console";
 
-        [NativeMethodImpl]
+        [JniExport]
         public static bool istty(Type console)
         {
             return !System.Console.IsOutputRedirected && !System.Console.IsInputRedirected;
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static bool echo(Type console, bool value)
         {
             return false;
         }
 
-        [NativeMethodImpl]
-        public static java.lang.String encoding(Type console)
+        [JniExport]
+        public static string encoding(Type console)
         {
             return "UTF-8";
         }

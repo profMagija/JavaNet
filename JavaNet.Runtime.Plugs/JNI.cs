@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -10,11 +11,11 @@ namespace JavaNet.Runtime.Plugs
 
         public static void RegisterNativeLibrary(Assembly asm)
         {
-            foreach (var type in asm.ExportedTypes)
+            foreach (var type in asm.DefinedTypes)
             {
                 foreach (var methodInfo in type.GetMethods(BindingFlags.Public | BindingFlags.Static))
                 {
-                    if (methodInfo.GetCustomAttribute<NativeMethodImplAttribute>() is NativeMethodImplAttribute atr)
+                    if (methodInfo.GetCustomAttribute<JniExport>() is JniExport atr)
                     {
                         var typeName = atr.DeclType ?? type.GetStatic<string>("TypeName");
                         var methodName = atr.Name ?? methodInfo.Name;
@@ -27,15 +28,15 @@ namespace JavaNet.Runtime.Plugs
 
         public static void RegisterNativeMethod(Type clazz, string name, Delegate func)
         {
-            clazz.SetStatic("nativeMethods<" + name + ">", func);
+            clazz.SetStatic("nativeMethod<" + name + ">", func);
         }
 
         private static readonly Dictionary<string, MethodInfo> _nativeMethods = new Dictionary<string, MethodInfo>();
 
-        public static object NativeMethodEntryPoint(Type type, string methodName, object[] arguments)
+        public static object NativeMethodEntryPoint(Type type, string methodName, string descriptor, object[] arguments)
         {
             var key = type.FullName + ":" + methodName;
-            if (_nativeMethods.TryGetValue(key, out var method))
+            if (_nativeMethods.TryGetValue(key, out var method) || _nativeMethods.TryGetValue(key + descriptor, out method))
             {
                 return method.Invoke(null, arguments);
             }

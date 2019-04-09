@@ -10,12 +10,11 @@ using JavaNet.Runtime.Plugs.NativeImpl;
 
 namespace JavaNet.Runtime.Native.j.lang
 {
-    [VolatileFields(TypeName)]
     public static class SystemNative
     {
         public const string TypeName = "java.lang.System";
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void registerNatives(Type system)
         {
             JNI.RegisterNativeMethod(system, nameof(currentTimeMillis), (Func<Type, long>) currentTimeMillis);
@@ -23,49 +22,49 @@ namespace JavaNet.Runtime.Native.j.lang
             JNI.RegisterNativeMethod(system, nameof(arraycopy), (Action<Type, object, int, object, int, int>) arraycopy);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void setIn0(Type system, InputStream in0)
         {
             system.SetStatic("in", in0);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void setOut0(Type system, OutputStream out0)
         {
             system.SetStatic("out", out0);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void setErr0(Type system, OutputStream err0)
         {
             system.SetStatic("err", err0);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static long currentTimeMillis(Type system)
         {
             return DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static long nanoTime(Type system)
         {
             return DateTime.Now.Ticks * 1000000 / TimeSpan.TicksPerMillisecond;
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void arraycopy(Type system, object src, int srcIndex, object target, int targetIndex, int length)
         {
             Array.Copy((Array) src, srcIndex, (Array) target, targetIndex, length);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static int identityHashCode(Type system, object obj)
         {
             return RuntimeHelpers.GetHashCode(obj);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static object initProperties(Type system, Properties props)
         {
             void P(string n, string v)
@@ -135,15 +134,15 @@ namespace JavaNet.Runtime.Native.j.lang
         }
 
         
-        [NativeMethodImpl]
+        [JniExport]
         public static string mapLibraryName(Type system, string name) => name;
 
         [ModuleLoadHook]
         public static void LoadSystem()
         {
-            JNI.RegisterNativeLibrary(Assembly.GetCallingAssembly());
+            JNI.RegisterNativeLibrary(typeof(SystemNative).Assembly);
             RuntimeHelpers.RunClassConstructor(Type.GetType("java.lang.System, JavaNet.Runtime", true).TypeHandle);
-            typeof(global::java.lang.System).CallStatic("initializeSystemClass");
+            typeof(java.lang.System).CallStatic("initializeSystemClass");
         }
     }
 }

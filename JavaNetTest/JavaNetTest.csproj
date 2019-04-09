@@ -7,12 +7,12 @@
     <Reference Include="JavaNet.Runtime">
       <HintPath>..\JavaNet.RuntimeConverter\bin\Debug\netcoreapp2.1\JavaNet.Runtime.dll</HintPath>
     </Reference>
-    <Reference Include="JavaNet.Runtime.Plugs">
-      <HintPath>..\JavaNet.RuntimeConverter\bin\Debug\netcoreapp2.1\JavaNet.Runtime.Plugs.dll</HintPath>
-      <Private></Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JavaNet.Runtime.Native\JavaNet.Runtime.Native.csproj" />
+    <ProjectReference Include="..\JavaNet.Runtime.Plugs\JavaNet.Runtime.Plugs.csproj" />
   </ItemGroup>
 </Project>

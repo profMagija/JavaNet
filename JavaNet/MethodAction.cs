@@ -714,10 +714,10 @@ namespace JavaNet
                     l.Add(Instruction.Create(OpCodes.Castclass, JavaAssemblyBuilder.Instance.ResolveTypeReference(s)));
                 }
 
-                if (Method.Name == "ToString" && Args.Length == 0)
-                {
-                    l.Add(Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.ToJavaString));
-                }
+                //if (Method.Name == "ToString" && Args.Length == 0)
+                //{
+                //    l.Add(Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.ToJavaString));
+                //}
 
                 l.AddRange(Target.StoreValue());
             }

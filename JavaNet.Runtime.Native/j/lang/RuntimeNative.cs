@@ -8,49 +8,49 @@ namespace JavaNet.Runtime.Native.j.lang
     {
         public const string TypeName = "java.lang.Runtime";
 
-        [NativeMethodImpl]
+        [JniExport]
         public static int availableProcessors(java.lang.Runtime @this)
         {
             return Environment.ProcessorCount;
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static long freeMemory(java.lang.Runtime @this)
         {
             return Process.GetCurrentProcess().MaxWorkingSet.ToInt64() - Environment.WorkingSet;
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static long totalMemory(java.lang.Runtime @this)
         {
             return 16L << 30; // TODO implement
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static long maxMemory(java.lang.Runtime @this)
         {
             return Process.GetCurrentProcess().MaxWorkingSet.ToInt64();
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void gc(java.lang.Runtime @this)
         {
             GC.Collect();
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void runFinalization0(Type runtime)
         {
             GC.WaitForPendingFinalizers();
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void traceInstructions(java.lang.Runtime @this, bool doTrace)
         {
 
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void traceMethodCalls(java.lang.Runtime @this, bool doTrace)
         {
 

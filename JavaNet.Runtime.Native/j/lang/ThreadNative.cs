@@ -43,9 +43,11 @@ namespace JavaNet.Runtime.Native.j.lang
 
         private static FieldRef<Data> _nativeData;
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void registerNatives(Type thread)
         {
+            _nativeData = new FieldRef<Data>(thread, "__nativeData");
+
             var clrThread = Thread.CurrentThread;
             _sysThreadGroup = Activator.CreateInstance(typeof(ThreadGroup), true);
             var mainThread = (java.lang.Thread) FormatterServices.GetUninitializedObject(thread);
@@ -76,7 +78,7 @@ namespace JavaNet.Runtime.Native.j.lang
         private static object _sysThreadGroup;
 
 
-        [NativeMethodImpl]
+        [JniExport]
         public static java.lang.Thread currentThread(Type thread)
         {
             lock (_javaThreads)
@@ -92,31 +94,31 @@ namespace JavaNet.Runtime.Native.j.lang
             }
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void yield(Type thread)
         {
             Thread.Yield();
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void sleep(Type thread, long milliseconds)
         {
             Thread.Sleep(TimeSpan.FromMilliseconds(milliseconds));
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static bool isInterrupted(java.lang.Thread @this, bool clearInterrupt)
         {
             return false;
         }
 
-        [NativeMethodImplAttribute]
+        [JniExport]
         public static bool isAlive(java.lang.Thread @this)
         {
             return _nativeData[@this].ClrThread.IsAlive;
         }
 
-        [NativeMethodImplAttribute]
+        [JniExport]
         public static int countStackFrames(java.lang.Thread @this)
         {
             if (_nativeData[@this].ClrThread == Thread.CurrentThread)
@@ -129,19 +131,19 @@ namespace JavaNet.Runtime.Native.j.lang
             }
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static bool holdsLock(Type thread, object target)
         {
             return Monitor.IsEntered(target);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static java.lang.Thread[] getThreads(Type thread)
         {
             return _javaThreads.Values.ToArray();
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void setPriority0(java.lang.Thread @this, int priority)
         {
             var pr = (priority - 1) / 2;
@@ -149,38 +151,38 @@ namespace JavaNet.Runtime.Native.j.lang
             _nativeData[@this].ClrThread.Priority = priorities[pr];
         }
 
-        [NativeMethodImplAttribute]
+        [JniExport]
         public static void start0(java.lang.Thread @this)
         {
             _nativeData[@this].ClrThread.Start();
         }
 
-        [NativeMethodImplAttribute]
+        [JniExport]
         public static void stop0(java.lang.Thread @this, object param)
         {
             _nativeData[@this].ClrThread.Abort(param);
         }
 
-        [NativeMethodImplAttribute]
+        [JniExport]
         public static void suspend0(java.lang.Thread @this)
         {
             _nativeData[@this].ClrThread.Suspend();
         }
 
-        [NativeMethodImplAttribute]
+        [JniExport]
         public static void resume0(java.lang.Thread @this)
         {
             _nativeData[@this].ClrThread.Resume();
         }
 
-        [NativeMethodImplAttribute]
+        [JniExport]
         public static void interrupt0(java.lang.Thread @this)
         {
             _nativeData[@this].ClrThread.Interrupt();
         }
 
-        [NativeMethodImplAttribute]
-        public static void setNativeName(java.lang.Thread @this, java.lang.String name)
+        [JniExport]
+        public static void setNativeName(java.lang.Thread @this, string name)
         {
             _nativeData[@this].ClrThread.Name = name;
         }

@@ -8,14 +8,14 @@ namespace JavaNet.Runtime.Native.sun.misc
     {
         public const string TypeName = "sun.misc.VM";
 
-        [NativeMethodImpl]
-        public static void Initialize(Type t)
+        [JniExport]
+        public static void initialize(Type vm)
         {
 
         }
 
-        [NativeMethodImpl]
-        public static ClassLoader LatestUserDefinedLoader(Type t)
+        [JniExport]
+        public static ClassLoader latestUserDefinedLoader(Type vm)
         {
             return null;
         }

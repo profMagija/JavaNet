@@ -296,8 +296,8 @@ namespace JavaNet
                     curBlock = new ActionBlock(i);
                     _blocks.Add(i, curBlock);
 
-                    if (_md.Name == "ToString" && _md.Parameters.Count == 0)
-                        curBlock.ReturnConvert = JavaAssemblyBuilder.Instance.ToSystemString;
+                    //if (_md.Name == "ToString" && _md.Parameters.Count == 0)
+                    //    curBlock.ReturnConvert = JavaAssemblyBuilder.Instance.ToSystemString;
 
                 }
                 curBlock.JavaOps.Add(_ops[i]);

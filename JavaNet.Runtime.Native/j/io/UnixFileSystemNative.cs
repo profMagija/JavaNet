@@ -7,8 +7,8 @@ namespace JavaNet.Runtime.Native.j.io
     {
         public const string TypeName = "java.io.UnixFileSystem";
 
-        [NativeMethodImpl]
-        public static string canonicalize0(object @this, java.lang.String name)
+        [JniExport]
+        public static string canonicalize0(object @this, string name)
         {
             try
             {
@@ -20,7 +20,7 @@ namespace JavaNet.Runtime.Native.j.io
             }
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static int getBooleanAttributes0(object @this, java.io.File file)
         {
             int rv = 0;
@@ -57,7 +57,7 @@ namespace JavaNet.Runtime.Native.j.io
             return path;
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static bool checkAccess(object @this, java.io.File file, int access)
         {
             var path = GetPath(file);
@@ -89,7 +89,7 @@ namespace JavaNet.Runtime.Native.j.io
             return true;
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static long getLastModifiedTime(object @this, java.io.File file)
         {
             var path = GetPath(file);
@@ -104,7 +104,7 @@ namespace JavaNet.Runtime.Native.j.io
             }
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static long getLength(object @this, java.io.File file)
         {
             var path = GetPath(file);
@@ -120,7 +120,7 @@ namespace JavaNet.Runtime.Native.j.io
             }
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static void initIDs() { }
     }
 }

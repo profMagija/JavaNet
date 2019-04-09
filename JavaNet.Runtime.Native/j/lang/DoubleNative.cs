@@ -7,12 +7,12 @@ namespace JavaNet.Runtime.Native.j.lang
     {
         public const string TypeName = "java.lang.Double";
 
-        [NativeMethodImpl]
+        [JniExport]
         public static long doubleToRawLongBits(Type dbl, double f)
         {
             return BitConverter.ToInt64(BitConverter.GetBytes(f), 0);
         }
-        [NativeMethodImpl]
+        [JniExport]
         public static double longBitsToDouble(Type dbl, long f)
         {
             return BitConverter.ToDouble(BitConverter.GetBytes(f), 0);

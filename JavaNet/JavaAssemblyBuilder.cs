@@ -48,9 +48,9 @@ namespace JavaNet
         private readonly HashSet<string> _annotations = new HashSet<string>();
         private readonly HashSet<string> _volatileFields = new HashSet<string>();
 
-        public MethodDefinition StringConstructor { get; set; }
-        public MethodDefinition ToSystemString { get; set; }
-        public MethodDefinition ToJavaString { get; set; }
+        //public MethodDefinition StringConstructor { get; set; }
+        //public MethodDefinition ToSystemString { get; set; }
+        //public MethodDefinition ToJavaString { get; set; }
         public TypeDefinition StringType { get; set; }
 
         private AssemblyDefinition _asm;
@@ -88,8 +88,8 @@ namespace JavaNet
         public void CreatePlugs(AssemblyDefinition asm)
         {
             _typePlugs["java/lang/Object"] = SystemImport(typeof(object));
-            ////_typePlugs["java/lang/String"] = SystemImport(typeof(string));
-            //_typePlugs["java/lang/Throwable"] = SystemImport(typeof(Exception));
+            _typePlugs["java/lang/String"] = SystemImport(typeof(string));
+            _typePlugs["java/lang/Throwable"] = SystemImport(typeof(Exception));
 
             //_typePlugs["java/lang/Class"] = SystemImport(typeof(Type));
             //_typePlugs["java/lang/annotation/Annotation"] = SystemImport(typeof(Attribute));
@@ -98,8 +98,8 @@ namespace JavaNet
             //_typePlugs["java/lang/reflect/Field"] = SystemImport(typeof(FieldInfo));
             //_typePlugs["java/lang/reflect/Method"] = SystemImport(typeof(MethodInfo));
 
-            //_typePlugs["java/lang/NoSuchFieldException"] = SystemImport(typeof(MissingFieldException));
-            //_typePlugs["java/lang/NoSuchMethodException"] = SystemImport(typeof(MissingMethodException));
+            //_typePlugs["java/lang/NoSuchFieldError"] = SystemImport(typeof(MissingFieldException));
+            //_typePlugs["java/lang/NoSuchMethodError"] = SystemImport(typeof(MissingMethodException));
             //_typePlugs["java/lang/NullPointerException"] = SystemImport(typeof(NullReferenceException));
             //_typePlugs["java/lang/ClassCastException"] = SystemImport(typeof(InvalidCastException));
             //_typePlugs["java/lang/IllegalMonitorStateException"] = SystemImport(typeof(SynchronizationLockException));
@@ -117,6 +117,18 @@ namespace JavaNet
                     foreach (var mlh in method.GetCustomAttributes<ModuleLoadHookAttribute>())
                     {
                         _moduleLoadHooks.Add(Import(method));
+                    }
+
+                    foreach (var mp in method.GetCustomAttributes<MethodPlugAttribute>())
+                    {
+                        var returnType = mp.ReturnType ?? (method.Name == "Ctor" ? "System.Void" : method.ReturnType.FullName);
+                        var declType = mp.DeclaringType ?? type.GetStatic<string>("TypeName");
+                        var name = mp.MethodName ?? (method.Name == "Ctor" ? ".ctor" : method.Name);
+                        var paramTypes = mp.ParamTypes ?? method.GetParameters().Skip(mp.IsStatic ? 0 : 1)
+                                             .Select(ActualTypeName)
+                                             .Skip(mp.IsStatic || name == ".ctor" ? 0 : 1);
+                        var signature = CreateMethodSignature(mp.IsStatic, returnType, declType, name, paramTypes);
+                        _methodReferences[signature] = Import(method);
                     }
                 }
             }
@@ -449,11 +461,11 @@ namespace JavaNet
                 }
             }
 
-            if (td.FullName == "java.lang.String")
-            {
-                BuildStringConversions(td);
-                StringType = td;
-            }
+            //if (td.FullName == "java.lang.String")
+            //{
+            //    BuildStringConversions(td);
+            //    StringType = td;
+            //}
 
             if (td.IsClass)
             {
@@ -525,6 +537,7 @@ namespace JavaNet
             _typeThings.Add((td, cf, methodPairs));
         }
 
+/*
         private void BuildStringConversions(TypeDefinition td)
         {
             var toSys = new MethodDefinition("op_Implicit", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.SpecialName, TypeSystem.String);
@@ -553,6 +566,7 @@ namespace JavaNet
 
             ToJavaString = toJava;
         }
+*/
 
         public IEnumerable<InterfaceImplementation> AllInterfaces(TypeDefinition tr)
         {
@@ -699,10 +713,10 @@ namespace JavaNet
             definingClass.Methods.Add(md);
             methodPairs.Add((mi, md));
 
-            if (mi.Name == "<init>" && mi.Descriptor == "([C)V" && definingClass.FullName == "java.lang.String")
-            {
-                StringConstructor = md;
-            }
+            //if (mi.Name == "<init>" && mi.Descriptor == "([C)V" && definingClass.FullName == "java.lang.String")
+            //{
+            //    StringConstructor = md;
+            //}
 
         }
 
@@ -829,20 +843,13 @@ namespace JavaNet
              */
             var il = md.Body.GetILProcessor();
             var (actionType, genericParams) = CreateNativeActionType(md);
-            var nativeField = new FieldDefinition("nativeMethod<" + md.Name + ">", (md.IsStatic ? FieldAttributes.Static | FieldAttributes.Private : FieldAttributes.Private), actionType);
+            var nativeField = new FieldDefinition("nativeMethod<" + md.Name + ">", FieldAttributes.Static, actionType);
             nativeField.DeclaringType = definingClass;
             definingClass.Fields.Add(nativeField);
             var arrLocal = new VariableDefinition(TypeSystem.Object.MakeArrayType());
             md.Body.Variables.Add(arrLocal);
-            if (md.IsStatic)
-            {
-                il.Append(Instruction.Create(OpCodes.Ldsfld, nativeField));
-            }
-            else
-            {
-                il.Append(Instruction.Create(OpCodes.Ldarg_0));
-                il.Append(Instruction.Create(OpCodes.Ldfld, nativeField));
-            }
+
+            il.Append(Instruction.Create(OpCodes.Ldsfld, nativeField));
 
             var callLib = Instruction.Create(OpCodes.Pop);
 
@@ -912,6 +919,7 @@ namespace JavaNet
             il.Append(Instruction.Create(OpCodes.Ldtoken, md.DeclaringType));
             il.Append(Instruction.Create(OpCodes.Call, Import(typeof(Type).GetMethod("GetTypeFromHandle"))));
             il.Append(Instruction.Create(OpCodes.Ldstr, md.Name));
+            il.Append(Instruction.Create(OpCodes.Ldstr, mi.Descriptor.Remove(mi.Descriptor.IndexOf(')')).Substring(1)));
             il.Append(Instruction.Create(OpCodes.Ldloc, arrLocal));
             il.Append(Instruction.Create(OpCodes.Call, Import(typeof(JNI).GetMethod("NativeMethodEntryPoint"))));
             if (md.ReturnType.FullName == "System.Void")

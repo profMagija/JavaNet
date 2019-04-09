@@ -85,7 +85,6 @@ namespace JavaNet
                     return new[]
                     {
                         Instruction.Create(OpCodes.Ldstr, s),
-                        Instruction.Create(OpCodes.Call, JavaAssemblyBuilder.Instance.ToJavaString),
                     };
                 case int i: return new[] {Instruction.Create(OpCodes.Ldc_I4, i)};
                 case long l: return new[] {Instruction.Create(OpCodes.Ldc_I8, l)};

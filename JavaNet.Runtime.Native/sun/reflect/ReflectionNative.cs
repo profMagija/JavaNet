@@ -10,23 +10,24 @@ namespace JavaNet.Runtime.Native.sun.reflect
     {
         public const string TypeName = "sun.reflect.Reflection";
 
-        [MethodImpl(MethodImplOptions.NoInlining), NativeMethodImpl]
-        public static Type getCallerClass()
+        [MethodImpl(MethodImplOptions.NoInlining), JniExport]
+        public static Class getCallerClass(Type reflection)
         {
             var st = new StackTrace();
             var f = st.GetFrame(2);
-            return f.GetMethod().DeclaringType;
+            return (Class) ReflectionBridge.GetClass(f.GetMethod().DeclaringType);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining), NativeMethodImpl]
-        public static Type getCallerClass(int offset)
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [JniExport(TypeName, "getCallerClassI")]
+        public static Class getCallerClass(Type reflection, int offset)
         {
             var st = new StackTrace();
             var f = st.GetFrame(1 + offset);
-            return f.GetMethod().DeclaringType;
+            return (Class) ReflectionBridge.GetClass(f.GetMethod().DeclaringType);
         }
 
-        [NativeMethodImpl]
+        [JniExport]
         public static int getClassAccessFlags(Type reflection, Class type)
         {
             return type.getModifiers();

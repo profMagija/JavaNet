@@ -8,21 +8,21 @@ namespace JavaNet.Runtime.Native.sun.misc
     {
         public const string TypeName = "sun.misc.URLClassPath";
 
-        [NativeMethodImpl]
+        [JniExport]
         [return: ActualType("java.net.URL[]")]
         public static object[] getLookupCacheURLs(Type type, ClassLoader cl)
         {
             return new object[0];
         }
 
-        [NativeMethodImpl]
-        public static int[] getLookupCacheForClassLoader(Type type, ClassLoader cl, java.lang.String url)
+        [JniExport]
+        public static int[] getLookupCacheForClassLoader(Type type, ClassLoader cl, string url)
         {
             return new int[0];
         }
 
-        [NativeMethodImpl]
-        public static bool knownToNotExist0(Type type, ClassLoader cl, java.lang.String url)
+        [JniExport]
+        public static bool knownToNotExist0(Type type, ClassLoader cl, string url)
         {
             return true;
         }
