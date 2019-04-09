@@ -95,11 +95,11 @@ namespace JavaNet.Runtime.Native.j.lang
             P("path.separator", Path.PathSeparator.ToString());
             P("line.separator", Environment.NewLine);
 
-            P("file.encoding", "UTF-8");
-            P("sun.jnu.encoding", "UTF-8");
-            P("sun.stdout.encoding", "UTF-8");
-            P("sun.stderr.encoding", "UTF-8");
-            P("file.encoding.pkg", "sun.io");
+            P("file.encoding", "UTF8");
+            P("sun.jnu.encoding", "UTF8");
+            P("sun.stdout.encoding", "UTF8");
+            P("sun.stderr.encoding", "UTF8");
+            P("file.encoding.pkg", "sun.nio");
             P("sun.io.unicode.encoding", "little");
             P("sun.cpu.isalist", "amd64");
 

@@ -265,7 +265,29 @@ namespace JavaNet.Runtime.Plugs
         [MethodPlug]
         public static string intern(string @this) => string.Intern(@this);
 
+        [MethodPlug(IsStatic = true)]
+        public static string valueOf(object obj) => obj != null ? obj.ToString() : "null";
 
+        [MethodPlug(IsStatic = true)]
+        public static string valueOf(int obj) => obj.ToString();
+
+        [MethodPlug(IsStatic = true)]
+        public static string valueOf(float obj) => obj.ToString();
+
+        [MethodPlug(IsStatic = true)]
+        public static string valueOf(double obj) => obj.ToString();
+
+        [MethodPlug(IsStatic = true)]
+        public static string valueOf(long obj) => obj.ToString();
+
+        [MethodPlug(IsStatic = true)]
+        public static string valueOf(short obj) => obj.ToString();
+
+        [MethodPlug(IsStatic = true)]
+        public static string valueOf(sbyte obj) => obj.ToString();
+
+        [MethodPlug(IsStatic = true)]
+        public static string valueOf(char obj) => obj.ToString();
 
 
         private static void CheckBounds(Array array, int offset, int count)

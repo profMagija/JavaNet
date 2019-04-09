@@ -128,7 +128,7 @@ namespace JavaNet
                         var returnType = mp.ReturnType ?? (method.Name == "Ctor" ? "System.Void" : ActualTypeName(method.ReturnParameter));
                         var declType = mp.DeclaringType ?? type.GetStatic<string>("TypeName");
                         var name = mp.MethodName ?? (method.Name == "Ctor" ? ".ctor" : method.Name);
-                        var paramTypes = mp.ParamTypes ?? method.GetParameters().Skip(mp.IsStatic ? 1 : 0)
+                        var paramTypes = mp.ParamTypes ?? method.GetParameters()
                                              .Select(ActualTypeName)
                                              .Skip(mp.IsStatic || name == ".ctor" ? 0 : 1);
                         var signature = CreateMethodSignature(mp.IsStatic, returnType, declType, name, paramTypes);

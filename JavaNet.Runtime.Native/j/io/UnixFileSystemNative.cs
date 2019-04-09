@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using JavaNet.Runtime.Plugs;
 
 namespace JavaNet.Runtime.Native.j.io
@@ -121,6 +122,6 @@ namespace JavaNet.Runtime.Native.j.io
         }
 
         [JniExport]
-        public static void initIDs() { }
+        public static void initIDs(Type type) { }
     }
 }

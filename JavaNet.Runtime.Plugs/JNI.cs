@@ -38,7 +38,19 @@ namespace JavaNet.Runtime.Plugs
             var key = type.FullName + ":" + methodName;
             if (_nativeMethods.TryGetValue(key, out var method) || _nativeMethods.TryGetValue(key + descriptor, out method))
             {
-                return method.Invoke(null, arguments);
+                try
+                {
+                    return method.Invoke(null, arguments);
+                }
+                catch (TargetInvocationException ex)
+                {
+                    throw ex.InnerException ?? ex;
+                }
+                catch (Exception ex)
+                {
+                    ex.Data.Add("jni_method", key + ":" + descriptor);
+                    throw;
+                }
             }
 
             // TODO do some dynamic loader things

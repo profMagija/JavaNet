@@ -25,12 +25,29 @@ namespace JavaNet.Runtime.Native.j.lang
         {
             _loadClass = new MethodRef<Func<string, bool, Class>>(typeof(ClassLoader), "loadClass");
             _nativeData = new FieldRef<Type>(typeof(Class), "__nativeData");
+
+            JNI.RegisterNativeMethod(clazz, nameof(forName0), (Func<Type, string, bool, ClassLoader, Class, Class>) forName0);
+            JNI.RegisterNativeMethod(clazz, nameof(getPrimitiveClass), (Func<Type, string, Class>) getPrimitiveClass);
+            JNI.RegisterNativeMethod(clazz, nameof(desiredAssertionStatus0), (Func<Type, Class, bool>) desiredAssertionStatus0);
+            JNI.RegisterNativeMethod(clazz, nameof(getDeclaredFields0), (Func<Class, bool, Field[]>) getDeclaredFields0);
+            JNI.RegisterNativeMethod(clazz, nameof(getDeclaredMethods0), (Func<Class, bool, Method[]>) getDeclaredMethods0);
+            JNI.RegisterNativeMethod(clazz, nameof(getDeclaredConstructors0), (Func<Class, bool, Constructor[]>) getDeclaredConstructors0);
+            JNI.RegisterNativeMethod(clazz, nameof(getModifiers), (Func<Class, int>) getModifiers);
+            JNI.RegisterNativeMethod(clazz, nameof(getName0), (Func<Class, string>) getName0);
+            JNI.RegisterNativeMethod(clazz, nameof(getSuperclass), (Func<Class, Class>) getSuperclass);
+            JNI.RegisterNativeMethod(clazz, nameof(isPrimitive), (Func<Class, bool>) isPrimitive);
+            JNI.RegisterNativeMethod(clazz, nameof(isInterface), (Func<Class, bool>) isInterface);
+            JNI.RegisterNativeMethod(clazz, nameof(isArray), (Func<Class, bool>) isArray);
+            JNI.RegisterNativeMethod(clazz, nameof(isInstance), (Func<Class, object, bool>) isInstance);
+
         }
 
         [JniExport]
         public static Class forName0(Type clazz, string classname, bool initialize, ClassLoader loader, Class caller)
         {
             Class found;
+
+            Console.WriteLine(" searching for {0}", classname);
 
             if (loader != null)
             {
@@ -53,10 +70,10 @@ namespace JavaNet.Runtime.Native.j.lang
 
                 foreach (var type in typeof(Class).Assembly.GetTypes())
                 {
-                    if (type.GetCustomAttribute<JavaNameAttribute>()?.Name == classname)
-                    {
+                    if (type.FullName == classname)
                         t = type;
-                    }
+                    if (type.GetCustomAttribute<JavaNameAttribute>()?.Name.Replace('/', '.') == classname)
+                        t = type;
                 }
 
                 if (t == null)
@@ -110,7 +127,7 @@ namespace JavaNet.Runtime.Native.j.lang
         }
 
         [JniExport]
-        public static Method[] getDeclaredMethods(Class @this, bool publicOnly)
+        public static Method[] getDeclaredMethods0(Class @this, bool publicOnly)
         {
             var flags = publicOnly ? BindingFlags.Public : BindingFlags.Public | BindingFlags.NonPublic;
             flags |= BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static;
@@ -118,6 +135,18 @@ namespace JavaNet.Runtime.Native.j.lang
 
             return methods
                 .Select(CreateMethod)
+                .ToArray();
+        }
+
+        [JniExport]
+        public static Constructor[] getDeclaredConstructors0(Class @this, bool publicOnly)
+        {
+            var flags = publicOnly ? BindingFlags.Public : BindingFlags.Public | BindingFlags.NonPublic;
+            flags |= BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static;
+            var methods = _nativeData[@this].GetConstructors(flags);
+
+            return methods
+                .Select(CreateConstructor)
                 .ToArray();
         }
 
@@ -153,15 +182,66 @@ namespace JavaNet.Runtime.Native.j.lang
             return t.FullName;
         }
 
-        internal static Field CreateField(FieldInfo f) =>
-            new Field(
+        [JniExport]
+        public static Class getSuperclass(Class @this)
+        {
+            var bt = _nativeData[@this].BaseType;
+            if (bt == null)
+                return null;
+            return (Class) ReflectionBridge.GetClass(bt);
+        }
+
+        [JniExport]
+        public static bool isPrimitive(Class @this)
+        {
+            return _nativeData[@this].IsPrimitive;
+        }
+
+        [JniExport]
+        public static bool isInterface(Class @this)
+        {
+            return _nativeData[@this].IsInterface;
+        }
+
+        [JniExport]
+        public static bool isArray(Class @this)
+        {
+            return _nativeData[@this].IsArray;
+        }
+
+        [JniExport]
+        public static bool isInstance(Class @this, object o)
+        {
+            return _nativeData[@this].IsInstanceOfType(o);
+        }
+
+
+
+        internal static Field CreateField(FieldInfo f)
+        {
+            var modifiers = 0;
+            if (f.IsStatic)
+                modifiers |= Modifier.STATIC;
+
+            if (f.IsPublic)
+                modifiers |= Modifier.PUBLIC;
+            else if (f.IsPrivate)
+                modifiers |= Modifier.PRIVATE;
+            else if (f.IsFamilyOrAssembly)
+                modifiers |= Modifier.PROTECTED;
+
+            if (f.GetRequiredCustomModifiers().Any(t => t == typeof(IsVolatile)))
+                modifiers |= Modifier.VOLATILE;
+
+            return new Field(
                 (Class) ReflectionBridge.GetClass(f.DeclaringType),
                 string.Intern(f.Name),
                 (Class) ReflectionBridge.GetClass(f.FieldType),
-                0,
+                modifiers,
                 0,
                 string.Empty,
                 new sbyte[0]) {__nativeData = f};
+        }
 
         internal static FieldInfo GetField(Field f)
         {
@@ -178,16 +258,63 @@ namespace JavaNet.Runtime.Native.j.lang
             return (Type) clazz.__nativeData ?? throw new NotImplementedException("hmm indeed");
         }
 
-        internal static Method CreateMethod(MethodInfo m) => new Method(
-            (Class) ReflectionBridge.GetClass(m.DeclaringType),
-            string.Intern(m.Name),
-            m.GetParameters().Select(p => (Class) ReflectionBridge.GetClass(p.ParameterType)).ToArray(),
-            (Class) ReflectionBridge.GetClass(m.ReturnType),
-            new Class[0],
-            0,
-            0,
-            "",
-            new sbyte[0], new sbyte[0], new sbyte[0]
-        ) {__nativeData = m};
+        internal static Method CreateMethod(MethodInfo m)
+        {
+            var modifiers = 0;
+
+            if (m.IsPublic)
+                modifiers |= Modifier.PUBLIC;
+            else if (m.IsPrivate)
+                modifiers |= Modifier.PRIVATE;
+            else if (m.IsFamilyOrAssembly)
+                modifiers |= Modifier.PROTECTED;
+
+            if (!m.IsVirtual)
+                modifiers |= Modifier.FINAL;
+
+            if (m.IsStatic)
+                modifiers |= Modifier.STATIC;
+
+            return new Method(
+                (Class) ReflectionBridge.GetClass(m.DeclaringType),
+                string.Intern(m.Name),
+                m.GetParameters().Select(p => (Class) ReflectionBridge.GetClass(p.ParameterType)).ToArray(),
+                (Class) ReflectionBridge.GetClass(m.ReturnType),
+                new Class[0],
+                modifiers,
+                0,
+                "",
+                new sbyte[0], new sbyte[0], new sbyte[0]
+            ) {__nativeData = m};
+        }
+
+        internal static Constructor CreateConstructor(ConstructorInfo m)
+        {
+            var modifiers = 0;
+
+            if (m.IsPublic)
+                modifiers |= Modifier.PUBLIC;
+            else if (m.IsPrivate)
+                modifiers |= Modifier.PRIVATE;
+            else if (m.IsFamilyOrAssembly)
+                modifiers |= Modifier.PROTECTED;
+
+            if (!m.IsVirtual)
+                modifiers |= Modifier.FINAL;
+
+            if (m.IsStatic)
+                modifiers |= Modifier.STATIC;
+
+            return new Constructor(
+                    (Class) ReflectionBridge.GetClass(m.DeclaringType),
+                    m.GetParameters().Select(p => (Class) ReflectionBridge.GetClass(p.ParameterType)).ToArray(),
+                    new Class[0],
+                    modifiers,
+                    0,
+                    "",
+                    new sbyte[0], new sbyte[0]
+                )
+                {__nativeData = m};
+        }
     }
 }

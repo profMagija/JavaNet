@@ -689,26 +689,40 @@ namespace JavaNet
 
             if (Instance != null)
                 args.Add(Instance);
-            
+
+            var method = Method;
+
+            if (Method.Name == ".ctor" && Method.DeclaringType.FullName == "System.Exception" && Args.Length == 1 && Args[0].ActualType.FullName != "System.String")
+            {
+                args.Add(new ConstantValue(JavaAssemblyBuilder.Instance.TypeSystem.String, ""));
+                method = JavaAssemblyBuilder.Instance.Import(typeof(Exception).GetConstructor(new[] { typeof(string), typeof(Exception) }));
+            }
+
             args.AddRange(Args);
 
-            if (!Method.HasThis)
-                Debug.Assert(args.Count == Method.Parameters.Count);
+            if (Method.Name == ".ctor" && Method.DeclaringType.FullName == "System.Exception" && Args.Length == 4)
+            {
+                args.RemoveRange(3, 2);
+                method = JavaAssemblyBuilder.Instance.Import(typeof(Exception).GetConstructor(new[] { typeof(string), typeof(Exception) }));
+            }
+
+            if (!method.HasThis)
+                Debug.Assert(args.Count == method.Parameters.Count);
             else
-                Debug.Assert(args.Count == Method.Parameters.Count + 1);
+                Debug.Assert(args.Count == method.Parameters.Count + 1);
 
             foreach (var value in args)
             {
                 l.AddRange(value.GetValue());
             }
 
-            var isVirt = Method.Resolve()?.IsVirtual ?? false;
+            var isVirt = method.Resolve()?.IsVirtual ?? false;
 
-            l.Add(Instruction.Create(Virtual && isVirt ? OpCodes.Callvirt : OpCodes.Call, Method));
+            l.Add(Instruction.Create(Virtual && isVirt ? OpCodes.Callvirt : OpCodes.Call, method));
 
             if (Target != null)
             {
-                if (Method.MethodReturnType.CustomAttributes.FirstOrDefault(x => x.AttributeType.FullName == typeof(ActualTypeAttribute).FullName) is CustomAttribute atr)
+                if (method.MethodReturnType.CustomAttributes.FirstOrDefault(x => x.AttributeType.FullName == typeof(ActualTypeAttribute).FullName) is CustomAttribute atr)
                 {
                     var s = (string) atr.ConstructorArguments[0].Value;
                     l.Add(Instruction.Create(OpCodes.Castclass, JavaAssemblyBuilder.Instance.ResolveTypeReference(s)));

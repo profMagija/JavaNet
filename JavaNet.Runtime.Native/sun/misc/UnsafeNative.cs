@@ -54,9 +54,23 @@ namespace JavaNet.Runtime.Native.sun.misc
         public static unsafe long objectFieldOffset(Unsafe @this, Field fi)
         {
             var o = FormatterServices.GetUninitializedObject(ClassNative.GetClass(fi.getDeclaringClass()));
+
+            var fieldInfo = ClassNative.GetField(fi);
+
+            if (fieldInfo.IsInitOnly)
+                return fieldInfo.FieldHandle.Value.ToInt64();
+
             var p0 = index(o, 0);
-            var p1 = (byte*) TypedReference.MakeTypedReference(o, new[] {ClassNative.GetField(fi)}).ToPointer();
-            return (int)(p1 - p0);
+            if (fieldInfo.FieldType.IsPrimitive)
+            {
+                fieldInfo.SetValue(o, 0xff);
+                for (var i = 8;; i++)
+                    if (p0[i] == 0xff)
+                        return i;
+            }
+            var p1 = (byte*) TypedReference.MakeTypedReference(o, new[] {fieldInfo}).ToPointer();
+            var fieldOffset = (int)(p1 - p0);
+            return fieldOffset;
         }
 
         [JniExport]
@@ -165,7 +179,8 @@ namespace JavaNet.Runtime.Native.sun.misc
 
             var tr = new TypedRef(new IntPtr(index(ptr, offset)), typeof(object).TypeHandle.Value);
             var tr2 = *((TypedReference*) &tr);
-            return __refvalue(tr2, object);
+            var o = __refvalue(tr2, object);
+            return o;
         }
 
         [JniExport]
